@@ -1,0 +1,1053 @@
+openapi: 3.0.0
+info:
+  title: Chat API
+  version: 1.0.0
+  description: |
+    AI Chat Service API - Build conversational AI experiences with multiple providers.
+
+    ## Features
+    - Multi-provider support (OpenAI, Anthropic, Ollama, custom)
+    - Streaming and non-streaming responses
+    - Session management
+    - Usage analytics
+  contact:
+    name: CoreNovus API Support
+    email: api@corenovus.com
+
+servers:
+  - url: https://api.corenovus.com
+    description: Production server
+  - url: http://localhost:8000
+    description: Development server
+
+tags:
+  - name: chat
+    description: Chat message operations
+  - name: sessions
+    description: Session management
+  - name: providers
+    description: AI provider management
+  - name: analytics
+    description: Usage statistics and analytics
+
+paths:
+  /api/v1/chat/message:
+    post:
+      tags:
+        - chat
+      summary: Send a chat message
+      description: Send a message to the AI and get a response
+      operationId: sendChatMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendChatMessageRequest'
+      responses:
+        '200':
+          description: Message sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendChatMessageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/chat/stream:
+    post:
+      tags:
+        - chat
+      summary: Send a chat message (streaming)
+      description: Send a message and receive response via Server-Sent Events
+      operationId: streamChatMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StreamChatMessageRequest'
+      responses:
+        '200':
+          description: Stream started
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /api/v1/chat/sessions:
+    get:
+      tags:
+        - sessions
+      summary: List chat sessions
+      operationId: getChatSessions
+      parameters:
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+        - name: provider
+          in: query
+          schema:
+            type: string
+          description: Filter by provider
+        - name: model
+          in: query
+          schema:
+            type: string
+          description: Filter by model
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Start date filter
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: End date filter
+        - name: archived
+          in: query
+          schema:
+            type: boolean
+          description: Include archived sessions
+      responses:
+        '200':
+          description: Sessions retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetChatSessionsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags:
+        - sessions
+      summary: Create a new chat session
+      operationId: createChatSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChatSessionRequest'
+      responses:
+        '201':
+          description: Session created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateChatSessionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/chat/sessions/{sessionId}:
+    get:
+      tags:
+        - sessions
+      summary: Get session details
+      operationId: getChatSession
+      parameters:
+        - $ref: '#/components/parameters/sessionId'
+        - name: includeMessages
+          in: query
+          schema:
+            type: boolean
+            default: true
+          description: Include message history
+        - name: messageLimit
+          in: query
+          schema:
+            type: integer
+            default: 50
+          description: Max messages to return
+      responses:
+        '200':
+          description: Session details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetChatSessionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - sessions
+      summary: Update session
+      operationId: updateChatSession
+      parameters:
+        - $ref: '#/components/parameters/sessionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateChatSessionRequest'
+      responses:
+        '200':
+          description: Session updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateChatSessionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - sessions
+      summary: Delete session
+      operationId: deleteChatSession
+      parameters:
+        - $ref: '#/components/parameters/sessionId'
+      responses:
+        '204':
+          description: Session deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/chat/providers:
+    get:
+      tags:
+        - providers
+      summary: List available AI providers
+      operationId: getProviders
+      parameters:
+        - name: includeDisabled
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Include disabled providers
+      responses:
+        '200':
+          description: Providers retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetProvidersResponse'
+
+  /api/v1/chat/models:
+    get:
+      tags:
+        - providers
+      summary: List available models
+      operationId: getModels
+      parameters:
+        - name: providerId
+          in: query
+          schema:
+            type: string
+          description: Filter by provider
+        - name: capability
+          in: query
+          schema:
+            type: string
+            enum: [streaming, functions, vision, codeGeneration]
+          description: Filter by capability
+      responses:
+        '200':
+          description: Models retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetModelsResponse'
+
+  /api/v1/chat/providers/validate:
+    post:
+      tags:
+        - providers
+      summary: Validate provider configuration
+      operationId: validateProvider
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidateProviderRequest'
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidateProviderResponse'
+
+  /api/v1/chat/search:
+    get:
+      tags:
+        - chat
+      summary: Search chat messages
+      operationId: searchMessages
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search keyword
+        - name: sessionId
+          in: query
+          schema:
+            type: string
+          description: Limit search to specific session
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchMessagesResponse'
+
+  /api/v1/chat/analytics:
+    get:
+      tags:
+        - analytics
+      summary: Get usage analytics
+      operationId: getChatAnalytics
+      parameters:
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Start date
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date
+          description: End date
+        - name: groupBy
+          in: query
+          schema:
+            type: string
+            enum: [day, week, month]
+            default: day
+          description: Group results by time period
+      responses:
+        '200':
+          description: Analytics data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatAnalyticsResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    sessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Session ID
+
+    limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      description: Number of items per page
+
+    offset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      description: Number of items to skip
+
+  schemas:
+    ChatMessage:
+      type: object
+      required:
+        - id
+        - content
+        - role
+        - timestamp
+      properties:
+        id:
+          type: string
+          description: Message ID
+        content:
+          type: string
+          description: Message content
+        role:
+          type: string
+          enum: [user, assistant, system]
+          description: Message role
+        timestamp:
+          type: string
+          format: date-time
+          description: Message timestamp
+        provider:
+          type: string
+          description: AI provider
+        model:
+          type: string
+          description: Model used
+        metadata:
+          type: object
+          properties:
+            tokens:
+              type: object
+              properties:
+                input:
+                  type: integer
+                output:
+                  type: integer
+            cost:
+              type: number
+              format: float
+            processingTime:
+              type: number
+              format: float
+            confidence:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 1
+
+    ChatSession:
+      type: object
+      required:
+        - id
+        - title
+        - createdAt
+        - updatedAt
+        - model
+        - provider
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatMessage'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        model:
+          type: string
+        provider:
+          type: string
+        metadata:
+          type: object
+          properties:
+            totalTokens:
+              type: integer
+            totalCost:
+              type: number
+              format: float
+            messageCount:
+              type: integer
+            lastActivity:
+              type: string
+              format: date-time
+
+    ChatProvider:
+      type: object
+      required:
+        - id
+        - name
+        - type
+        - enabled
+        - models
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          enum: [openai, anthropic, ollama, custom]
+        enabled:
+          type: boolean
+        models:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatModel'
+        configuration:
+          type: object
+          properties:
+            apiKey:
+              type: string
+            baseUrl:
+              type: string
+            organizationId:
+              type: string
+        limits:
+          type: object
+          properties:
+            maxTokens:
+              type: integer
+            maxMessages:
+              type: integer
+            requestsPerMinute:
+              type: integer
+
+    ChatModel:
+      type: object
+      required:
+        - id
+        - name
+        - providerId
+        - maxTokens
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        providerId:
+          type: string
+        maxTokens:
+          type: integer
+        costPer1kTokens:
+          type: object
+          properties:
+            input:
+              type: number
+              format: float
+            output:
+              type: number
+              format: float
+        capabilities:
+          type: object
+          properties:
+            streaming:
+              type: boolean
+            functions:
+              type: boolean
+            vision:
+              type: boolean
+            codeGeneration:
+              type: boolean
+        description:
+          type: string
+
+    SendChatMessageRequest:
+      type: object
+      required:
+        - message
+        - provider
+      properties:
+        message:
+          type: string
+          minLength: 1
+          description: User message content
+        sessionId:
+          type: string
+          description: Session ID (optional, creates new session if not provided)
+        provider:
+          type: string
+          description: AI provider ID
+        model:
+          type: string
+          description: Model ID (optional, uses provider default)
+        temperature:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 2
+          default: 0.7
+          description: Response randomness (0-2)
+        maxTokens:
+          type: integer
+          minimum: 1
+          description: Max output tokens
+        systemPrompt:
+          type: string
+          description: System prompt
+        conversationHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatMessage'
+          description: Conversation history (for stateless requests)
+        stream:
+          type: boolean
+          default: false
+          description: Enable streaming response
+
+    SendChatMessageResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                message:
+                  $ref: '#/components/schemas/ChatMessage'
+                sessionId:
+                  type: string
+                usage:
+                  type: object
+                  properties:
+                    inputTokens:
+                      type: integer
+                    outputTokens:
+                      type: integer
+                    totalTokens:
+                      type: integer
+                    estimatedCost:
+                      type: number
+                      format: float
+                quality:
+                  $ref: '#/components/schemas/QualityMetrics'
+                processingInfo:
+                  type: object
+                  properties:
+                    model:
+                      type: string
+                    provider:
+                      type: string
+                    processingTime:
+                      type: number
+                      format: float
+                    timestamp:
+                      type: string
+                      format: date-time
+
+    StreamChatMessageRequest:
+      type: object
+      required:
+        - message
+        - provider
+      properties:
+        message:
+          type: string
+          minLength: 1
+        sessionId:
+          type: string
+        provider:
+          type: string
+        model:
+          type: string
+        temperature:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 2
+          default: 0.7
+        maxTokens:
+          type: integer
+          minimum: 1
+        systemPrompt:
+          type: string
+        conversationHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatMessage'
+
+    CreateChatSessionRequest:
+      type: object
+      required:
+        - provider
+        - model
+      properties:
+        title:
+          type: string
+          description: Session title (optional, auto-generated)
+        provider:
+          type: string
+        model:
+          type: string
+        systemPrompt:
+          type: string
+        initialMessage:
+          type: string
+          description: Initial message (optional)
+
+    CreateChatSessionResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                session:
+                  $ref: '#/components/schemas/ChatSession'
+                firstMessage:
+                  $ref: '#/components/schemas/ChatMessage'
+
+    UpdateChatSessionRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        model:
+          type: string
+        provider:
+          type: string
+        archived:
+          type: boolean
+        tags:
+          type: array
+          items:
+            type: string
+
+    UpdateChatSessionResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ChatSession'
+
+    GetChatSessionsResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              allOf:
+                - $ref: '#/components/schemas/PaginatedResponse'
+                - type: object
+                  properties:
+                    items:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/ChatSession'
+
+    GetChatSessionResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ChatSession'
+
+    GetProvidersResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/ChatProvider'
+
+    GetModelsResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/ChatModel'
+
+    ValidateProviderRequest:
+      type: object
+      required:
+        - provider
+      properties:
+        provider:
+          type: string
+        apiKey:
+          type: string
+        baseUrl:
+          type: string
+
+    ValidateProviderResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                valid:
+                  type: boolean
+                availableModels:
+                  type: array
+                  items:
+                    type: string
+                limits:
+                  type: object
+                  properties:
+                    maxTokens:
+                      type: integer
+                    requestsPerMinute:
+                      type: integer
+                error:
+                  type: string
+
+    SearchMessagesResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              allOf:
+                - $ref: '#/components/schemas/PaginatedResponse'
+                - type: object
+                  properties:
+                    items:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          message:
+                            $ref: '#/components/schemas/ChatMessage'
+                          sessionId:
+                            type: string
+                          sessionTitle:
+                            type: string
+                          relevanceScore:
+                            type: number
+                            format: float
+                          context:
+                            type: object
+                            properties:
+                              previousMessages:
+                                type: array
+                                items:
+                                  $ref: '#/components/schemas/ChatMessage'
+                              nextMessages:
+                                type: array
+                                items:
+                                  $ref: '#/components/schemas/ChatMessage'
+
+    ChatAnalyticsResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                usage:
+                  type: object
+                  properties:
+                    totalMessages:
+                      type: integer
+                    totalTokens:
+                      type: integer
+                    totalCost:
+                      type: number
+                      format: float
+                    averageResponseTime:
+                      type: number
+                      format: float
+                breakdown:
+                  type: object
+                  properties:
+                    byProvider:
+                      type: object
+                      additionalProperties:
+                        type: object
+                        properties:
+                          messages:
+                            type: integer
+                          tokens:
+                            type: integer
+                          cost:
+                            type: number
+                            format: float
+                    byModel:
+                      type: object
+                      additionalProperties:
+                        type: object
+                        properties:
+                          messages:
+                            type: integer
+                          tokens:
+                            type: integer
+                          cost:
+                            type: number
+                            format: float
+                    byDate:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          date:
+                            type: string
+                            format: date
+                          messages:
+                            type: integer
+                          tokens:
+                            type: integer
+                          cost:
+                            type: number
+                            format: float
+                trends:
+                  type: object
+                  properties:
+                    messageGrowth:
+                      type: number
+                      format: float
+                    costGrowth:
+                      type: number
+                      format: float
+                    popularModels:
+                      type: array
+                      items:
+                        type: string
+                    peakUsageHours:
+                      type: array
+                      items:
+                        type: integer
+
+    ApiResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+        error:
+          type: string
+        message:
+          type: string
+        code:
+          type: string
+
+    PaginatedResponse:
+      type: object
+      required:
+        - items
+        - pagination
+      properties:
+        items:
+          type: array
+          items: {}
+        pagination:
+          type: object
+          required:
+            - total
+            - limit
+            - offset
+            - hasMore
+          properties:
+            total:
+              type: integer
+            limit:
+              type: integer
+            offset:
+              type: integer
+            hasMore:
+              type: boolean
+
+    QualityMetrics:
+      type: object
+      properties:
+        relevance:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        coherence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        accuracy:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        completeness:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+        message:
+          type: string
+        code:
+          type: string
+        details:
+          type: object
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    TooManyRequests:
+      description: Rate limit exceeded
+      headers:
+        Retry-After:
+          description: Seconds until retry allowed
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+security:
+  - bearerAuth: []

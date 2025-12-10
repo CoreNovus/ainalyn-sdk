@@ -1,0 +1,504 @@
+openapi: 3.0.0
+info:
+  title: YouTube Video Analysis API
+  version: 1.0.0
+  description: |
+    YouTube Video Analysis Service API - Analyze YouTube videos with AI.
+
+    ## Features
+    - YouTube video content analysis
+    - Question-answering about video content
+    - Video summarization
+    - Timestamp extraction
+    - Chat with video content
+    - URL validation
+  contact:
+    name: CoreNovus API Support
+    email: api@corenovus.com
+
+servers:
+  - url: https://api.corenovus.com
+    description: Production server
+  - url: http://localhost:8000
+    description: Development server
+
+tags:
+  - name: youtube-analysis
+    description: YouTube video analysis operations
+  - name: youtube-chat
+    description: Video content chat operations
+
+paths:
+  /api/v1/video-analysis/youtube/analyze:
+    post:
+      tags:
+        - youtube-analysis
+      summary: Analyze YouTube video
+      description: Provide YouTube URL and question to get AI analysis results
+      operationId: analyzeYouTubeVideo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/YouTubeAnalyzeRequest'
+      responses:
+        '202':
+          description: Analysis task accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YouTubeAnalyzeResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/video-analysis/youtube/tasks/{taskId}:
+    get:
+      tags:
+        - youtube-analysis
+      summary: Get analysis task status
+      description: Check YouTube video analysis task progress and results
+      operationId: getYouTubeAnalysisTask
+      parameters:
+        - $ref: '#/components/parameters/taskId'
+      responses:
+        '200':
+          description: Task status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YouTubeTaskResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/video-analysis/youtube/chat:
+    post:
+      tags:
+        - youtube-chat
+      summary: Chat with video content
+      description: Have a conversation about analyzed YouTube video content
+      operationId: chatWithYouTubeVideo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/YouTubeChatRequest'
+      responses:
+        '200':
+          description: Chat response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YouTubeChatResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/video-analysis/youtube/validate:
+    post:
+      tags:
+        - youtube-analysis
+      summary: Validate YouTube URL
+      description: Check if YouTube URL is valid and analyzable
+      operationId: validateYouTubeUrl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/YouTubeValidateRequest'
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YouTubeValidateResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    taskId:
+      name: taskId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Analysis task ID
+
+  schemas:
+    YouTubeAnalyzeRequest:
+      type: object
+      required:
+        - youtubeUrl
+        - question
+      properties:
+        youtubeUrl:
+          type: string
+          description: YouTube video URL
+          example: https://www.youtube.com/watch?v=dQw4w9WgXcQ
+        question:
+          type: string
+          description: User question about the video
+          minLength: 1
+          maxLength: 1000
+          example: What is the main topic of this video?
+        options:
+          type: object
+          properties:
+            language:
+              type: string
+              default: en
+              description: Response language
+            summaryLength:
+              type: string
+              enum:
+                - short
+                - medium
+                - long
+              default: medium
+              description: Summary length preference
+            includeTimestamps:
+              type: boolean
+              default: true
+              description: Include relevant timestamps
+            maxProcessingTime:
+              type: integer
+              default: 300
+              description: Maximum processing time (seconds)
+
+    YouTubeAnalyzeResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                taskId:
+                  type: string
+                  description: Analysis task ID
+                status:
+                  type: string
+                  enum:
+                    - accepted
+                    - processing
+                    - completed
+                    - failed
+                  description: Task status
+                estimatedProcessingTime:
+                  type: number
+                  description: Estimated processing time (seconds)
+                videoInfo:
+                  $ref: '#/components/schemas/YouTubeVideoInfo'
+
+    YouTubeTaskResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                taskId:
+                  type: string
+                status:
+                  type: string
+                  enum:
+                    - accepted
+                    - processing
+                    - completed
+                    - failed
+                progress:
+                  type: number
+                  minimum: 0
+                  maximum: 100
+                  description: Progress percentage
+                result:
+                  type: object
+                  properties:
+                    answer:
+                      type: string
+                      description: AI-generated answer
+                    format:
+                      type: string
+                      description: Response format
+                    metadata:
+                      $ref: '#/components/schemas/AnalysisMetadata'
+                error:
+                  type: string
+                  description: Error message (when failed)
+                createdAt:
+                  type: string
+                  format: date-time
+                completedAt:
+                  type: string
+                  format: date-time
+                processingTime:
+                  type: number
+                  description: Actual processing time (seconds)
+
+    YouTubeChatRequest:
+      type: object
+      required:
+        - taskId
+        - message
+      properties:
+        taskId:
+          type: string
+          description: Completed analysis task ID
+        message:
+          type: string
+          description: User message
+          minLength: 1
+          maxLength: 1000
+        conversationHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatMessage'
+          description: Conversation history (optional)
+        options:
+          type: object
+          properties:
+            contextWindow:
+              type: integer
+              default: 5
+              description: Conversation context window size
+
+    YouTubeChatResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                message:
+                  type: string
+                  description: AI response
+                relevantTimestamps:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      time:
+                        type: string
+                        description: Timestamp
+                      description:
+                        type: string
+                        description: Content description
+                confidence:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+                  description: Response confidence
+
+    YouTubeValidateRequest:
+      type: object
+      required:
+        - youtubeUrl
+      properties:
+        youtubeUrl:
+          type: string
+          description: YouTube URL to validate
+
+    YouTubeValidateResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                valid:
+                  type: boolean
+                  description: URL is valid
+                videoId:
+                  type: string
+                  description: Video ID
+                videoInfo:
+                  $ref: '#/components/schemas/YouTubeVideoInfo'
+                restrictions:
+                  type: object
+                  properties:
+                    isPrivate:
+                      type: boolean
+                    isAgeRestricted:
+                      type: boolean
+                    isRegionBlocked:
+                      type: boolean
+                    hasClosedCaptions:
+                      type: boolean
+                error:
+                  type: string
+                  description: Validation error message
+
+    YouTubeVideoInfo:
+      type: object
+      properties:
+        videoId:
+          type: string
+        title:
+          type: string
+        duration:
+          type: string
+          description: Video duration (ISO 8601 format)
+        channelName:
+          type: string
+        publishedAt:
+          type: string
+          format: date-time
+        thumbnailUrl:
+          type: string
+        viewCount:
+          type: integer
+        likeCount:
+          type: integer
+        description:
+          type: string
+
+    AnalysisMetadata:
+      type: object
+      properties:
+        videoLength:
+          type: string
+          description: Video length
+        analysisDepth:
+          type: string
+          enum:
+            - basic
+            - standard
+            - deep
+        extractedSections:
+          type: integer
+          description: Number of sections extracted
+        keyTopics:
+          type: array
+          items:
+            type: string
+          description: Key topics
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Analysis confidence
+        language:
+          type: string
+          description: Detected language
+        hasTranscript:
+          type: boolean
+          description: Has closed captions
+        processingDetails:
+          type: object
+          properties:
+            transcriptionTime:
+              type: number
+            analysisTime:
+              type: number
+            totalTime:
+              type: number
+
+    ChatMessage:
+      type: object
+      required:
+        - role
+        - content
+        - timestamp
+      properties:
+        role:
+          type: string
+          enum:
+            - user
+            - assistant
+        content:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    ApiResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        code:
+          type: string
+
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+        message:
+          type: string
+        code:
+          type: string
+        details:
+          type: object
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    TooManyRequests:
+      description: Rate limit exceeded
+      headers:
+        Retry-After:
+          description: Retry after (seconds)
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+security:
+  - bearerAuth: []

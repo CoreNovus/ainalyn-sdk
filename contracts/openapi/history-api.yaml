@@ -1,0 +1,546 @@
+openapi: 3.0.0
+info:
+  title: History API
+  version: 1.0.0
+  description: |
+    Unified History Service API - Track and manage all feature usage history.
+
+    ## Features
+    - Unified history across all services
+    - Feature-specific filtering
+    - Search functionality
+    - Bulk operations
+    - Data export
+  contact:
+    name: CoreNovus API Support
+    email: api@corenovus.com
+
+servers:
+  - url: https://api.corenovus.com
+    description: Production server
+  - url: http://localhost:8000
+    description: Development server
+
+tags:
+  - name: history
+    description: History management operations
+  - name: export
+    description: Data export operations
+
+paths:
+  /api/v1/history:
+    get:
+      tags:
+        - history
+      summary: Get history
+      description: Retrieve history records across all features
+      operationId: getHistory
+      parameters:
+        - name: feature
+          in: query
+          description: Filter by feature
+          schema:
+            $ref: '#/components/schemas/FeatureType'
+        - name: dateFrom
+          in: query
+          description: Start date filter
+          schema:
+            type: string
+            format: date-time
+        - name: dateTo
+          in: query
+          description: End date filter
+          schema:
+            type: string
+            format: date-time
+        - name: search
+          in: query
+          description: Search keyword
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          description: Items per page
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+        - name: sortBy
+          in: query
+          description: Sort field
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - feature
+              - title
+            default: createdAt
+        - name: sortOrder
+          in: query
+          description: Sort order
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+      responses:
+        '200':
+          description: History retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetHistoryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/history/{id}:
+    get:
+      tags:
+        - history
+      summary: Get history item
+      description: Retrieve a specific history record
+      operationId: getHistoryItem
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: History item ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: History item retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoryItemDetailResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - history
+      summary: Delete history item
+      description: Delete a specific history record
+      operationId: deleteHistoryItem
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: History item ID
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Item deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/history/bulk-delete:
+    post:
+      tags:
+        - history
+      summary: Bulk delete history
+      description: Delete multiple history records at once
+      operationId: bulkDeleteHistory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkDeleteRequest'
+      responses:
+        '200':
+          description: Items deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkDeleteResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v1/history/clear:
+    post:
+      tags:
+        - history
+      summary: Clear history
+      description: Clear all history or filter by feature/date range
+      operationId: clearHistory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClearHistoryRequest'
+      responses:
+        '200':
+          description: History cleared
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClearHistoryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v1/history/export:
+    post:
+      tags:
+        - export
+      summary: Export history
+      description: Export history to file
+      operationId: exportHistory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExportHistoryRequest'
+      responses:
+        '200':
+          description: Export completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportHistoryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v1/history/stats:
+    get:
+      tags:
+        - history
+      summary: Get history stats
+      description: Retrieve history statistics by feature
+      operationId: getHistoryStats
+      parameters:
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Stats retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoryStatsResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    FeatureType:
+      type: string
+      enum:
+        - chat
+        - translation
+        - image_analysis
+        - speech_to_text
+        - speech_to_image
+        - sketch_to_image
+        - sketch_to_video
+        - video_analysis
+        - video_generation
+        - text_to_music
+        - image_to_music
+        - travel_planning
+        - presentation
+        - counseling
+      description: Feature type
+
+    HistoryItem:
+      type: object
+      properties:
+        id:
+          type: string
+          description: History item ID
+        feature:
+          $ref: '#/components/schemas/FeatureType'
+        title:
+          type: string
+          description: Item title or summary
+        preview:
+          type: string
+          description: Content preview
+        thumbnailUrl:
+          type: string
+          format: uri
+          description: Thumbnail image (if applicable)
+        metadata:
+          type: object
+          description: Feature-specific metadata
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    HistoryItemDetail:
+      allOf:
+        - $ref: '#/components/schemas/HistoryItem'
+        - type: object
+          properties:
+            content:
+              type: object
+              description: Full content data
+            relatedItems:
+              type: array
+              items:
+                $ref: '#/components/schemas/HistoryItem'
+              description: Related history items
+            usage:
+              type: object
+              properties:
+                tokens:
+                  type: integer
+                cost:
+                  type: number
+                  format: float
+                processingTime:
+                  type: number
+                  format: float
+
+    GetHistoryResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/HistoryItem'
+            pagination:
+              type: object
+              properties:
+                total:
+                  type: integer
+                page:
+                  type: integer
+                limit:
+                  type: integer
+                totalPages:
+                  type: integer
+                hasMore:
+                  type: boolean
+
+    HistoryItemDetailResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/HistoryItemDetail'
+
+    BulkDeleteRequest:
+      type: object
+      required:
+        - ids
+      properties:
+        ids:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          maxItems: 100
+          description: IDs to delete
+
+    BulkDeleteResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            deletedCount:
+              type: integer
+            failedIds:
+              type: array
+              items:
+                type: string
+
+    ClearHistoryRequest:
+      type: object
+      properties:
+        feature:
+          $ref: '#/components/schemas/FeatureType'
+        dateFrom:
+          type: string
+          format: date-time
+        dateTo:
+          type: string
+          format: date-time
+        confirmClearAll:
+          type: boolean
+          description: Required if clearing all history
+
+    ClearHistoryResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            deletedCount:
+              type: integer
+
+    ExportHistoryRequest:
+      type: object
+      required:
+        - format
+      properties:
+        format:
+          type: string
+          enum:
+            - json
+            - csv
+            - xlsx
+          description: Export format
+        feature:
+          $ref: '#/components/schemas/FeatureType'
+        dateFrom:
+          type: string
+          format: date-time
+        dateTo:
+          type: string
+          format: date-time
+        includeContent:
+          type: boolean
+          default: false
+          description: Include full content data
+        includeMedia:
+          type: boolean
+          default: false
+          description: Include media files (ZIP archive)
+
+    ExportHistoryResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            downloadUrl:
+              type: string
+              format: uri
+            expiresAt:
+              type: string
+              format: date-time
+            fileSize:
+              type: integer
+            format:
+              type: string
+            recordCount:
+              type: integer
+
+    HistoryStatsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            totalRecords:
+              type: integer
+            byFeature:
+              type: object
+              additionalProperties:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  lastUsed:
+                    type: string
+                    format: date-time
+            byDate:
+              type: array
+              items:
+                type: object
+                properties:
+                  date:
+                    type: string
+                    format: date
+                  count:
+                    type: integer
+            storageUsed:
+              type: object
+              properties:
+                total:
+                  type: integer
+                  description: Total storage (bytes)
+                byFeature:
+                  type: object
+                  additionalProperties:
+                    type: integer
+
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+        message:
+          type: string
+        code:
+          type: string
+        details:
+          type: object
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+security:
+  - bearerAuth: []

@@ -1,0 +1,477 @@
+openapi: 3.0.3
+info:
+  title: Image to Music API
+  description: |
+    Image to Music Generation API - Transform images into music based on visual content and mood.
+
+    ## Features
+    - Image content analysis
+    - Mood-based music generation
+    - Multiple music styles
+    - Customizable music parameters
+    - Task progress tracking
+
+    ## Workflow
+    1. Upload an image and set music parameters
+    2. System analyzes image content and mood
+    3. Generate music matching the image atmosphere
+    4. Check task status via task ID
+    5. Download the generated music file
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: api-support@example.com
+
+servers:
+  - url: http://localhost:8005
+    description: Development server
+  - url: https://api.example.com
+    description: Production server
+
+tags:
+  - name: image-to-music
+    description: Image to music generation operations
+
+paths:
+  /image-to-music/generate:
+    post:
+      tags:
+        - image-to-music
+      summary: Generate music from image
+      description: |
+        Upload an image and generate matching music.
+
+        The system will:
+        1. Analyze visual elements (colors, composition, theme)
+        2. Detect emotional tone
+        3. Select appropriate music style
+        4. Generate music matching the image atmosphere
+      operationId: generateMusic
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - image
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: Image file (JPG, PNG, WebP)
+                musicStyle:
+                  type: string
+                  enum:
+                    - classical
+                    - ambient
+                    - electronic
+                    - jazz
+                    - rock
+                    - pop
+                    - cinematic
+                    - lo-fi
+                    - auto
+                  default: auto
+                  description: Music style (auto = automatic selection)
+                duration:
+                  type: integer
+                  minimum: 10
+                  maximum: 300
+                  default: 60
+                  description: Music duration in seconds
+                tempo:
+                  type: string
+                  enum:
+                    - slow
+                    - medium
+                    - fast
+                    - auto
+                  default: auto
+                  description: Music tempo
+                mood:
+                  type: string
+                  enum:
+                    - happy
+                    - sad
+                    - calm
+                    - energetic
+                    - mysterious
+                    - romantic
+                    - auto
+                  default: auto
+                  description: Music mood (auto = detect from image)
+                includeAnalysis:
+                  type: boolean
+                  default: true
+                  description: Include image analysis in response
+      responses:
+        '200':
+          description: Music generation task created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      sessionId:
+                        type: string
+                        format: uuid
+                        description: Session ID
+                      taskId:
+                        type: string
+                        format: uuid
+                        description: Task ID
+                      status:
+                        type: string
+                        enum:
+                          - pending
+                          - analyzing
+                          - generating
+                          - completed
+                          - failed
+                        description: Task status
+                      imageAnalysis:
+                        type: object
+                        description: Image analysis results
+                        properties:
+                          dominantColors:
+                            type: array
+                            items:
+                              type: string
+                            description: Dominant colors (HEX)
+                          mood:
+                            type: string
+                            description: Detected mood
+                          theme:
+                            type: string
+                            description: Image theme
+                          composition:
+                            type: string
+                            description: Composition analysis
+                          suggestedStyle:
+                            type: string
+                            description: Suggested music style
+                      estimatedTime:
+                        type: integer
+                        description: Estimated completion time (seconds)
+                  metadata:
+                    $ref: '#/components/schemas/Metadata'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /image-to-music/status/{sessionId}:
+    get:
+      tags:
+        - image-to-music
+      summary: Get task status
+      description: Check the current status and progress of a music generation task
+      operationId: getMusicStatus
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Session ID
+      responses:
+        '200':
+          description: Status retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      sessionId:
+                        type: string
+                      status:
+                        type: string
+                        enum:
+                          - pending
+                          - analyzing
+                          - generating
+                          - completed
+                          - failed
+                      progress:
+                        type: integer
+                        minimum: 0
+                        maximum: 100
+                        description: Progress percentage
+                      currentStep:
+                        type: string
+                        description: Current processing step
+                      result:
+                        type: object
+                        description: Result (when completed)
+                        properties:
+                          musicUrl:
+                            type: string
+                            format: uri
+                            description: Music file URL
+                          duration:
+                            type: number
+                            description: Actual duration (seconds)
+                          format:
+                            type: string
+                            description: File format
+                          fileSize:
+                            type: integer
+                            description: File size (bytes)
+                      error:
+                        type: object
+                        description: Error info (when failed)
+                        properties:
+                          code:
+                            type: string
+                          message:
+                            type: string
+                  metadata:
+                    $ref: '#/components/schemas/Metadata'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /image-to-music/history:
+    get:
+      tags:
+        - image-to-music
+      summary: Get generation history
+      description: Retrieve past music generation records
+      operationId: getMusicHistory
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - duration
+              - musicStyle
+            default: createdAt
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+      responses:
+        '200':
+          description: History retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MusicHistoryItem'
+                      total:
+                        type: integer
+                      page:
+                        type: integer
+                      pageSize:
+                        type: integer
+                  metadata:
+                    $ref: '#/components/schemas/Metadata'
+
+  /image-to-music/download/{id}:
+    get:
+      tags:
+        - image-to-music
+      summary: Download music
+      description: Download the generated music file
+      operationId: downloadMusic
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum:
+              - mp3
+              - wav
+              - flac
+            default: mp3
+      responses:
+        '200':
+          description: File download
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+            audio/wav:
+              schema:
+                type: string
+                format: binary
+            audio/flac:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /image-to-music/cancel/{sessionId}:
+    post:
+      tags:
+        - image-to-music
+      summary: Cancel task
+      description: Cancel an in-progress music generation task
+      operationId: cancelGeneration
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Task cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      sessionId:
+                        type: string
+                      status:
+                        type: string
+                        enum:
+                          - cancelled
+                  metadata:
+                    $ref: '#/components/schemas/Metadata'
+
+components:
+  schemas:
+    MusicHistoryItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sessionId:
+          type: string
+          format: uuid
+        imageThumbnail:
+          type: string
+          format: uri
+        musicStyle:
+          type: string
+        duration:
+          type: integer
+        mood:
+          type: string
+        musicUrl:
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+
+    Metadata:
+      type: object
+      properties:
+        requestId:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: string
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                $ref: '#/components/schemas/Error'
+
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                $ref: '#/components/schemas/Error'

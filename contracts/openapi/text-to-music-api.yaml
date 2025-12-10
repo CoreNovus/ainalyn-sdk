@@ -1,0 +1,491 @@
+openapi: 3.0.3
+info:
+  title: Text to Music API
+  description: |
+    Text to Music Generation API - Transform text descriptions into music compositions.
+
+    ## Features
+    - Text prompt to music conversion
+    - Multiple music styles
+    - Adjustable BPM and duration
+    - Weighted prompt support
+    - Real-time generation progress
+    - WebSocket streaming
+
+    ## Workflow
+    1. Provide music description prompts
+    2. Configure generation parameters (BPM, duration, creativity)
+    3. System generates music with streaming support
+    4. Download completed music file
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: api-support@example.com
+
+servers:
+  - url: http://localhost:8005
+    description: Development server
+  - url: https://api.example.com
+    description: Production server
+
+tags:
+  - name: text-to-music
+    description: Text to music generation operations
+
+paths:
+  /api/v1/text-to-music/generate:
+    post:
+      tags:
+        - text-to-music
+      summary: Generate music
+      description: |
+        Generate music from text prompts.
+
+        Features:
+        - Weighted prompts (combine multiple prompts)
+        - Custom BPM (60-200)
+        - Adjustable creativity (temperature)
+        - Duration control (10-300 seconds)
+      operationId: generateMusic
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - prompts
+              properties:
+                prompts:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/WeightedPrompt'
+                  minItems: 1
+                  maxItems: 5
+                  description: Prompt array (1-5 prompts)
+                config:
+                  $ref: '#/components/schemas/MusicGenerationConfig'
+                sessionId:
+                  type: string
+                  format: uuid
+                  description: Session ID (optional)
+            examples:
+              lofi:
+                summary: Lo-Fi Music
+                value:
+                  prompts:
+                    - text: "Lo-Fi Hip Hop with Piano"
+                      weight: 1.0
+                  config:
+                    duration: 30
+                    temperature: 1.0
+              orchestral:
+                summary: Epic Orchestral
+                value:
+                  prompts:
+                    - text: "Epic Orchestral Cinematic"
+                      weight: 1.0
+                  config:
+                    bpm: 120
+                    duration: 60
+                    temperature: 1.1
+      responses:
+        '200':
+          description: Music generation task created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      taskId:
+                        type: string
+                        format: uuid
+                        description: Task ID
+                      sessionId:
+                        type: string
+                        format: uuid
+                        description: Session ID
+                      status:
+                        type: string
+                        enum:
+                          - pending
+                          - processing
+                          - generating
+                          - converting
+                          - completed
+                          - failed
+                      wsUrl:
+                        type: string
+                        format: uri
+                        description: WebSocket URL for streaming
+                      estimatedTime:
+                        type: integer
+                        description: Estimated completion time (seconds)
+                  metadata:
+                    $ref: '#/components/schemas/Metadata'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/text-to-music/{musicId}/status:
+    get:
+      tags:
+        - text-to-music
+      summary: Get generation status
+      description: Check the current status of a music generation task
+      operationId: getMusicStatus
+      parameters:
+        - name: musicId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Music task ID
+      responses:
+        '200':
+          description: Status retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      musicId:
+                        type: string
+                        format: uuid
+                      status:
+                        $ref: '#/components/schemas/MusicGenerationStatus'
+                      progress:
+                        type: integer
+                        minimum: 0
+                        maximum: 100
+                        description: Progress percentage
+                      currentStep:
+                        type: string
+                        description: Current processing step
+                      result:
+                        $ref: '#/components/schemas/GeneratedMusic'
+                      error:
+                        type: string
+                        description: Error message (if failed)
+                  metadata:
+                    $ref: '#/components/schemas/Metadata'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/text-to-music/{musicId}/audio:
+    get:
+      tags:
+        - text-to-music
+      summary: Get music audio
+      description: Get the generated music audio file
+      operationId: getMusicAudio
+      parameters:
+        - name: musicId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Audio file
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/text-to-music/{musicId}:
+    delete:
+      tags:
+        - text-to-music
+      summary: Delete music
+      description: Delete a generated music file
+      operationId: deleteMusic
+      parameters:
+        - name: musicId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Music deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Music deleted successfully
+
+  /api/v1/text-to-music/{musicId}/download:
+    get:
+      tags:
+        - text-to-music
+      summary: Download music
+      description: Download the generated music file with filename
+      operationId: downloadMusic
+      parameters:
+        - name: musicId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum:
+              - mp3
+              - wav
+            default: mp3
+      responses:
+        '200':
+          description: File download
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+            audio/wav:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/text-to-music/session/{sessionId}/history:
+    get:
+      tags:
+        - text-to-music
+      summary: Get session history
+      description: Retrieve all generated music for a specific session
+      operationId: getSessionHistory
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: History retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      sessionId:
+                        type: string
+                        format: uuid
+                      history:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/GeneratedMusic'
+                      totalCount:
+                        type: integer
+                  metadata:
+                    $ref: '#/components/schemas/Metadata'
+
+components:
+  schemas:
+    WeightedPrompt:
+      type: object
+      required:
+        - text
+        - weight
+      properties:
+        text:
+          type: string
+          minLength: 3
+          maxLength: 500
+          description: Music description prompt
+          example: "Lo-Fi Hip Hop with Piano"
+        weight:
+          type: number
+          minimum: 0.1
+          maximum: 2.0
+          default: 1.0
+          description: Prompt weight
+
+    MusicGenerationConfig:
+      type: object
+      properties:
+        bpm:
+          type: integer
+          minimum: 60
+          maximum: 200
+          description: Tempo BPM (optional)
+        temperature:
+          type: number
+          minimum: 0.5
+          maximum: 2.0
+          default: 1.0
+          description: Creativity level
+        duration:
+          type: integer
+          minimum: 10
+          maximum: 300
+          default: 30
+          description: Duration in seconds
+
+    MusicGenerationStatus:
+      type: string
+      enum:
+        - pending
+        - processing
+        - generating
+        - converting
+        - completed
+        - failed
+        - cancelled
+      description: Music generation status
+
+    GeneratedMusic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        prompt:
+          type: string
+        audioUrl:
+          type: string
+          format: uri
+          description: MP3 audio URL
+        duration:
+          type: number
+          description: Duration in seconds
+        fileSize:
+          type: integer
+          description: File size (bytes)
+        format:
+          type: string
+          enum:
+            - mp3
+          default: mp3
+        metadata:
+          type: object
+          properties:
+            bpm:
+              type: integer
+            temperature:
+              type: number
+            sampleRate:
+              type: integer
+              description: Sample rate (Hz)
+            channels:
+              type: integer
+              description: Audio channels
+            bitDepth:
+              type: integer
+              description: Bit depth
+            createdAt:
+              type: string
+              format: date-time
+        timestamp:
+          type: string
+          format: date-time
+
+    Metadata:
+      type: object
+      properties:
+        requestId:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: string
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                $ref: '#/components/schemas/Error'
+
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                $ref: '#/components/schemas/Error'

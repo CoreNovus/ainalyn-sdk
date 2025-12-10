@@ -1,0 +1,755 @@
+openapi: 3.0.0
+info:
+  title: Video Generation API
+  version: 1.0.0
+  description: |
+    AI Video Generation Service API - Create videos from text or images.
+
+    ## Features
+    - Text-to-video generation
+    - Image sequence to video
+    - Multiple video styles and transitions
+    - Customizable resolution and aspect ratio
+    - Background music options
+    - Real-time progress via WebSocket
+    - Task management
+  contact:
+    name: CoreNovus API Support
+    email: api@corenovus.com
+
+servers:
+  - url: https://api.corenovus.com
+    description: Production server
+  - url: http://localhost:8000
+    description: Development server
+
+tags:
+  - name: upload
+    description: Image upload operations
+  - name: tasks
+    description: Video generation task management
+  - name: download
+    description: Video download operations
+
+paths:
+  /api/v1/video-generation/upload-images:
+    post:
+      tags:
+        - upload
+      summary: Upload image sequence
+      description: Upload multiple images for video generation
+      operationId: uploadImages
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: Image files (1-10 images)
+                  minItems: 1
+                  maxItems: 10
+                projectId:
+                  type: string
+                  description: Project identifier
+                sequenceOrder:
+                  type: array
+                  items:
+                    type: integer
+                  description: Image sequence order
+              required:
+                - images
+                - projectId
+      responses:
+        '200':
+          description: Images uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadImagesResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+
+  /api/v1/video-generation/tasks:
+    post:
+      tags:
+        - tasks
+      summary: Create video generation task
+      description: Create a new video generation task
+      operationId: createVideoTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateVideoTaskRequest'
+      responses:
+        '201':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateVideoTaskResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+    get:
+      tags:
+        - tasks
+      summary: Get task list
+      description: Retrieve video generation task list
+      operationId: getVideoTasks
+      parameters:
+        - name: status
+          in: query
+          description: Filter by status
+          schema:
+            type: string
+            enum:
+              - pending
+              - processing
+              - completed
+              - failed
+              - cancelled
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: Items per page
+          schema:
+            type: integer
+            default: 10
+            maximum: 50
+      responses:
+        '200':
+          description: Tasks retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetVideoTasksResponse'
+
+  /api/v1/video-generation/tasks/{taskId}:
+    get:
+      tags:
+        - tasks
+      summary: Get task details
+      description: Get specific task details and progress
+      operationId: getVideoTask
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          description: Task ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Task details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoGenerationTask'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - tasks
+      summary: Cancel task
+      description: Cancel an in-progress video generation task
+      operationId: cancelVideoTask
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          description: Task ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Task cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CancelTaskResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '400':
+          description: Task already completed or cannot be cancelled
+
+  /api/v1/video-generation/tasks/{taskId}/download:
+    get:
+      tags:
+        - download
+      summary: Download generated video
+      description: Get video download URL
+      operationId: downloadVideo
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          description: Task ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Download URL retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DownloadVideoResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '400':
+          description: Video not yet generated
+
+  /api/v1/video-generation/ws:
+    get:
+      tags:
+        - tasks
+      summary: WebSocket connection
+      description: Establish WebSocket connection for real-time progress updates
+      operationId: connectWebSocket
+      parameters:
+        - name: taskId
+          in: query
+          required: true
+          description: Task ID to monitor
+          schema:
+            type: string
+      responses:
+        '101':
+          description: Switching protocols
+        '400':
+          description: Invalid request
+
+components:
+  schemas:
+    InputMode:
+      type: string
+      enum:
+        - text
+        - images
+      description: Input mode
+
+    VideoStyle:
+      type: string
+      enum:
+        - professional
+        - educational
+        - social
+        - presentation
+      description: Video style
+
+    VideoResolution:
+      type: string
+      enum:
+        - 720p
+        - 1080p
+        - 4k
+      description: Video resolution
+
+    TransitionEffect:
+      type: string
+      enum:
+        - fade
+        - slide
+        - zoom
+        - dissolve
+      description: Transition effect
+
+    AspectRatio:
+      type: string
+      enum:
+        - '16:9'
+        - '9:16'
+        - '1:1'
+      description: Video aspect ratio
+
+    TaskStatus:
+      type: string
+      enum:
+        - pending
+        - processing
+        - completed
+        - failed
+        - cancelled
+      description: Task status
+
+    VideoSettings:
+      type: object
+      properties:
+        duration:
+          type: integer
+          minimum: 5
+          maximum: 60
+          description: Video duration (seconds)
+        resolution:
+          $ref: '#/components/schemas/VideoResolution'
+        style:
+          $ref: '#/components/schemas/VideoStyle'
+        transition:
+          $ref: '#/components/schemas/TransitionEffect'
+        fps:
+          type: integer
+          minimum: 24
+          maximum: 60
+          default: 30
+          description: Frames per second
+        aspectRatio:
+          $ref: '#/components/schemas/AspectRatio'
+        backgroundMusic:
+          type: boolean
+          default: false
+      required:
+        - duration
+        - resolution
+        - style
+        - transition
+
+    GenerationConfig:
+      type: object
+      properties:
+        model:
+          type: string
+          default: veo-001
+          description: AI model version
+        responseCount:
+          type: integer
+          minimum: 1
+          maximum: 4
+          default: 1
+          description: Number of variations
+        negativePrompt:
+          type: string
+          description: Elements to avoid
+        guidanceScale:
+          type: number
+          minimum: 0
+          maximum: 20
+          description: Guidance strength
+        seed:
+          type: integer
+          description: Random seed
+        personGeneration:
+          type: string
+          enum:
+            - PERSON_GENERATION_ALLOW
+            - PERSON_GENERATION_DENY
+          default: PERSON_GENERATION_ALLOW
+          description: Allow person generation
+
+    OutputConfig:
+      type: object
+      properties:
+        format:
+          type: string
+          enum:
+            - mp4
+            - gif
+          default: mp4
+        codec:
+          type: string
+          enum:
+            - h264
+            - h265
+          default: h264
+        quality:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+          default: high
+        watermark:
+          type: boolean
+          default: false
+
+    CreateVideoTaskRequest:
+      type: object
+      properties:
+        inputMode:
+          $ref: '#/components/schemas/InputMode'
+        content:
+          type: object
+          properties:
+            textScript:
+              type: string
+              description: Text script content
+            imageIds:
+              type: array
+              items:
+                type: string
+              description: Uploaded image IDs
+            uploadId:
+              type: string
+              description: Batch upload ID
+        videoSettings:
+          $ref: '#/components/schemas/VideoSettings'
+        generationConfig:
+          $ref: '#/components/schemas/GenerationConfig'
+        outputConfig:
+          $ref: '#/components/schemas/OutputConfig'
+      required:
+        - inputMode
+        - content
+        - videoSettings
+
+    ImageInfo:
+      type: object
+      properties:
+        id:
+          type: string
+        originalName:
+          type: string
+        url:
+          type: string
+        thumbnailUrl:
+          type: string
+        dimensions:
+          type: object
+          properties:
+            width:
+              type: integer
+            height:
+              type: integer
+        order:
+          type: integer
+        duration:
+          type: number
+          description: Suggested display duration
+
+    UploadImagesResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            uploadId:
+              type: string
+            images:
+              type: array
+              items:
+                $ref: '#/components/schemas/ImageInfo'
+            totalImages:
+              type: integer
+            estimatedDuration:
+              type: number
+            validation:
+              type: object
+              properties:
+                consistentDimensions:
+                  type: boolean
+                recommendedAspectRatio:
+                  type: string
+                qualityScore:
+                  type: number
+
+    VideoMetadata:
+      type: object
+      properties:
+        codec:
+          type: string
+        bitrate:
+          type: integer
+        frameRate:
+          type: integer
+        generatedAt:
+          type: string
+          format: date-time
+
+    VideoResult:
+      type: object
+      properties:
+        videoUrl:
+          type: string
+        previewUrl:
+          type: string
+        duration:
+          type: number
+        fileSize:
+          type: integer
+        resolution:
+          type: object
+          properties:
+            width:
+              type: integer
+            height:
+              type: integer
+        metadata:
+          $ref: '#/components/schemas/VideoMetadata'
+
+    ProcessingLog:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        stage:
+          type: string
+        message:
+          type: string
+        level:
+          type: string
+          enum:
+            - info
+            - warning
+            - error
+
+    CostInfo:
+      type: object
+      properties:
+        credits:
+          type: number
+        currency:
+          type: string
+        breakdown:
+          type: object
+          additionalProperties:
+            type: number
+
+    VideoGenerationTask:
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        progress:
+          type: number
+          minimum: 0
+          maximum: 100
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        estimatedCompletionTime:
+          type: string
+          format: date-time
+        inputSummary:
+          type: object
+          properties:
+            mode:
+              $ref: '#/components/schemas/InputMode'
+            contentLength:
+              type: integer
+            settings:
+              type: object
+              properties:
+                duration:
+                  type: integer
+                resolution:
+                  type: string
+                style:
+                  type: string
+        queuePosition:
+          type: integer
+        result:
+          $ref: '#/components/schemas/VideoResult'
+        processingLog:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProcessingLog'
+        costs:
+          $ref: '#/components/schemas/CostInfo'
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+
+    CreateVideoTaskResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/VideoGenerationTask'
+
+    GetVideoTasksResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            tasks:
+              type: array
+              items:
+                $ref: '#/components/schemas/VideoGenerationTask'
+            pagination:
+              type: object
+              properties:
+                page:
+                  type: integer
+                limit:
+                  type: integer
+                total:
+                  type: integer
+                totalPages:
+                  type: integer
+
+    CancelTaskResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            cancelled:
+              type: boolean
+            refundedCredits:
+              type: number
+
+    DownloadVideoResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            downloadUrl:
+              type: string
+            expiresAt:
+              type: string
+              format: date-time
+            fileSize:
+              type: integer
+            fileName:
+              type: string
+
+    WebSocketMessage:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - progress
+            - status
+            - log
+            - error
+            - complete
+        taskId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        data:
+          type: object
+          description: Varies based on type
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+              code:
+                type: string
+
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+
+    TooManyRequests:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+              retryAfter:
+                type: integer
+
+    PayloadTooLarge:
+      description: File too large
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+              maxSize:
+                type: integer
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []

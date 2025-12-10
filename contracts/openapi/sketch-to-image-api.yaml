@@ -1,0 +1,478 @@
+openapi: 3.0.3
+info:
+  title: Sketch to Image API
+  description: |
+    Sketch to Image Generation API - Transform hand-drawn sketches into polished images.
+
+    ## Features
+    - Sketch to image conversion
+    - Support for canvas data and image uploads
+    - Multiple image styles
+    - Adjustable resolution
+    - Conversion strength control
+    - Negative prompt support
+
+    ## Workflow
+    1. Upload a sketch or canvas data
+    2. Add text description
+    3. Select image style and resolution
+    4. Adjust conversion strength
+    5. Generate polished image
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: api-support@example.com
+
+servers:
+  - url: http://localhost:8005
+    description: Development server
+  - url: https://api.example.com
+    description: Production server
+
+tags:
+  - name: sketch-to-image
+    description: Sketch to image operations
+
+paths:
+  /api/v1/sketch-to-image/generate:
+    post:
+      tags:
+        - sketch-to-image
+      summary: Generate image from sketch
+      description: |
+        Convert a hand-drawn sketch to an image.
+
+        Supports two input methods:
+        - sketchImage: Upload image file
+        - sketchData: Base64 encoded canvas data
+      operationId: generateImage
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - description
+              properties:
+                sketchImage:
+                  type: string
+                  format: binary
+                  description: Sketch image (choose one of sketchImage or sketchData)
+                sketchData:
+                  type: string
+                  format: byte
+                  description: Base64 encoded canvas data (choose one of sketchImage or sketchData)
+                description:
+                  type: string
+                  minLength: 3
+                  maxLength: 1000
+                  description: Image description (required)
+                style:
+                  $ref: '#/components/schemas/ImageStyle'
+                resolution:
+                  $ref: '#/components/schemas/ImageResolution'
+                strength:
+                  type: number
+                  minimum: 0.1
+                  maximum: 1.0
+                  default: 0.5
+                  description: Conversion strength (0.1-1.0)
+                negativePrompt:
+                  type: string
+                  maxLength: 500
+                  description: Negative prompt (what to avoid)
+                sessionId:
+                  type: string
+                  format: uuid
+                  description: Session ID
+                seed:
+                  type: integer
+                  description: Random seed (for reproducible results)
+          application/json:
+            schema:
+              type: object
+              required:
+                - description
+              properties:
+                sketchData:
+                  type: string
+                  format: byte
+                  description: Base64 encoded canvas data
+                description:
+                  type: string
+                style:
+                  $ref: '#/components/schemas/ImageStyle'
+                resolution:
+                  $ref: '#/components/schemas/ImageResolution'
+                strength:
+                  type: number
+                negativePrompt:
+                  type: string
+                sessionId:
+                  type: string
+                  format: uuid
+                seed:
+                  type: integer
+      responses:
+        '200':
+          description: Image generation task created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/GenerateImageResult'
+                  metadata:
+                    $ref: '#/components/schemas/Metadata'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/sketch-to-image/{imageId}/status:
+    get:
+      tags:
+        - sketch-to-image
+      summary: Get image generation status
+      description: Check the status and progress of an image generation task
+      operationId: getImageStatus
+      parameters:
+        - name: imageId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Image ID
+      responses:
+        '200':
+          description: Status retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/ImageStatusResult'
+                  metadata:
+                    $ref: '#/components/schemas/Metadata'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/sketch-to-image/session/{sessionId}/history:
+    get:
+      tags:
+        - sketch-to-image
+      summary: Get session history
+      description: Retrieve all generated images for a specific session
+      operationId: getSessionHistory
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: History retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/SessionHistoryResult'
+                  metadata:
+                    $ref: '#/components/schemas/Metadata'
+
+  /api/v1/sketch-to-image/{imageId}:
+    delete:
+      tags:
+        - sketch-to-image
+      summary: Delete image
+      description: Delete a generated image
+      operationId: deleteImage
+      parameters:
+        - name: imageId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Image deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Image deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  schemas:
+    ImageStyle:
+      type: string
+      enum:
+        - realistic
+        - anime
+        - cartoon
+        - artistic
+        - sketch
+        - watercolor
+        - oil_painting
+        - digital_art
+        - photo
+        - illustration
+      default: realistic
+      description: |
+        Image style:
+        - realistic: Photorealistic
+        - anime: Japanese animation style
+        - cartoon: Cartoon style
+        - artistic: Artistic interpretation
+        - sketch: Pencil sketch
+        - watercolor: Watercolor painting
+        - oil_painting: Oil painting
+        - digital_art: Digital art
+        - photo: Photography style
+        - illustration: Illustration
+
+    ImageResolution:
+      type: string
+      enum:
+        - 512x512
+        - 768x768
+        - 1024x1024
+        - 1920x1080
+        - 1080x1920
+        - 3840x2160
+        - 2160x3840
+      default: 1024x1024
+      description: Output resolution
+
+    GenerationStatus:
+      type: string
+      enum:
+        - queued
+        - processing
+        - completed
+        - failed
+      description: Generation status
+
+    GenerateImageResult:
+      type: object
+      properties:
+        imageUrl:
+          type: string
+          format: uri
+          description: Generated image URL
+        imageId:
+          type: string
+          format: uuid
+          description: Image ID
+        sessionId:
+          type: string
+          format: uuid
+          description: Session ID
+        thumbnailUrl:
+          type: string
+          format: uri
+          description: Thumbnail URL
+        metadata:
+          $ref: '#/components/schemas/ImageMetadata'
+        timestamp:
+          type: string
+          format: date-time
+
+    ImageStatusResult:
+      type: object
+      properties:
+        imageId:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/GenerationStatus'
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Progress percentage
+        estimatedTimeRemaining:
+          type: integer
+          description: Estimated time remaining (seconds)
+        imageUrl:
+          type: string
+          format: uri
+          description: Image URL (when completed)
+        thumbnailUrl:
+          type: string
+          format: uri
+        metadata:
+          $ref: '#/components/schemas/ImageMetadata'
+        error:
+          type: string
+          description: Error message (if failed)
+
+    ImageMetadata:
+      type: object
+      properties:
+        width:
+          type: integer
+          description: Image width (pixels)
+        height:
+          type: integer
+          description: Image height (pixels)
+        format:
+          type: string
+          description: Image format
+        size:
+          type: integer
+          description: File size (bytes)
+        generationTime:
+          type: number
+          description: Generation time (seconds)
+        model:
+          type: string
+          description: Model used
+        style:
+          type: string
+          description: Image style
+        resolution:
+          type: string
+          description: Resolution
+        strength:
+          type: number
+          description: Conversion strength
+        seed:
+          type: integer
+          description: Random seed used
+
+    GeneratedImage:
+      type: object
+      properties:
+        imageId:
+          type: string
+          format: uuid
+        imageUrl:
+          type: string
+          format: uri
+        thumbnailUrl:
+          type: string
+          format: uri
+        description:
+          type: string
+        style:
+          type: string
+        resolution:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        metadata:
+          $ref: '#/components/schemas/ImageMetadata'
+
+    SessionHistoryResult:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeneratedImage'
+        totalCount:
+          type: integer
+
+    Metadata:
+      type: object
+      properties:
+        requestId:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: string
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                $ref: '#/components/schemas/Error'
+
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                $ref: '#/components/schemas/Error'
