@@ -1,6 +1,10 @@
 # Ainalyn SDK Developer Architecture Guide
 
-> This document is for internal SDK developers. It explains the project structure, layered design, and development scenario guidelines.
+> **Audience**: Internal SDK developers only. This document is NOT for SDK users.
+>
+> For SDK users who want to extend functionality, see [API_SURFACE_AND_EXTENSIBILITY.md](./API_SURFACE_AND_EXTENSIBILITY.md).
+
+This document explains the internal project structure, layered design, and development guidelines for SDK maintainers.
 
 ## 1. System Overview
 
@@ -36,7 +40,7 @@ The Ainalyn SDK is designed to serve as a **bridge layer** between a packaged de
 │  ┌──────────────────────────────┴───────────────────────────────┐   │
 │  │                  User Extension Points                        │   │
 │  │  ┌───────────┐ ┌───────────┐ ┌───────────┐ ┌───────────────┐ │   │
-│  │  │PromptMgr  │ │ ModelMgr  │ │Middleware │ │CustomProvider │ │   │
+│  │  │PromptProv │ │ModelRouter│ │Middleware │ │CustomProvider │ │   │
 │  │  └───────────┘ └───────────┘ └───────────┘ └───────────────┘ │   │
 │  └──────────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────┘
@@ -81,8 +85,8 @@ ainalyn_sdk/
 │   │   ├── clients/              # Core client implementations (orchestrators for each API)
 │   │   ├── middleware/           # Middleware definitions and wiring
 │   │   ├── usecases/             # Specific use-case flows
-│   │   ├── prompt_manager.py     # Prompt management and templating
-│   │   └── model_manager.py      # Model configuration and selection
+│   │   ├── prompt_provider.py    # Default prompt provider implementation
+│   │   └── model_router.py       # Default model router implementation
 │   │
 │   ├── infrastructure/           # Infrastructure Layer - Technical implementations
 │   │   ├── providers/            # Provider implementations (HTTP, gRPC...)
@@ -114,9 +118,8 @@ ainalyn_sdk/
 │   └── fixtures/                 # Test data
 │
 ├── docs/                         # Developer documentation
-│   ├── ARCHITECTURE_FOR_DEVS.md  # This document
-│   ├── API_SURFACE_AND_EXTENSIBILITY.md
-│   ├── INTEGRATION_GUIDE.md      # Desktop app integration guide
+│   ├── ARCHITECTURE_FOR_DEVS.md  # This document (internal)
+│   ├── API_SURFACE_AND_EXTENSIBILITY.md  # User extension guide
 │   └── ...
 │
 ├── examples/                     # Example code
@@ -179,8 +182,8 @@ Dependency direction: can only depend "inward" (downwards)
   * `ProviderPort` - LLM / AI service provider
   * `StoragePort` - data storage
   * `EventPublisherPort` - event publishing
-  * `PromptManagerPort` - prompt management
-  * `ModelManagerPort` - model management
+  * `PromptProviderPort` - prompt customization
+  * `ModelRouterPort` - model selection and routing
 * Domain error definitions
 
 **Prohibited:**
@@ -204,11 +207,11 @@ Dependency direction: can only depend "inward" (downwards)
   * ... other API-specific clients
 * Middleware definitions and chain management
 * Use-case flows
-* **Prompt management** (`PromptManager`)
+* **Prompt provider integration** (implements `PromptProviderPort`)
   * Load and manage system prompts
   * Template variable substitution
   * Feature-specific prompt configuration
-* **Model management** (`ModelManager`)
+* **Model router integration** (implements `ModelRouterPort`)
   * Model selection strategies
   * Model parameter configuration
   * Provider routing
@@ -395,27 +398,29 @@ This scenario describes how **users** (not SDK developers) create extensions.
 
    ```python
    # my_extension/prompts.py
-   from ainalyn.ports import PromptManagerPort
+   from ainalyn.extensions import PromptProvider
 
-   class MyPromptManager(PromptManagerPort):
-       def get_system_prompt(self, feature: str, context: dict) -> str:
+   class MyPrompts(PromptProvider):
+       def get_system_prompt(self, feature: str, context: dict | None = None) -> str:
            if feature == "chat":
-               return f"You are a helpful assistant for {context.get('company', 'users')}."
-           return ""
+               company = context.get('company', 'users') if context else 'users'
+               return f"You are a helpful assistant for {company}."
+           return "You are a helpful AI assistant."
    ```
 
 2. **Custom Model Selection**
 
    ```python
    # my_extension/models.py
-   from ainalyn.ports import ModelManagerPort
+   from ainalyn.extensions import ModelRouter, ModelConfig
 
-   class MyModelManager(ModelManagerPort):
-       def select_model(self, feature: str, context: dict) -> str:
+   class MyModelRouter(ModelRouter):
+       def select_model(self, feature: str, context: dict | None = None) -> ModelConfig:
            # Route to different models based on task complexity
-           if context.get("complexity") == "high":
-               return "gpt-4"
-           return "gpt-3.5-turbo"
+           complexity = context.get("complexity") if context else None
+           if complexity == "high":
+               return ModelConfig(provider="openai", model="gpt-4")
+           return ModelConfig(provider="openai", model="gpt-3.5-turbo")
    ```
 
 3. **Custom Middleware**
@@ -451,11 +456,11 @@ This scenario describes how **users** (not SDK developers) create extensions.
    ```python
    # main.py
    from ainalyn import AinalynServer
-   from my_extension import MyPromptManager, MyModelManager, ContentFilterMiddleware
+   from my_extension import MyPrompts, MyModelRouter, ContentFilterMiddleware
 
    server = AinalynServer(
-       prompt_manager=MyPromptManager(),
-       model_manager=MyModelManager(),
+       prompts=MyPrompts(),
+       model_router=MyModelRouter(),
        middleware=[ContentFilterMiddleware()],
    )
    server.run(port=8080)

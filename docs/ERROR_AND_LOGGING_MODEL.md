@@ -1,6 +1,10 @@
 # Error Handling and Logging Model
 
 > This document defines the SDK's error classification, handling strategy, and logging design specification.
+>
+> **For SDK Users**: See [Section 6](#6-user-error-feedback) for error types you may encounter when developing extensions.
+>
+> **For Internal Developers**: The full document covers internal error handling architecture.
 
 ## 1. Error Classification System
 
@@ -622,4 +626,95 @@ def format_error_response(error: AinalynError) -> ErrorResponse:
 
 ---
 
-*Last updated: 2024-12*
+## 7. Extension Development Errors (For SDK Users)
+
+When developing extensions (prompts, model router, middleware, providers), you may encounter the following errors:
+
+### 7.1 Common Extension Errors
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `ExtensionLoadError` | Extension module failed to load | Check import paths and syntax errors |
+| `PromptProviderError` | `get_system_prompt()` raised exception | Add try/catch in your prompt provider |
+| `ModelRouterError` | `select_model()` returned invalid config | Ensure ModelConfig has valid provider/model |
+| `MiddlewareError` | Middleware method raised exception | Check your middleware implementation |
+| `ProviderError` | Custom provider failed | Check provider connectivity and response format |
+
+### 7.2 Handling Errors in Extensions
+
+```python
+from ainalyn.extensions import Middleware, RequestContext, Response
+from ainalyn.errors import AinalynError
+
+class SafeMiddleware(Middleware):
+    async def before_request(self, context: RequestContext) -> RequestContext:
+        try:
+            # Your processing logic
+            context.request.content = self.process(context.request.content)
+        except Exception as e:
+            # Log but don't fail the request
+            self.logger.error(f"Middleware error: {e}")
+        return context
+
+    async def on_error(self, context: RequestContext, error: Exception) -> None:
+        if isinstance(error, AinalynError):
+            self.logger.error(f"SDK error: {error.code} - {error.message}")
+        else:
+            self.logger.error(f"Unexpected error: {error}")
+```
+
+### 7.3 Provider Error Handling
+
+When implementing custom providers, translate external errors to SDK errors:
+
+```python
+from ainalyn.extensions import Provider, ProviderRequest, ProviderResponse
+from ainalyn.errors import ProviderError, NetworkError, AuthenticationError
+
+class MyProvider(Provider):
+    async def generate(self, request: ProviderRequest) -> ProviderResponse:
+        try:
+            response = await self.client.post(...)
+            return self._parse_response(response)
+
+        except httpx.TimeoutException as e:
+            raise NetworkError(
+                message="Provider request timed out",
+                code="EXT_PRV_TIMEOUT",
+                recoverable=True,
+            ) from e
+
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 401:
+                raise AuthenticationError(
+                    message="Invalid API key for provider",
+                    code="EXT_PRV_AUTH_FAILED",
+                )
+            raise ProviderError(
+                message=f"Provider returned error: {e.response.status_code}",
+                code="EXT_PRV_HTTP_ERROR",
+            ) from e
+```
+
+### 7.4 Debugging Extension Errors
+
+Enable debug logging to troubleshoot extension issues:
+
+```python
+from ainalyn import AinalynServer, ServerConfig
+
+server = AinalynServer(
+    config=ServerConfig(log_level="DEBUG"),
+    prompts=MyPrompts(),
+)
+server.run()
+```
+
+Log output will show:
+- Extension loading status
+- Method invocations (prompts, model router, middleware)
+- Error stack traces
+
+---
+
+*Last updated: 2025-01*

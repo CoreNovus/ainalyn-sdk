@@ -1,6 +1,10 @@
 # Testing Strategy and Guidelines
 
 > This document defines the SDK's test layering, test types, and quality requirements.
+>
+> **For SDK Users**: See [Section 8](#8-testing-your-extensions) for guidance on testing your custom extensions.
+>
+> **For Internal Developers**: The full document covers internal testing architecture.
 
 ## 1. Overview of Test Layers
 
@@ -740,4 +744,251 @@ jobs:
 
 ---
 
-*Last updated: 2024-12*
+## 8. Testing Your Extensions (For SDK Users)
+
+When developing custom extensions (prompts, model router, middleware, providers), follow these testing guidelines.
+
+### 8.1 Testing Prompt Providers
+
+```python
+import pytest
+from my_extensions import MyPrompts
+
+class TestMyPrompts:
+    """Tests for custom prompt provider"""
+
+    @pytest.fixture
+    def prompts(self) -> MyPrompts:
+        return MyPrompts(company_name="Test Corp")
+
+    def test_chat_prompt_includes_company_name(self, prompts: MyPrompts):
+        """Chat prompt should include company name"""
+        prompt = prompts.get_system_prompt("chat")
+        assert "Test Corp" in prompt
+
+    def test_translation_prompt(self, prompts: MyPrompts):
+        """Translation prompt should be appropriate"""
+        prompt = prompts.get_system_prompt("translation")
+        assert "translat" in prompt.lower()
+
+    def test_unknown_feature_returns_default(self, prompts: MyPrompts):
+        """Unknown feature should return default prompt"""
+        prompt = prompts.get_system_prompt("unknown_feature")
+        assert prompt  # Should return something, not empty
+
+    def test_context_is_used(self, prompts: MyPrompts):
+        """Context should affect prompt generation"""
+        prompt1 = prompts.get_system_prompt("counseling", {"style": "formal"})
+        prompt2 = prompts.get_system_prompt("counseling", {"style": "casual"})
+        assert prompt1 != prompt2
+```
+
+### 8.2 Testing Model Routers
+
+```python
+import pytest
+from ainalyn.extensions import ModelConfig
+from my_extensions import MyModelRouter
+
+class TestMyModelRouter:
+    """Tests for custom model router"""
+
+    @pytest.fixture
+    def router(self) -> MyModelRouter:
+        return MyModelRouter()
+
+    def test_returns_valid_config(self, router: MyModelRouter):
+        """Should return valid ModelConfig"""
+        config = router.select_model("chat")
+        assert isinstance(config, ModelConfig)
+        assert config.provider
+        assert config.model
+
+    def test_high_complexity_uses_better_model(self, router: MyModelRouter):
+        """High complexity should use more capable model"""
+        simple = router.select_model("chat", {"complexity": "low"})
+        complex = router.select_model("chat", {"complexity": "high"})
+        # Assuming gpt-4 is more capable than gpt-3.5-turbo
+        assert complex.model != simple.model or complex.provider != simple.provider
+
+    def test_available_models_not_empty(self, router: MyModelRouter):
+        """Should return list of available models"""
+        models = router.get_available_models()
+        assert len(models) > 0
+```
+
+### 8.3 Testing Middleware
+
+```python
+import pytest
+from unittest.mock import MagicMock, AsyncMock
+from ainalyn.extensions import RequestContext, Response
+from my_extensions import ContentFilterMiddleware
+
+class TestContentFilterMiddleware:
+    """Tests for content filter middleware"""
+
+    @pytest.fixture
+    def middleware(self) -> ContentFilterMiddleware:
+        return ContentFilterMiddleware(blocked_words=["secret", "confidential"])
+
+    @pytest.fixture
+    def mock_context(self) -> RequestContext:
+        context = MagicMock(spec=RequestContext)
+        context.request.content = "This is a test message"
+        context.feature = "chat"
+        return context
+
+    @pytest.mark.asyncio
+    async def test_clean_content_passes_through(
+        self,
+        middleware: ContentFilterMiddleware,
+        mock_context: RequestContext,
+    ):
+        """Clean content should pass through unchanged"""
+        result = await middleware.before_request(mock_context)
+        assert result.request.content == "This is a test message"
+
+    @pytest.mark.asyncio
+    async def test_blocked_word_is_filtered(
+        self,
+        middleware: ContentFilterMiddleware,
+        mock_context: RequestContext,
+    ):
+        """Blocked words should be filtered"""
+        mock_context.request.content = "This is a secret message"
+        result = await middleware.before_request(mock_context)
+        assert "secret" not in result.request.content.lower()
+
+    @pytest.mark.asyncio
+    async def test_response_filtering(
+        self,
+        middleware: ContentFilterMiddleware,
+        mock_context: RequestContext,
+    ):
+        """Response should also be filtered"""
+        response = MagicMock(spec=Response)
+        response.content = "The confidential information is..."
+
+        result = await middleware.after_response(mock_context, response)
+        assert "confidential" not in result.content.lower()
+```
+
+### 8.4 Testing Custom Providers
+
+```python
+import pytest
+from unittest.mock import AsyncMock, patch
+from ainalyn.extensions import ProviderRequest, Message
+from my_extensions import OllamaProvider
+
+class TestOllamaProvider:
+    """Tests for custom Ollama provider"""
+
+    @pytest.fixture
+    def provider(self) -> OllamaProvider:
+        return OllamaProvider(base_url="http://localhost:11434")
+
+    @pytest.fixture
+    def sample_request(self) -> ProviderRequest:
+        return ProviderRequest(
+            messages=[Message(role="user", content="Hello")],
+            model="llama2",
+            temperature=0.7,
+        )
+
+    @pytest.mark.asyncio
+    async def test_generate_returns_response(
+        self,
+        provider: OllamaProvider,
+        sample_request: ProviderRequest,
+    ):
+        """generate() should return valid response"""
+        with patch.object(provider.client, "post", new_callable=AsyncMock) as mock:
+            mock.return_value.json.return_value = {
+                "message": {"content": "Hello! How can I help?"},
+                "prompt_eval_count": 5,
+                "eval_count": 10,
+            }
+
+            response = await provider.generate(sample_request)
+
+            assert response.content == "Hello! How can I help?"
+            assert response.usage.input_tokens == 5
+            assert response.usage.output_tokens == 10
+
+    @pytest.mark.asyncio
+    async def test_handles_connection_error(
+        self,
+        provider: OllamaProvider,
+        sample_request: ProviderRequest,
+    ):
+        """Should handle connection errors gracefully"""
+        with patch.object(provider.client, "post", new_callable=AsyncMock) as mock:
+            mock.side_effect = httpx.ConnectError("Connection refused")
+
+            with pytest.raises(NetworkError):
+                await provider.generate(sample_request)
+
+    def test_get_models_returns_list(self, provider: OllamaProvider):
+        """Should return list of available models"""
+        models = provider.get_models()
+        assert isinstance(models, list)
+        assert len(models) > 0
+```
+
+### 8.5 Integration Testing with Mock Server
+
+```python
+import pytest
+from ainalyn import AinalynServer, ServerConfig
+from ainalyn.testing import MockProvider
+from my_extensions import MyPrompts, MyModelRouter
+
+class TestExtensionIntegration:
+    """Integration tests for extensions"""
+
+    @pytest.fixture
+    async def server(self):
+        """Create test server with extensions"""
+        server = AinalynServer(
+            config=ServerConfig(port=0),  # Random port
+            prompts=MyPrompts(),
+            model_router=MyModelRouter(),
+            providers={"mock": MockProvider()},  # Use mock provider
+        )
+        await server.start()
+        yield server
+        await server.stop()
+
+    @pytest.mark.asyncio
+    async def test_end_to_end_chat(self, server):
+        """Test complete chat flow with extensions"""
+        async with httpx.AsyncClient(base_url=server.url) as client:
+            response = await client.post(
+                "/api/v1/chat/send",
+                json={"message": "Hello"},
+            )
+
+            assert response.status_code == 200
+            data = response.json()
+            assert data["success"]
+            assert "content" in data["data"]
+```
+
+### 8.6 Running Extension Tests
+
+```bash
+# Run all extension tests
+pytest tests/extensions/ -v
+
+# Run with coverage
+pytest tests/extensions/ --cov=my_extensions --cov-report=html
+
+# Run specific test file
+pytest tests/extensions/test_prompts.py -v
+```
+
+---
+
+*Last updated: 2025-01*

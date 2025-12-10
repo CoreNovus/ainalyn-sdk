@@ -1,165 +1,58 @@
-# Public API and Extension Points
+# SDK Extension API Reference
 
-> This document defines the Public APIs that the SDK guarantees externally, as well as user-extensible Extension Points.
+> This document describes the extension points available to users who want to customize the SDK behavior for their desktop application integration.
 
-## 1. Public API Overview
+## 1. Overview
 
-### 1.1 Main Entry Points
+The Ainalyn SDK allows you to customize how the desktop application interacts with AI services. You can extend:
 
-The SDK provides two main entry points depending on the use case:
+| Extension Point | Purpose | Difficulty |
+|-----------------|---------|------------|
+| **Prompts** | Customize system prompts for each feature | Easy |
+| **Model Router** | Control which AI model is used | Easy |
+| **Middleware** | Add pre/post-processing logic | Medium |
+| **Custom Provider** | Connect your own LLM (e.g., Ollama, vLLM) | Advanced |
 
-#### For Direct SDK Usage
+## 2. Getting Started
 
-```python
-from ainalyn import AinalynClient
-
-# Create a Client instance
-client = AinalynClient(
-    api_key="your-api-key",
-    base_url="https://api.corenovus.com",  # optional
-    storage=None,  # optional, custom Storage
-    middleware=None,  # optional, custom Middleware
-)
-```
-
-#### For Desktop Application Integration (Server Mode)
+### 2.1 Basic Server Startup
 
 ```python
 from ainalyn import AinalynServer
 
-# Create and run a local server for desktop app integration
+# Start the server with default settings
+server = AinalynServer()
+server.run(port=8080)
+```
+
+### 2.2 Server with Custom Extensions
+
+```python
+from ainalyn import AinalynServer
+from my_extensions import MyPrompts, MyModelRouter, MyMiddleware
+
 server = AinalynServer(
-    api_key="your-api-key",
-    host="127.0.0.1",           # localhost only for security
-    port=8080,                   # configurable port
-    cors_origins=["app://*"],    # allow Electron app
-    prompt_manager=None,         # optional, custom PromptManager
-    model_manager=None,          # optional, custom ModelManager
-    middleware=None,             # optional, custom Middleware
-    providers=None,              # optional, custom Providers
+    prompts=MyPrompts(),
+    model_router=MyModelRouter(),
+    middleware=[MyMiddleware()],
 )
-
-# Start the server
-server.run()
-```
-
-**Responsibilities & Guarantees:**
-
-* `AinalynClient` is the unified entry point for programmatic SDK usage
-* `AinalynServer` is the entry point for desktop application integration
-* Both manage client instances for all sub-services
-* Responsible for configuration propagation and resource management
-
-### 1.2 Service Clients
-
-Each API service has a corresponding client:
-
-| Service          | Client Class            | Main Methods                                                    |
-| ---------------- | ----------------------- | --------------------------------------------------------------- |
-| Chat             | `ChatClient`            | `send_message()`, `stream_message()`, `create_session()`        |
-| Translation      | `TranslationClient`     | `detect_language()`, `translate()`, `upload_document()`         |
-| Image Analysis   | `ImageAnalysisClient`   | `analyze()`, `describe()`, `detect_objects()`, `extract_text()` |
-| Speech to Text   | `SpeechToTextClient`    | `transcribe()`, `transcribe_async()`, `stream()`                |
-| Speech to Image  | `SpeechToImageClient`   | `generate()`, `generate_batch()`                                |
-| Sketch to Image  | `SketchToImageClient`   | `generate()`, `get_status()`                                    |
-| Sketch to Video  | `SketchToVideoClient`   | `generate_image()`, `image_to_video()`, `get_status()`          |
-| Video Analysis   | `VideoAnalysisClient`   | `analyze_youtube()`, `chat()`, `validate_url()`                 |
-| Video Generation | `VideoGenerationClient` | `upload_images()`, `create_task()`, `get_status()`              |
-| Text to Music    | `TextToMusicClient`     | `generate()`, `get_status()`, `download()`                      |
-| Image to Music   | `ImageToMusicClient`    | `generate()`, `get_status()`, `download()`                      |
-| Travel Planning  | `TravelPlanningClient`  | `plan()`, `stream_plan()`, `get_templates()`                    |
-| Presentation     | `PresentationClient`    | `generate()`, `get_status()`, `export()`                        |
-| Counseling       | `CounselingClient`      | `send_message()`, `stream_message()`, `create_session()`        |
-| Settings         | `SettingsClient`        | `get_settings()`, `update_settings()`, `reset()`                |
-| History          | `HistoryClient`         | `get_history()`, `delete()`, `export()`                         |
-
-### 1.3 Core Data Types
-
-**Public domain types:**
-
-```python
-from ainalyn.types import (
-    # Common
-    Message,
-    Session,
-    Usage,
-    Pagination,
-
-    # Chat
-    ChatMessage,
-    ChatSession,
-    ChatProvider,
-    ChatModel,
-
-    # Translation
-    TranslationConfig,
-    TranslationResult,
-    DetectedLanguage,
-
-    # Image
-    ImageInfo,
-    ImageMetadata,
-    DetectedObject,
-    BoundingBox,
-
-    # Audio/Speech
-    TranscribedWord,
-    SpeakerSegment,
-    GeneratedMusic,
-
-    # Video
-    VideoMetadata,
-    VideoResult,
-    GenerationStatus,
-
-    # Others...
-)
-```
-
-### 1.4 API Response Structure
-
-All API responses follow a unified structure:
-
-```python
-@dataclass
-class ApiResponse[T]:
-    success: bool
-    data: T | None
-    error: str | None
-    message: str | None
-    code: str | None
-    metadata: ResponseMetadata | None
-
-@dataclass
-class ResponseMetadata:
-    request_id: str
-    timestamp: datetime
-    processing_time: float  # seconds
+server.run(port=8080)
 ```
 
 ---
 
-## 2. Extension Points
+## 3. Prompt Customization
 
-The SDK is designed to be highly extensible for desktop application integration. Users can customize:
+Prompts define how the AI behaves. You can customize system prompts for each feature.
 
-1. **Prompt Management** - Define system prompts and templates
-2. **Model Management** - Control model selection and routing
-3. **Providers** - Implement custom AI service providers
-4. **Storage** - Customize data persistence
-5. **Middleware** - Add pre/post-processing logic
-6. **Events** - Subscribe to SDK events for UI updates
-
-### 2.1 Prompt Manager Extensions (NEW)
-
-Users can customize system prompts for each feature:
+### 3.1 PromptProvider Interface
 
 ```python
-from ainalyn.ports import PromptManagerPort
+from ainalyn.extensions import PromptProvider
 from typing import Protocol
 
-class PromptManagerPort(Protocol):
-    """Interface for custom prompt management"""
+class PromptProvider(Protocol):
+    """Interface for custom prompt providers"""
 
     def get_system_prompt(
         self,
@@ -167,97 +60,82 @@ class PromptManagerPort(Protocol):
         context: dict[str, Any] | None = None,
     ) -> str:
         """
-        Get the system prompt for a specific feature.
+        Return the system prompt for a given feature.
 
         Args:
-            feature: Feature name (e.g., "chat", "translation", "counseling")
-            context: Optional context for dynamic prompt generation
+            feature: The feature requesting the prompt.
+                     One of: "chat", "translation", "counseling",
+                     "image_analysis", "travel_planning", etc.
+            context: Optional context with user/session info.
 
         Returns:
-            The system prompt string
-        """
-        ...
-
-    def get_prompt_template(
-        self,
-        template_name: str,
-    ) -> PromptTemplate | None:
-        """
-        Get a named prompt template.
-
-        Args:
-            template_name: Name of the template
-
-        Returns:
-            PromptTemplate or None if not found
-        """
-        ...
-
-    def render_template(
-        self,
-        template_name: str,
-        variables: dict[str, Any],
-    ) -> str:
-        """
-        Render a template with variables.
-
-        Args:
-            template_name: Name of the template
-            variables: Variables to substitute
-
-        Returns:
-            Rendered prompt string
+            The system prompt string.
         """
         ...
 ```
 
-**Usage:**
+### 3.2 Example: Custom Prompt Provider
 
 ```python
-from ainalyn.ports import PromptManagerPort
+from ainalyn.extensions import PromptProvider
 
-class MyPromptManager(PromptManagerPort):
-    """Custom prompt manager for enterprise deployment"""
+class MyPrompts(PromptProvider):
+    """Custom prompts for enterprise deployment"""
 
-    def __init__(self, company_name: str, guidelines_path: str):
+    def __init__(self, company_name: str = "Acme Corp"):
         self.company_name = company_name
-        self.guidelines = self._load_guidelines(guidelines_path)
 
     def get_system_prompt(self, feature: str, context: dict | None = None) -> str:
-        base_prompt = f"You are an AI assistant for {self.company_name}."
+        base = f"You are an AI assistant for {self.company_name}."
 
         if feature == "chat":
-            return f"{base_prompt}\n\nGuidelines:\n{self.guidelines}"
-        elif feature == "translation":
-            return f"{base_prompt}\nProvide accurate translations."
-        elif feature == "counseling":
-            style = context.get("style", "professional") if context else "professional"
-            return f"{base_prompt}\nRespond in a {style} manner."
+            return f"""
+{base}
 
-        return base_prompt
+Guidelines:
+- Be professional and helpful
+- Do not discuss competitors
+- If unsure, say "I'll need to check on that"
+"""
 
-# Register with server
-server = AinalynServer(
-    prompt_manager=MyPromptManager("Acme Corp", "guidelines.txt"),
-)
+        if feature == "translation":
+            return f"{base} Provide accurate, natural translations."
+
+        if feature == "counseling":
+            style = context.get("style", "empathetic") if context else "empathetic"
+            return f"{base} Respond in a {style} manner."
+
+        return base
+
+# Usage
+server = AinalynServer(prompts=MyPrompts("Acme Corp"))
 ```
 
-**Invocation timing:**
+### 3.3 Available Features
 
-* `get_system_prompt()`: Called before each AI request to construct the system message
-* `get_prompt_template()`: Called when using named templates
-* `render_template()`: Called to substitute variables in templates
+| Feature | Description | Default Prompt Behavior |
+|---------|-------------|------------------------|
+| `chat` | General chat | Helpful assistant |
+| `translation` | Text translation | Accurate translator |
+| `counseling` | Counseling service | Empathetic counselor |
+| `image_analysis` | Image Q&A | Visual analyst |
+| `travel_planning` | Travel planning | Travel expert |
+| `presentation` | Presentation generation | Presentation designer |
 
-### 2.2 Model Manager Extensions (NEW)
+---
 
-Users can control model selection and configuration:
+## 4. Model Router
+
+Control which AI model handles each request.
+
+### 4.1 ModelRouter Interface
 
 ```python
-from ainalyn.ports import ModelManagerPort
+from ainalyn.extensions import ModelRouter, ModelConfig
 from typing import Protocol
 
-class ModelManagerPort(Protocol):
-    """Interface for custom model management"""
+class ModelRouter(Protocol):
+    """Interface for custom model routing"""
 
     def select_model(
         self,
@@ -265,71 +143,61 @@ class ModelManagerPort(Protocol):
         context: dict[str, Any] | None = None,
     ) -> ModelConfig:
         """
-        Select the appropriate model for a request.
+        Select the model for a request.
 
         Args:
-            feature: Feature name (e.g., "chat", "translation")
-            context: Request context (user info, task complexity, etc.)
+            feature: The feature making the request.
+            context: Request context (may include user_id, complexity, etc.)
 
         Returns:
-            ModelConfig with provider, model name, and parameters
+            ModelConfig specifying provider, model, and parameters.
         """
         ...
 
-    def get_available_models(
-        self,
-        feature: str | None = None,
-    ) -> list[ModelInfo]:
-        """
-        Get list of available models.
-
-        Args:
-            feature: Optional feature filter
-
-        Returns:
-            List of available ModelInfo
-        """
+    def get_available_models(self) -> list[ModelInfo]:
+        """Return list of available models for UI display."""
         ...
 
-    def get_model_config(
-        self,
-        model_id: str,
-    ) -> ModelConfig | None:
-        """
-        Get configuration for a specific model.
 
-        Args:
-            model_id: Model identifier
+@dataclass
+class ModelConfig:
+    """Model configuration"""
+    provider: str           # "openai", "anthropic", "google", or custom
+    model: str              # Model name (e.g., "gpt-4", "claude-3-opus")
+    temperature: float = 0.7
+    max_tokens: int = 4096
+    extra: dict[str, Any] = field(default_factory=dict)
 
-        Returns:
-            ModelConfig or None if not found
-        """
-        ...
+
+@dataclass
+class ModelInfo:
+    """Model information for UI"""
+    id: str
+    name: str
+    provider: str
+    description: str = ""
 ```
 
-**Usage:**
+### 4.2 Example: Custom Model Router
 
 ```python
-from ainalyn.ports import ModelManagerPort
-from ainalyn.types import ModelConfig
+from ainalyn.extensions import ModelRouter, ModelConfig, ModelInfo
 
-class MyModelManager(ModelManagerPort):
-    """Custom model manager with intelligent routing"""
+class MyModelRouter(ModelRouter):
+    """Route to different models based on task and user"""
 
     def select_model(self, feature: str, context: dict | None = None) -> ModelConfig:
         context = context or {}
 
-        # Route based on task complexity
-        complexity = context.get("complexity", "normal")
-        if complexity == "high":
+        # High complexity tasks get GPT-4
+        if context.get("complexity") == "high":
             return ModelConfig(
                 provider="openai",
                 model="gpt-4",
                 temperature=0.7,
-                max_tokens=4096,
             )
 
-        # Route based on feature
+        # Translation uses a specialized model
         if feature == "translation":
             return ModelConfig(
                 provider="google",
@@ -337,407 +205,422 @@ class MyModelManager(ModelManagerPort):
                 temperature=0.3,
             )
 
-        # Route based on user tier
-        user_tier = context.get("user_tier", "free")
-        if user_tier == "premium":
-            return ModelConfig(provider="anthropic", model="claude-3-opus")
+        # Premium users get Claude
+        if context.get("user_tier") == "premium":
+            return ModelConfig(
+                provider="anthropic",
+                model="claude-3-opus",
+            )
 
-        # Default model
-        return ModelConfig(provider="openai", model="gpt-3.5-turbo")
+        # Default: cost-effective model
+        return ModelConfig(
+            provider="openai",
+            model="gpt-3.5-turbo",
+        )
 
-    def get_available_models(self, feature: str | None = None) -> list[ModelInfo]:
+    def get_available_models(self) -> list[ModelInfo]:
         return [
-            ModelInfo(id="gpt-4", provider="openai", name="GPT-4"),
-            ModelInfo(id="gpt-3.5-turbo", provider="openai", name="GPT-3.5 Turbo"),
-            ModelInfo(id="claude-3-opus", provider="anthropic", name="Claude 3 Opus"),
+            ModelInfo("gpt-4", "GPT-4", "openai", "Most capable"),
+            ModelInfo("gpt-3.5-turbo", "GPT-3.5", "openai", "Fast & affordable"),
+            ModelInfo("claude-3-opus", "Claude 3 Opus", "anthropic", "Best for analysis"),
         ]
 
-# Register with server
-server = AinalynServer(
-    model_manager=MyModelManager(),
-)
+# Usage
+server = AinalynServer(model_router=MyModelRouter())
 ```
 
-**Invocation timing:**
+---
 
-* `select_model()`: Called before each AI request to determine which model to use
-* `get_available_models()`: Called by frontend to populate model selection dropdowns
-* `get_model_config()`: Called when user explicitly selects a model
+## 5. Middleware
 
-### 2.3 Provider Extensions
+Add custom processing before and after AI requests.
 
-Users can implement custom AI service providers:
+### 5.1 Middleware Interface
 
 ```python
-from ainalyn.ports import ProviderPort
+from ainalyn.extensions import Middleware, RequestContext, Response
+from typing import Protocol
 
-class CustomProvider(ProviderPort):
-    """Interface that a custom Provider must implement"""
-
-    async def send_request(
-        self,
-        request: ProviderRequest,
-        options: ProviderOptions | None = None
-    ) -> ProviderResponse:
-        """
-        Send a request to the AI service
-
-        Args:
-            request: Normalized request object
-            options: Extra options (timeout, retry, etc.)
-
-        Returns:
-            Normalized response object
-
-        Raises:
-            ProviderError: When the service call fails
-        """
-        ...
-
-    async def stream_request(
-        self,
-        request: ProviderRequest,
-        options: ProviderOptions | None = None
-    ) -> AsyncIterator[ProviderChunk]:
-        """
-        Streaming request (if applicable)
-        """
-        ...
-
-    def validate_config(self) -> ValidationResult:
-        """
-        Validate provider configuration
-        """
-        ...
-```
-
-**Usage:**
-
-```python
-# Use custom Provider
-client = AinalynClient(
-    api_key="key",
-    providers={
-        "chat": MyCustomChatProvider(config),
-    }
-)
-```
-
-**Invocation timing:**
-
-* `send_request()`: On every non-streaming API call
-* `stream_request()`: On every streaming API call
-* `validate_config()`: On initialization and config updates
-
-### 2.4 Storage Extensions
-
-Users can customize data storage:
-
-```python
-from ainalyn.ports import StoragePort
-
-class CustomStorage(StoragePort):
-    """Interface that a custom Storage must implement"""
-
-    # Session operations
-    async def save_session(self, session: Session) -> str:
-        """Save a Session and return session_id"""
-        ...
-
-    async def get_session(self, session_id: str) -> Session | None:
-        """Get a Session"""
-        ...
-
-    async def update_session(self, session: Session) -> None:
-        """Update a Session"""
-        ...
-
-    async def delete_session(self, session_id: str) -> None:
-        """Delete a Session"""
-        ...
-
-    # Message operations
-    async def save_message(self, session_id: str, message: Message) -> str:
-        """Save a message and return message_id"""
-        ...
-
-    async def get_messages(
-        self,
-        session_id: str,
-        limit: int = 50,
-        offset: int = 0
-    ) -> list[Message]:
-        """Get message list"""
-        ...
-
-    # Invocation operations
-    async def save_invocation(self, invocation: Invocation) -> str:
-        """Save API invocation record"""
-        ...
-
-    async def get_invocations(
-        self,
-        session_id: str | None = None,
-        date_from: datetime | None = None,
-        date_to: datetime | None = None,
-        limit: int = 100
-    ) -> list[Invocation]:
-        """Query invocation records"""
-        ...
-
-    # Cache operations (optional)
-    async def get_cache(self, key: str) -> CacheEntry | None:
-        """Get cache entry"""
-        ...
-
-    async def set_cache(
-        self,
-        key: str,
-        value: CacheEntry,
-        ttl: int | None = None
-    ) -> None:
-        """Set cache entry"""
-        ...
-```
-
-**Usage:**
-
-```python
-# Use custom Storage
-client = AinalynClient(
-    api_key="key",
-    storage=MyPostgresStorage(connection_string)
-)
-```
-
-**Invocation timing:**
-
-* Session-related: when creating/retrieving/updating sessions
-* Message-related: automatically called after sending messages
-* Invocation-related: automatically recorded after each API call
-
-### 2.5 Middleware Extensions
-
-Users can insert custom pre/post request processing:
-
-```python
-from ainalyn.middleware import Middleware, MiddlewareContext
-
-class CustomMiddleware(Middleware):
-    """Interface that a custom Middleware must implement"""
+class Middleware(Protocol):
+    """Interface for request/response middleware"""
 
     async def before_request(
         self,
-        context: MiddlewareContext
-    ) -> MiddlewareContext:
+        context: RequestContext,
+    ) -> RequestContext:
         """
-        Pre-request processing
+        Process before the AI request.
 
-        Can be used for:
-        - Modifying request content
-        - Adding tracing IDs
-        - Validation/review
+        Use cases:
+        - Input validation
+        - Content filtering
+        - Adding context
         - Logging
+
+        Args:
+            context: The request context (mutable)
+
+        Returns:
+            Modified context
         """
-        # Modify context.request
         return context
 
-    async def after_request(
+    async def after_response(
         self,
-        context: MiddlewareContext,
-        response: ProviderResponse
-    ) -> ProviderResponse:
+        context: RequestContext,
+        response: Response,
+    ) -> Response:
         """
-        Post-request processing
+        Process after the AI response.
 
-        Can be used for:
-        - Modifying response content
+        Use cases:
+        - Output filtering
+        - Response formatting
         - Logging
-        - Updating statistics
+        - Analytics
+
+        Args:
+            context: The original request context
+            response: The AI response (mutable)
+
+        Returns:
+            Modified response
         """
         return response
 
     async def on_error(
         self,
-        context: MiddlewareContext,
-        error: Exception
+        context: RequestContext,
+        error: Exception,
     ) -> None:
         """
-        Error handling
+        Handle errors (for logging/alerting, not recovery).
 
-        Can be used for:
-        - Error logging
-        - Alerts/notifications
+        Args:
+            context: The request context
+            error: The exception that occurred
         """
-        ...
+        pass
 ```
 
-**Usage:**
+### 5.2 Example: Content Filter Middleware
 
 ```python
-# Use custom Middleware
-client = AinalynClient(
-    api_key="key",
-    middleware=[
-        LoggingMiddleware(),
-        AuditMiddleware(),
-        MyCustomMiddleware(),
-    ]
+from ainalyn.extensions import Middleware, RequestContext, Response
+
+class ContentFilterMiddleware(Middleware):
+    """Filter sensitive content from inputs and outputs"""
+
+    def __init__(self, blocked_words: list[str]):
+        self.blocked_words = [w.lower() for w in blocked_words]
+
+    async def before_request(self, context: RequestContext) -> RequestContext:
+        # Filter input
+        content = context.request.content.lower()
+        for word in self.blocked_words:
+            if word in content:
+                context.request.content = "[Content filtered]"
+                break
+        return context
+
+    async def after_response(self, context: RequestContext, response: Response) -> Response:
+        # Filter output
+        for word in self.blocked_words:
+            if word in response.content.lower():
+                response.content = response.content.replace(word, "[filtered]")
+        return response
+
+# Usage
+server = AinalynServer(
+    middleware=[ContentFilterMiddleware(["confidential", "secret"])]
 )
 ```
 
-**Execution order:**
-
-1. `before_request`: executed in list order
-2. Actual API call
-3. `after_request`: executed in **reverse** list order
-4. `on_error`: executed in reverse order when an error occurs
-
-### 2.6 Event Extensions
-
-Users can subscribe to SDK events:
+### 5.3 Example: Logging Middleware
 
 ```python
-from ainalyn.events import EventPublisherPort, Event
+import logging
+from ainalyn.extensions import Middleware, RequestContext, Response
 
-class CustomEventHandler(EventPublisherPort):
-    """Custom event handler"""
+class LoggingMiddleware(Middleware):
+    """Log all requests and responses"""
 
-    async def on_token(self, event: TokenEvent) -> None:
-        """
-        Triggered when each token is received during streaming responses
+    def __init__(self):
+        self.logger = logging.getLogger("ainalyn.requests")
 
-        Can be used for:
-        - Real-time UI updates
-        - Progress tracking
-        """
-        ...
+    async def before_request(self, context: RequestContext) -> RequestContext:
+        self.logger.info(f"Request: feature={context.feature}, length={len(context.request.content)}")
+        return context
 
-    async def on_complete(self, event: CompleteEvent) -> None:
-        """
-        Triggered when a request is completed
+    async def after_response(self, context: RequestContext, response: Response) -> Response:
+        self.logger.info(f"Response: tokens={response.usage.total_tokens}")
+        return response
 
-        Can be used for:
-        - Completion notifications
-        - Statistics logging
-        """
-        ...
-
-    async def on_error(self, event: ErrorEvent) -> None:
-        """
-        Triggered when an error occurs
-        """
-        ...
-
-    async def on_progress(self, event: ProgressEvent) -> None:
-        """
-        Progress updates for long-running tasks
-
-        Applicable to:
-        - Video generation
-        - Music generation
-        - Document translation
-        """
-        ...
+    async def on_error(self, context: RequestContext, error: Exception) -> None:
+        self.logger.error(f"Error: {error}")
 ```
 
-**Usage:**
+### 5.4 Middleware Execution Order
+
+```
+Request Flow:
+  1. Middleware[0].before_request()
+  2. Middleware[1].before_request()
+  3. ... (all middleware)
+  4. AI Request
+  5. Middleware[N].after_response()  (reverse order)
+  6. Middleware[N-1].after_response()
+  7. ... (all middleware, reversed)
+```
+
+---
+
+## 6. Custom Provider (Advanced)
+
+Connect your own LLM backend (e.g., Ollama, vLLM, private deployment).
+
+### 6.1 Provider Interface
 
 ```python
-# Use custom event handlers
-client = AinalynClient(
-    api_key="key",
-    event_handlers=[
-        MyUIEventHandler(),
-        MyLoggingEventHandler(),
-    ]
+from ainalyn.extensions import Provider, ProviderRequest, ProviderResponse
+from typing import Protocol, AsyncIterator
+
+class Provider(Protocol):
+    """Interface for custom AI providers"""
+
+    async def generate(
+        self,
+        request: ProviderRequest,
+    ) -> ProviderResponse:
+        """
+        Generate a response (non-streaming).
+
+        Args:
+            request: The generation request
+
+        Returns:
+            The complete response
+        """
+        ...
+
+    async def stream(
+        self,
+        request: ProviderRequest,
+    ) -> AsyncIterator[str]:
+        """
+        Generate a streaming response.
+
+        Args:
+            request: The generation request
+
+        Yields:
+            Response chunks as strings
+        """
+        ...
+
+    def get_models(self) -> list[str]:
+        """Return list of available model names."""
+        ...
+
+
+@dataclass
+class ProviderRequest:
+    """Request to the provider"""
+    messages: list[Message]      # Conversation messages
+    model: str                   # Model name
+    temperature: float = 0.7
+    max_tokens: int = 4096
+    stream: bool = False
+
+
+@dataclass
+class ProviderResponse:
+    """Response from the provider"""
+    content: str
+    usage: Usage
+    model: str
+    finish_reason: str = "stop"
+```
+
+### 6.2 Example: Ollama Provider
+
+```python
+import httpx
+from ainalyn.extensions import Provider, ProviderRequest, ProviderResponse
+from typing import AsyncIterator
+
+class OllamaProvider(Provider):
+    """Provider for local Ollama instance"""
+
+    def __init__(self, base_url: str = "http://localhost:11434"):
+        self.base_url = base_url
+        self.client = httpx.AsyncClient(base_url=base_url)
+
+    async def generate(self, request: ProviderRequest) -> ProviderResponse:
+        response = await self.client.post(
+            "/api/chat",
+            json={
+                "model": request.model,
+                "messages": [
+                    {"role": m.role, "content": m.content}
+                    for m in request.messages
+                ],
+                "stream": False,
+                "options": {
+                    "temperature": request.temperature,
+                },
+            },
+        )
+        data = response.json()
+
+        return ProviderResponse(
+            content=data["message"]["content"],
+            usage=Usage(
+                input_tokens=data.get("prompt_eval_count", 0),
+                output_tokens=data.get("eval_count", 0),
+            ),
+            model=request.model,
+        )
+
+    async def stream(self, request: ProviderRequest) -> AsyncIterator[str]:
+        async with self.client.stream(
+            "POST",
+            "/api/chat",
+            json={
+                "model": request.model,
+                "messages": [
+                    {"role": m.role, "content": m.content}
+                    for m in request.messages
+                ],
+                "stream": True,
+            },
+        ) as response:
+            async for line in response.aiter_lines():
+                if line:
+                    data = json.loads(line)
+                    if "message" in data:
+                        yield data["message"].get("content", "")
+
+    def get_models(self) -> list[str]:
+        return ["llama2", "mistral", "codellama"]
+
+# Usage
+server = AinalynServer(
+    providers={"ollama": OllamaProvider()},
+    model_router=OllamaModelRouter(),  # Route to "ollama" provider
+)
+```
+
+### 6.3 Using Custom Provider with Model Router
+
+```python
+class OllamaModelRouter(ModelRouter):
+    """Route all requests to local Ollama"""
+
+    def select_model(self, feature: str, context: dict | None = None) -> ModelConfig:
+        return ModelConfig(
+            provider="ollama",  # Use the custom provider
+            model="llama2",
+            temperature=0.7,
+        )
+```
+
+---
+
+## 7. Configuration
+
+### 7.1 Server Configuration
+
+```python
+from ainalyn import AinalynServer, ServerConfig
+
+config = ServerConfig(
+    host="127.0.0.1",       # Localhost only (recommended for security)
+    port=8080,               # Port number
+    cors_origins=["*"],      # CORS origins (Electron app)
+    log_level="INFO",        # Logging level
+    api_key=None,            # Optional: require API key for requests
+)
+
+server = AinalynServer(config=config)
+```
+
+### 7.2 Configuration File (Optional)
+
+```yaml
+# config.yaml
+server:
+  host: "127.0.0.1"
+  port: 8080
+  log_level: "INFO"
+
+extensions:
+  prompts_module: "my_extensions.prompts"
+  model_router_module: "my_extensions.models"
+  middleware_modules:
+    - "my_extensions.logging"
+    - "my_extensions.filters"
+```
+
+```python
+from ainalyn import AinalynServer
+
+server = AinalynServer.from_config("config.yaml")
+server.run()
+```
+
+---
+
+## 8. Best Practices
+
+### 8.1 Prompt Engineering Tips
+
+1. **Be Specific**: Clear instructions produce better results
+2. **Use Context**: Pass user info via `context` parameter
+3. **Test Variations**: Try different prompts for each feature
+4. **Keep It Focused**: One role per prompt
+
+### 8.2 Model Router Tips
+
+1. **Cost Optimization**: Use cheaper models for simple tasks
+2. **Quality Routing**: Route complex tasks to capable models
+3. **Fallback Logic**: Have backup models if primary fails
+
+### 8.3 Middleware Tips
+
+1. **Keep It Light**: Don't add heavy processing
+2. **Order Matters**: Put logging first, filters last
+3. **Don't Modify Original**: Create copies when transforming
+4. **Handle Errors**: Always implement `on_error`
+
+### 8.4 Custom Provider Tips
+
+1. **Handle Timeouts**: Set reasonable timeout values
+2. **Implement Retry**: Add retry logic for transient failures
+3. **Normalize Responses**: Match the expected response format
+4. **Test Thoroughly**: Test both streaming and non-streaming
+
+---
+
+## 9. Troubleshooting
+
+### Common Issues
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| Server won't start | Port in use | Change port in config |
+| CORS errors | Origin not allowed | Add Electron origin to `cors_origins` |
+| Model not found | Wrong provider/model | Check `model_router` returns valid config |
+| Timeout errors | Slow provider | Increase timeout or use faster model |
+
+### Debug Mode
+
+```python
+server = AinalynServer(
+    config=ServerConfig(log_level="DEBUG"),
 )
 ```
 
 ---
 
-## 3. Built-in Implementations
-
-The SDK provides the following built-in implementations:
-
-### 3.1 Built-in Provider
-
-| Provider       | Description                       |
-| -------------- | --------------------------------- |
-| `HttpProvider` | Standard HTTP API calls (default) |
-
-### 3.2 Built-in Storage
-
-| Storage           | Description                                                   |
-| ----------------- | ------------------------------------------------------------- |
-| `InMemoryStorage` | In-memory storage (default, suitable for development/testing) |
-| `SQLiteStorage`   | SQLite file storage (suitable for single-node apps)           |
-
-### 3.3 Built-in Middleware
-
-| Middleware             | Description                                 |
-| ---------------------- | ------------------------------------------- |
-| `RetryMiddleware`      | Automatic retries for failed requests       |
-| `RateLimitMiddleware`  | Request rate limiting                       |
-| `LoggingMiddleware`    | Request logging                             |
-| `TokenLimitMiddleware` | Token usage limiting (requires Rust module) |
-| `CacheMiddleware`      | Response caching                            |
-
----
-
-## 4. Version Compatibility Guarantees
-
-### 4.1 Public API Stability
-
-* **Stable**: Main entry point (`AinalynClient`) and public methods of service clients
-* **Stable**: Data types exported from the `types` module
-* **Stable**: Port interfaces (`ProviderPort`, `StoragePort`, etc.)
-
-### 4.2 Possible Changes
-
-* **Subject to change**: Internal implementation details of built-in middleware
-* **Subject to change**: Error message text
-* **Subject to change**: Non-essential fields in `ResponseMetadata`
-
-### 4.3 Deprecation Policy
-
-* Deprecated items are marked with a `@deprecated` warning before removal
-* A transition period of at least 2 minor versions is provided
-* Removal only occurs in major version upgrades
-
----
-
-## 5. Extension Development Checklist
-
-When developing custom extensions, please verify:
-
-**Provider:**
-
-* [ ] All required methods are implemented
-* [ ] Errors are handled correctly and converted to `ProviderError`
-* [ ] Cancellation is supported (if applicable)
-* [ ] Corresponding tests are written
-
-**Storage:**
-
-* [ ] All Session/Message/Invocation methods are implemented
-* [ ] Thread safety is ensured (if needed)
-* [ ] Connection failures are handled
-* [ ] Integration tests are written
-
-**Middleware:**
-
-* [ ] Do not raise directly inside middleware (use `context.abort()`)
-* [ ] Context is passed correctly
-* [ ] Execution order side effects are considered
-* [ ] Unit tests are written
-
-**Event Handler:**
-
-* [ ] Handler methods are non-blocking
-* [ ] Internal errors do not affect the main flow
-* [ ] Performance impact under high-frequency calls is considered
-
----
-
-*Last Updated: 2024-12*
+*Last Updated: 2025-01*
