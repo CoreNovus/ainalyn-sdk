@@ -345,8 +345,8 @@ filterwarnings = [
     "ignore::PendingDeprecationWarning",
 ]
 
-# Timeout for each test
-timeout = 30
+# Note: timeout requires pytest-timeout plugin
+# timeout = 30
 
 # ============================================================================
 # Coverage - Code Coverage

@@ -4,7 +4,11 @@
 
 ## 1. Public API Overview
 
-### 1.1 Main Entry Point
+### 1.1 Main Entry Points
+
+The SDK provides two main entry points depending on the use case:
+
+#### For Direct SDK Usage
 
 ```python
 from ainalyn import AinalynClient
@@ -18,10 +22,32 @@ client = AinalynClient(
 )
 ```
 
+#### For Desktop Application Integration (Server Mode)
+
+```python
+from ainalyn import AinalynServer
+
+# Create and run a local server for desktop app integration
+server = AinalynServer(
+    api_key="your-api-key",
+    host="127.0.0.1",           # localhost only for security
+    port=8080,                   # configurable port
+    cors_origins=["app://*"],    # allow Electron app
+    prompt_manager=None,         # optional, custom PromptManager
+    model_manager=None,          # optional, custom ModelManager
+    middleware=None,             # optional, custom Middleware
+    providers=None,              # optional, custom Providers
+)
+
+# Start the server
+server.run()
+```
+
 **Responsibilities & Guarantees:**
 
-* `AinalynClient` is the unified entry point of the SDK
-* Manages client instances for all sub-services
+* `AinalynClient` is the unified entry point for programmatic SDK usage
+* `AinalynServer` is the entry point for desktop application integration
+* Both manage client instances for all sub-services
 * Responsible for configuration propagation and resource management
 
 ### 1.2 Service Clients
@@ -115,7 +141,230 @@ class ResponseMetadata:
 
 ## 2. Extension Points
 
-### 2.1 Provider Extensions
+The SDK is designed to be highly extensible for desktop application integration. Users can customize:
+
+1. **Prompt Management** - Define system prompts and templates
+2. **Model Management** - Control model selection and routing
+3. **Providers** - Implement custom AI service providers
+4. **Storage** - Customize data persistence
+5. **Middleware** - Add pre/post-processing logic
+6. **Events** - Subscribe to SDK events for UI updates
+
+### 2.1 Prompt Manager Extensions (NEW)
+
+Users can customize system prompts for each feature:
+
+```python
+from ainalyn.ports import PromptManagerPort
+from typing import Protocol
+
+class PromptManagerPort(Protocol):
+    """Interface for custom prompt management"""
+
+    def get_system_prompt(
+        self,
+        feature: str,
+        context: dict[str, Any] | None = None,
+    ) -> str:
+        """
+        Get the system prompt for a specific feature.
+
+        Args:
+            feature: Feature name (e.g., "chat", "translation", "counseling")
+            context: Optional context for dynamic prompt generation
+
+        Returns:
+            The system prompt string
+        """
+        ...
+
+    def get_prompt_template(
+        self,
+        template_name: str,
+    ) -> PromptTemplate | None:
+        """
+        Get a named prompt template.
+
+        Args:
+            template_name: Name of the template
+
+        Returns:
+            PromptTemplate or None if not found
+        """
+        ...
+
+    def render_template(
+        self,
+        template_name: str,
+        variables: dict[str, Any],
+    ) -> str:
+        """
+        Render a template with variables.
+
+        Args:
+            template_name: Name of the template
+            variables: Variables to substitute
+
+        Returns:
+            Rendered prompt string
+        """
+        ...
+```
+
+**Usage:**
+
+```python
+from ainalyn.ports import PromptManagerPort
+
+class MyPromptManager(PromptManagerPort):
+    """Custom prompt manager for enterprise deployment"""
+
+    def __init__(self, company_name: str, guidelines_path: str):
+        self.company_name = company_name
+        self.guidelines = self._load_guidelines(guidelines_path)
+
+    def get_system_prompt(self, feature: str, context: dict | None = None) -> str:
+        base_prompt = f"You are an AI assistant for {self.company_name}."
+
+        if feature == "chat":
+            return f"{base_prompt}\n\nGuidelines:\n{self.guidelines}"
+        elif feature == "translation":
+            return f"{base_prompt}\nProvide accurate translations."
+        elif feature == "counseling":
+            style = context.get("style", "professional") if context else "professional"
+            return f"{base_prompt}\nRespond in a {style} manner."
+
+        return base_prompt
+
+# Register with server
+server = AinalynServer(
+    prompt_manager=MyPromptManager("Acme Corp", "guidelines.txt"),
+)
+```
+
+**Invocation timing:**
+
+* `get_system_prompt()`: Called before each AI request to construct the system message
+* `get_prompt_template()`: Called when using named templates
+* `render_template()`: Called to substitute variables in templates
+
+### 2.2 Model Manager Extensions (NEW)
+
+Users can control model selection and configuration:
+
+```python
+from ainalyn.ports import ModelManagerPort
+from typing import Protocol
+
+class ModelManagerPort(Protocol):
+    """Interface for custom model management"""
+
+    def select_model(
+        self,
+        feature: str,
+        context: dict[str, Any] | None = None,
+    ) -> ModelConfig:
+        """
+        Select the appropriate model for a request.
+
+        Args:
+            feature: Feature name (e.g., "chat", "translation")
+            context: Request context (user info, task complexity, etc.)
+
+        Returns:
+            ModelConfig with provider, model name, and parameters
+        """
+        ...
+
+    def get_available_models(
+        self,
+        feature: str | None = None,
+    ) -> list[ModelInfo]:
+        """
+        Get list of available models.
+
+        Args:
+            feature: Optional feature filter
+
+        Returns:
+            List of available ModelInfo
+        """
+        ...
+
+    def get_model_config(
+        self,
+        model_id: str,
+    ) -> ModelConfig | None:
+        """
+        Get configuration for a specific model.
+
+        Args:
+            model_id: Model identifier
+
+        Returns:
+            ModelConfig or None if not found
+        """
+        ...
+```
+
+**Usage:**
+
+```python
+from ainalyn.ports import ModelManagerPort
+from ainalyn.types import ModelConfig
+
+class MyModelManager(ModelManagerPort):
+    """Custom model manager with intelligent routing"""
+
+    def select_model(self, feature: str, context: dict | None = None) -> ModelConfig:
+        context = context or {}
+
+        # Route based on task complexity
+        complexity = context.get("complexity", "normal")
+        if complexity == "high":
+            return ModelConfig(
+                provider="openai",
+                model="gpt-4",
+                temperature=0.7,
+                max_tokens=4096,
+            )
+
+        # Route based on feature
+        if feature == "translation":
+            return ModelConfig(
+                provider="google",
+                model="gemini-pro",
+                temperature=0.3,
+            )
+
+        # Route based on user tier
+        user_tier = context.get("user_tier", "free")
+        if user_tier == "premium":
+            return ModelConfig(provider="anthropic", model="claude-3-opus")
+
+        # Default model
+        return ModelConfig(provider="openai", model="gpt-3.5-turbo")
+
+    def get_available_models(self, feature: str | None = None) -> list[ModelInfo]:
+        return [
+            ModelInfo(id="gpt-4", provider="openai", name="GPT-4"),
+            ModelInfo(id="gpt-3.5-turbo", provider="openai", name="GPT-3.5 Turbo"),
+            ModelInfo(id="claude-3-opus", provider="anthropic", name="Claude 3 Opus"),
+        ]
+
+# Register with server
+server = AinalynServer(
+    model_manager=MyModelManager(),
+)
+```
+
+**Invocation timing:**
+
+* `select_model()`: Called before each AI request to determine which model to use
+* `get_available_models()`: Called by frontend to populate model selection dropdowns
+* `get_model_config()`: Called when user explicitly selects a model
+
+### 2.3 Provider Extensions
 
 Users can implement custom AI service providers:
 
@@ -180,7 +429,7 @@ client = AinalynClient(
 * `stream_request()`: On every streaming API call
 * `validate_config()`: On initialization and config updates
 
-### 2.2 Storage Extensions
+### 2.4 Storage Extensions
 
 Users can customize data storage:
 
@@ -267,7 +516,7 @@ client = AinalynClient(
 * Message-related: automatically called after sending messages
 * Invocation-related: automatically recorded after each API call
 
-### 2.3 Middleware Extensions
+### 2.5 Middleware Extensions
 
 Users can insert custom pre/post request processing:
 
@@ -344,7 +593,7 @@ client = AinalynClient(
 3. `after_request`: executed in **reverse** list order
 4. `on_error`: executed in reverse order when an error occurs
 
-### 2.4 Event Extensions
+### 2.6 Event Extensions
 
 Users can subscribe to SDK events:
 

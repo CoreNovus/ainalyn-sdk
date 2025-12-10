@@ -1,0 +1,55 @@
+# <type>(<scope>): <subject>
+#
+# <body>
+#
+# <footer>
+#
+# ============================================================================
+# COMMIT MESSAGE CONVENTIONS - Ainalyn SDK
+# ============================================================================
+#
+# TYPE (required):
+#   feat     - New feature
+#   fix      - Bug fix
+#   docs     - Documentation changes
+#   style    - Formatting (no logic change)
+#   refactor - Refactoring (no behavior change)
+#   perf     - Performance improvement
+#   test     - Test-related changes
+#   build    - Build system changes
+#   ci       - CI configuration changes
+#   chore    - Misc (no src/test impact)
+#   revert   - Revert previous changes
+#
+# SCOPE (recommended):
+#   Architecture: domain, app, infra, interface
+#   Features:     chat, translation, image, speech, video, music,
+#                 travel, presentation, history, settings, counseling
+#   Technical:    provider, storage, middleware, events, errors,
+#                 logging, types, rust, deps
+#   Special:      release, security, api
+#
+# SUBJECT RULES:
+#   - Use imperative mood: "add" not "added" or "adds"
+#   - Start with lowercase letter
+#   - No period at the end
+#   - Maximum 50 characters (72 hard limit)
+#
+# BODY (optional):
+#   - Explain WHY, not WHAT
+#   - Wrap at 72 characters
+#   - Separate from subject with blank line
+#
+# FOOTER (optional):
+#   - Reference issues: "Closes #123", "Fixes #456"
+#   - Breaking changes: "BREAKING CHANGE: description"
+#   - Co-authors: "Co-authored-by: Name <email>"
+#
+# EXAMPLES:
+#   feat(chat): add streaming response support
+#   fix(storage): prevent session data corruption
+#   docs(api): update usage examples
+#   refactor(middleware): extract retry logic to utility
+#   perf(tokenizer): switch to rust implementation
+#
+# ============================================================================
