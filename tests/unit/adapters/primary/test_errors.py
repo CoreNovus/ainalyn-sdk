@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from ainalyn.adapters.primary.errors import (
     BuilderError,
     DuplicateNameError,

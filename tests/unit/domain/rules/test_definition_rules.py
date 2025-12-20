@@ -197,7 +197,8 @@ class TestCircularDependencies:
         cycles = DefinitionRules.detect_circular_dependencies(workflow)
 
         assert len(cycles) > 0
-        assert "n1" in cycles[0] and "n2" in cycles[0]
+        assert "n1" in cycles[0]
+        assert "n2" in cycles[0]
 
     def test_detect_self_reference(self) -> None:
         """Test detection of node referencing itself."""
