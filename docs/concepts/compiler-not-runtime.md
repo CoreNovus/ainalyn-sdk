@@ -1,0 +1,351 @@
+# Compiler vs Runtime
+
+The Ainalyn SDK is fundamentally a **compiler**, not a runtime engine. Understanding this distinction is essential for effective agent development.
+
+## The Compiler Paradigm
+
+### What is a Compiler?
+
+A compiler transforms source code from one form to another without executing it:
+
+```
+Source Code → [Compiler] → Target Format
+```
+
+### The Ainalyn SDK as a Compiler
+
+```
+Python API → [Ainalyn SDK] → YAML Definition
+```
+
+The SDK takes your Python-based agent descriptions and compiles them into YAML that the platform can deploy and execute.
+
+## Analogy: Terraform
+
+The Ainalyn SDK is similar to **Terraform**:
+
+### Terraform
+
+```hcl
+# Terraform describes infrastructure
+resource "aws_instance" "web" {
+  ami           = "ami-123456"
+  instance_type = "t2.micro"
+}
+```
+
+- **Terraform does NOT**: Create AWS instances itself
+- **Terraform DOES**: Generate a plan that AWS can execute
+- **AWS does**: Actually create and manage resources
+
+### Ainalyn SDK
+
+```python
+# Ainalyn SDK describes agents
+agent = (
+    AgentBuilder("MyAgent")
+    .add_workflow(...)
+    .build()
+)
+```
+
+- **SDK does NOT**: Execute agents
+- **SDK DOES**: Generate YAML that the platform can execute
+- **Platform does**: Actually run agents and manage executions
+
+## Compiler vs Runtime Comparison
+
+| Aspect | Compiler (SDK) | Runtime (Platform) |
+|--------|----------------|-------------------|
+| **Purpose** | Transform definitions | Execute tasks |
+| **Input** | Python API calls | YAML definitions |
+| **Output** | YAML files | Execution results |
+| **When** | Development time | Production time |
+| **Where** | Developer's machine | Cloud platform |
+| **Authority** | Structure validation | Execution control |
+
+## What This Means for You
+
+### As an SDK User
+
+#### ✅ You CAN
+
+- Define agent structures
+- Validate definitions
+- Export to YAML
+- Test definition structure locally
+
+#### ❌ You CANNOT
+
+- Execute agents
+- See execution results
+- Control retry/timeout
+- Calculate actual costs
+
+### The Development Flow
+
+```
+1. Write Python code using SDK  ──────┐
+                                      │
+2. SDK validates structure      ◄─────┘
+                                      │
+3. SDK compiles to YAML         ◄─────┘
+                                      │
+4. Upload YAML to platform      ──────┐
+                                      │
+5. Platform validates definition ◄────┘
+                                      │
+6. User requests execution      ──────┐
+                                      │
+7. Platform creates Execution   ◄─────┘
+                                      │
+8. Platform runs agent logic    ◄─────┘
+                                      │
+9. Platform bills for execution ◄─────┘
+```
+
+**SDK involvement**: Steps 1-3 only!
+
+## Examples
+
+### Example 1: Defining vs Executing
+
+#### ❌ Wrong Mental Model
+
+```python
+# Wrong thinking: "The SDK will run this"
+agent = AgentBuilder("MyAgent").add_workflow(...).build()
+agent.execute()  # ❌ Does not exist!
+```
+
+#### ✅ Correct Mental Model
+
+```python
+# Correct thinking: "The SDK compiles this for the platform"
+agent = AgentBuilder("MyAgent").add_workflow(...).build()
+yaml_output = export_yaml(agent)  # ✅ Compile to YAML
+# Now upload YAML to platform for execution
+```
+
+### Example 2: Local Testing
+
+#### ❌ Wrong Approach
+
+```python
+# Wrong: Trying to "run" the agent locally
+result = agent.run_workflow("my_workflow")  # ❌ Not possible
+```
+
+#### ✅ Correct Approach
+
+```python
+# Correct: Validate the structure
+from ainalyn.api import validate
+
+validate(agent)  # ✅ Structural validation only
+print("Agent definition is valid!")
+# Actual execution happens on the platform
+```
+
+## Why This Design?
+
+### 1. Separation of Concerns
+
+- **SDK**: Focuses on definition quality
+- **Platform**: Focuses on execution reliability
+
+### 2. Platform Flexibility
+
+- Platform can improve execution without SDK changes
+- Platform can add new execution strategies
+- Platform can optimize resource usage
+
+### 3. Developer Simplicity
+
+- You don't manage infrastructure
+- You don't implement retry logic
+- You don't handle billing
+
+### 4. Security and Governance
+
+- Platform controls execution environment
+- Platform enforces resource limits
+- Platform ensures billing accuracy
+
+## Local Development vs Production
+
+### Local Development
+
+```python
+# Development: Create and validate definitions
+agent = AgentBuilder("MyAgent")....build()
+validate(agent)
+yaml = export_yaml(agent)
+print(yaml)  # Review the output
+```
+
+**Purpose**: Ensure your definition is valid and complete
+
+### Production
+
+```yaml
+# Production: Platform executes the definition
+# (After you upload the YAML)
+
+# Platform parses YAML
+# Platform creates Execution
+# Platform runs agent logic
+# Platform returns results
+# Platform bills user
+```
+
+**Purpose**: Actual task completion
+
+## Common Questions
+
+### Q: Can I test my agent locally before deploying?
+
+**A**: You can validate the **structure** of your agent definition locally using `validate()`. However, actual agent **behavior** can only be tested on the platform, as the SDK cannot execute agents.
+
+### Q: How do I debug my agent?
+
+**A**:
+1. Use `validate()` to catch structural errors
+2. Review the generated YAML for correctness
+3. Deploy to platform and check execution logs
+4. Platform provides execution debugging tools
+
+### Q: Can I simulate execution locally?
+
+**A**: The SDK may provide **structural validation** utilities for development, but these are NOT simulations of actual platform execution. Real execution behavior depends on platform runtime, which the SDK cannot replicate.
+
+### Q: Why not include a runtime in the SDK?
+
+**A**: Including a runtime would:
+- Violate platform boundaries
+- Create inconsistency between local and platform behavior
+- Require duplicating platform logic
+- Make the SDK unnecessarily complex
+- Confuse responsibility (who handles errors, billing, etc.)
+
+## Compiler Benefits
+
+### 1. Fast Feedback
+
+Validation happens instantly:
+
+```python
+validate(agent)  # Immediate structural feedback
+```
+
+### 2. Type Safety
+
+Python type hints catch errors at development time:
+
+```python
+builder: AgentBuilder = AgentBuilder("MyAgent")
+# IDE helps you avoid mistakes
+```
+
+### 3. Version Control
+
+Agent definitions are just code:
+
+```bash
+git add my_agent.py
+git commit -m "Add new agent definition"
+git push
+```
+
+### 4. Reproducibility
+
+Same Python code always produces same YAML:
+
+```python
+# Deterministic compilation
+yaml1 = export_yaml(agent)
+yaml2 = export_yaml(agent)
+assert yaml1 == yaml2  # Always true
+```
+
+## The Compilation Process
+
+### Step 1: Builder API
+
+```python
+from ainalyn import AgentBuilder
+
+agent = AgentBuilder("MyAgent").description("...").build()
+```
+
+**What happens**: Python objects created in memory
+
+### Step 2: Validation
+
+```python
+from ainalyn.api import validate
+
+validate(agent)
+```
+
+**What happens**: Rules engine checks compliance
+
+### Step 3: Compilation
+
+```python
+from ainalyn.api import export_yaml
+
+yaml_output = export_yaml(agent)
+```
+
+**What happens**: Python objects transformed to YAML
+
+### Step 4: Deployment
+
+```bash
+# Upload YAML to platform (via CLI, web UI, or API)
+ainalyn deploy my_agent.yaml
+```
+
+**What happens**: Platform ingests and prepares for execution
+
+## SDK as a Language
+
+Think of the SDK as a **Domain-Specific Language (DSL)** for agent definitions:
+
+```python
+# This is a language for describing agents
+agent = (
+    AgentBuilder("DataAnalyzer")
+    .version("1.0.0")
+    .add_workflow(
+        WorkflowBuilder("analyze")
+        .add_node(
+            NodeBuilder("load_data")
+            .goal("Load CSV data")
+            .build()
+        )
+        .build()
+    )
+    .build()
+)
+```
+
+Just like:
+- **SQL** describes queries (database executes)
+- **HTML** describes pages (browser renders)
+- **Terraform** describes infrastructure (cloud executes)
+
+**Ainalyn SDK** describes agents (platform executes)
+
+## Further Reading
+
+- **[Platform Boundaries](platform-boundaries.md)** - What the SDK cannot do
+- **[Agent Definition](agent-definition.md)** - What you're building
+- **[Architecture Overview](architecture-overview.md)** - How the SDK works
+- **[Validation](../user-guide/validation.md)** - Validating definitions
+- **[Exporting](../user-guide/exporting.md)** - Compiling to YAML
+
+---
+
+**Remember**: You're not writing an execution engine. You're defining what should be executed. The platform handles the rest! 🚀

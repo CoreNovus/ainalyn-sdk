@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 💬 GitHub Discussions
+    url: https://github.com/ainalyn/ainalyn-sdk/discussions
+    about: Ask questions and discuss ideas with the community
+  - name: 📖 Documentation
+    url: https://docs.ainalyn.io/sdk
+    about: Read the comprehensive SDK documentation
+  - name: 📧 Email Support
+    url: mailto:dev@ainalyn.io
+    about: Contact the team directly for private inquiries
