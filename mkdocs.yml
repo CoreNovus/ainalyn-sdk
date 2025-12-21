@@ -164,6 +164,11 @@ nav:
     - concepts/architecture-overview.md
     - concepts/agent-definition.md
 
+  - API Reference:
+    - api-reference/api.md
+    - api-reference/builders.md
+    - api-reference/cli.md
+
 # Watch additional files for live reload
 watch:
   - ainalyn/
