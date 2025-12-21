@@ -42,7 +42,14 @@ from ainalyn.adapters.primary import (
     ToolBuilder,
     WorkflowBuilder,
 )
-from ainalyn.adapters.secondary import SchemaValidator, StaticAnalyzer
+from ainalyn.adapters.secondary import SchemaValidator, StaticAnalyzer, YamlExporter
+from ainalyn.application import (
+    CompilationResult,
+    CompileDefinitionUseCase,
+    DefinitionService,
+    ExportDefinitionUseCase,
+    ValidateDefinitionUseCase,
+)
 from ainalyn.domain.entities import (
     AgentDefinition,
     Module,
@@ -84,9 +91,18 @@ __all__ = [
     "InvalidReferenceError",
     "InvalidValueError",
     "MissingRequiredFieldError",
-    # Validators & Analyzers (Secondary Adapters)
+    # Secondary Adapters
     "SchemaValidator",
     "StaticAnalyzer",
+    "YamlExporter",
+    # Application Services
+    "DefinitionService",
+    # Application Use Cases
+    "ValidateDefinitionUseCase",
+    "ExportDefinitionUseCase",
+    "CompileDefinitionUseCase",
+    # Results
+    "CompilationResult",
     # Validation
     "Severity",
     "ValidationError",

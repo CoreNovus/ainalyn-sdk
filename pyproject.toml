@@ -32,7 +32,9 @@ classifiers = [
     "Typing :: Typed",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-dependencies = []
+dependencies = [
+    "PyYAML>=6.0",
+]
 
 [project.optional-dependencies]
 # Development dependencies

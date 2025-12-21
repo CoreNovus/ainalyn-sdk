@@ -13,4 +13,21 @@ This layer depends on the domain layer and defines interfaces
 
 from __future__ import annotations
 
-__all__: list[str] = []
+from ainalyn.application.services import DefinitionService
+from ainalyn.application.use_cases import (
+    CompilationResult,
+    CompileDefinitionUseCase,
+    ExportDefinitionUseCase,
+    ValidateDefinitionUseCase,
+)
+
+__all__ = [
+    # Services
+    "DefinitionService",
+    # Use Cases
+    "ValidateDefinitionUseCase",
+    "ExportDefinitionUseCase",
+    "CompileDefinitionUseCase",
+    # Results
+    "CompilationResult",
+]

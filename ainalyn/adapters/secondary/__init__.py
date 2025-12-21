@@ -16,9 +16,11 @@ This module exports validators and analyzers for Agent Definitions.
 from __future__ import annotations
 
 from ainalyn.adapters.secondary.analyzers import StaticAnalyzer
+from ainalyn.adapters.secondary.exporters import YamlExporter
 from ainalyn.adapters.secondary.validators import SchemaValidator
 
 __all__ = [
     "SchemaValidator",
     "StaticAnalyzer",
+    "YamlExporter",
 ]
