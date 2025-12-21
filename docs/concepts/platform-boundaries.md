@@ -352,7 +352,8 @@ Execution authority belongs to the Ainalyn Platform.
 - **[Compiler vs Runtime](compiler-not-runtime.md)** - Deep dive into the paradigm
 - **[Agent Definition](agent-definition.md)** - What you're actually building
 - **[Architecture Overview](architecture-overview.md)** - How the SDK is designed
-- **[Boundary Compliance](../contributor-guide/boundary-compliance.md)** - For SDK contributors
+
+For SDK contributors, see CONTRIBUTING.md in the repository root for boundary compliance guidelines.
 
 ## Reference Specifications
 

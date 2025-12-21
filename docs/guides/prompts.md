@@ -1,0 +1,414 @@
+# Prompts
+
+How to create reusable LLM prompt templates for your agents.
+
+## What is a Prompt?
+
+A prompt is a template that defines how to interact with Language Models. It supports:
+
+- **Template text** with variable placeholders
+- **Variable interpolation** using `{{variable}}` syntax
+- **Reusability** across multiple workflows
+
+**Important:** The SDK defines the prompt template. The platform handles LLM invocation.
+
+## Creating a Prompt
+
+```python
+from ainalyn import PromptBuilder
+
+prompt = (
+    PromptBuilder("data-analyzer")
+    .description("Analyzes data and provides insights")
+    .template("""
+Please analyze the following data:
+
+{{data}}
+
+Focus on: {{focus_areas}}
+
+Provide detailed insights and recommendations.
+""")
+    .variables(["data", "focus_areas"])
+    .build()
+)
+```
+
+## Variable Syntax
+
+Use `{{variable_name}}` to mark placeholders in your template.
+
+```python
+template = """
+Hello {{name}},
+
+Your order {{order_id}} has been {{status}}.
+
+Thank you!
+"""
+
+prompt = (
+    PromptBuilder("order-notification")
+    .template(template)
+    .variables(["name", "order_id", "status"])
+    .build()
+)
+```
+
+**At runtime:**
+- Platform replaces `{{name}}` with actual value
+- Variables come from node inputs or previous outputs
+
+## Using Prompts in Workflows
+
+**Step 1: Define the prompt**
+
+```python
+analyzer = (
+    PromptBuilder("analyzer")
+    .description("Analyzes text content")
+    .template("Analyze this: {{content}}")
+    .variables(["content"])
+    .build()
+)
+```
+
+**Step 2: Add prompt to agent**
+
+```python
+agent = (
+    AgentBuilder("text-agent")
+    .version("1.0.0")
+    .add_prompt(analyzer)  # Register prompt
+    .add_workflow(workflow)
+    .build()
+)
+```
+
+**Step 3: Reference in node**
+
+```python
+from ainalyn import NodeBuilder, NodeType
+
+node = (
+    NodeBuilder("analyze")
+    .description("Analyze content")
+    .node_type(NodeType.PROMPT)
+    .reference("analyzer")  # References the prompt
+    .inputs(["content"])
+    .outputs(["analysis"])
+    .build()
+)
+```
+
+## Common Prompt Patterns
+
+### Text Analysis
+
+```python
+analyzer = (
+    PromptBuilder("text-analyzer")
+    .description("Analyzes text for sentiment and key points")
+    .template("""
+Analyze the following text:
+
+{{text}}
+
+Provide:
+1. Sentiment (positive/negative/neutral)
+2. Key points (3-5 bullet points)
+3. Summary (1-2 sentences)
+""")
+    .variables(["text"])
+    .build()
+)
+```
+
+### Data Summarization
+
+```python
+summarizer = (
+    PromptBuilder("data-summarizer")
+    .description("Summarizes structured data")
+    .template("""
+Summarize this data:
+
+{{data}}
+
+Format: {{format}}
+
+Include statistics and key findings.
+""")
+    .variables(["data", "format"])
+    .build()
+)
+```
+
+### Content Generation
+
+```python
+generator = (
+    PromptBuilder("content-generator")
+    .description("Generates content based on topic")
+    .template("""
+Write a {{content_type}} about {{topic}}.
+
+Tone: {{tone}}
+Length: {{length}} words
+
+Requirements:
+{{requirements}}
+""")
+    .variables(["content_type", "topic", "tone", "length", "requirements"])
+    .build()
+)
+```
+
+### Translation
+
+```python
+translator = (
+    PromptBuilder("translator")
+    .description("Translates text between languages")
+    .template("""
+Translate the following text from {{source_lang}} to {{target_lang}}:
+
+{{text}}
+
+Maintain the original tone and style.
+""")
+    .variables(["source_lang", "target_lang", "text"])
+    .build()
+)
+```
+
+### Q&A Assistant
+
+```python
+qa = (
+    PromptBuilder("qa-assistant")
+    .description("Answers questions based on context")
+    .template("""
+Context:
+{{context}}
+
+Question: {{question}}
+
+Provide a clear, concise answer based only on the context provided.
+""")
+    .variables(["context", "question"])
+    .build()
+)
+```
+
+## Multiline Templates
+
+Use Python triple quotes for readable templates:
+
+```python
+# ✅ Readable multiline template
+template = """
+Analyze the following report:
+
+Title: {{title}}
+Date: {{date}}
+Author: {{author}}
+
+Content:
+{{content}}
+
+Provide a summary and key takeaways.
+"""
+
+# ❌ Hard to read single line
+template = "Analyze: {{title}} Date: {{date}} Author: {{author}} Content: {{content}}"
+```
+
+## Variables Best Practices
+
+**1. List all variables used**
+
+```python
+# ✅ All variables declared
+PromptBuilder("analyzer")
+    .template("Analyze {{data}} focusing on {{aspect}}")
+    .variables(["data", "aspect"])
+
+# ❌ Missing variable declaration
+PromptBuilder("analyzer")
+    .template("Analyze {{data}} focusing on {{aspect}}")
+    .variables(["data"])  # Missing "aspect"
+```
+
+**2. Use descriptive variable names**
+
+```python
+# ✅ Clear variable names
+.variables(["user_email", "order_id", "delivery_date"])
+
+# ❌ Unclear
+.variables(["e", "id", "d"])
+```
+
+**3. Keep variable count manageable**
+
+```python
+# ✅ Focused prompt with 2-4 variables
+.variables(["topic", "tone", "length"])
+
+# ❌ Too many variables
+.variables(["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8"])
+```
+
+## Prompt Naming
+
+**Valid names:**
+```python
+"text-analyzer"       # ✅ Lowercase with hyphens
+"data-summarizer"     # ✅ Descriptive
+"qa-assistant-v2"     # ✅ With version
+```
+
+**Invalid names:**
+```python
+"TextAnalyzer"        # ❌ Must be lowercase
+"text_analyzer"       # ❌ No underscores
+"my prompt"           # ❌ No spaces
+```
+
+## Prompt Design Tips
+
+**1. Be specific**
+
+```python
+# ✅ Specific instructions
+template = """
+Analyze the sentiment of this customer review:
+
+{{review}}
+
+Classify as: positive, negative, or neutral
+Provide reasoning in 1-2 sentences
+"""
+
+# ❌ Vague
+template = "What do you think about {{review}}?"
+```
+
+**2. Structure the output**
+
+```python
+# ✅ Structured output request
+template = """
+Summarize: {{article}}
+
+Format:
+- Main idea: [1 sentence]
+- Key points: [3-5 bullets]
+- Conclusion: [1 sentence]
+"""
+
+# ❌ Unstructured
+template = "Summarize {{article}}"
+```
+
+**3. Provide context**
+
+```python
+# ✅ With context
+template = """
+You are a technical documentation expert.
+
+Review this code documentation:
+
+{{documentation}}
+
+Suggest improvements for clarity and completeness.
+"""
+
+# ❌ No context
+template = "Review {{documentation}}"
+```
+
+## Complete Example
+
+```python
+from ainalyn import (
+    AgentBuilder,
+    WorkflowBuilder,
+    NodeBuilder,
+    PromptBuilder,
+    NodeType
+)
+
+# Define prompt
+review_prompt = (
+    PromptBuilder("code-reviewer")
+    .description("Reviews code for quality and best practices")
+    .template("""
+Review the following code:
+
+Language: {{language}}
+Code:
+{{code}}
+
+Provide:
+1. Overall quality assessment
+2. Potential issues or bugs
+3. Suggestions for improvement
+4. Best practice recommendations
+""")
+    .variables(["language", "code"])
+    .build()
+)
+
+# Use in workflow
+workflow = (
+    WorkflowBuilder("code-review")
+    .entry_node("review")
+    .add_node(
+        NodeBuilder("review")
+        .description("Review submitted code")
+        .node_type(NodeType.PROMPT)
+        .reference("code-reviewer")
+        .inputs(["language", "code"])
+        .outputs(["review_result"])
+        .build()
+    )
+    .build()
+)
+
+# Create agent
+agent = (
+    AgentBuilder("code-review-agent")
+    .version("1.0.0")
+    .description("Automated code review assistant")
+    .add_prompt(review_prompt)
+    .add_workflow(workflow)
+    .build()
+)
+```
+
+## Prompt vs Module vs Tool
+
+**Use Prompt when:**
+- You need LLM-based reasoning
+- Task involves text understanding or generation
+- Output is natural language
+
+**Use Module when:**
+- You need deterministic logic
+- Task is computation or data processing
+- See [Modules Guide](modules.md)
+
+**Use Tool when:**
+- You need external services
+- Task involves APIs or databases
+- See [Tools Guide](tools.md)
+
+## See Also
+
+- [PromptBuilder API](../api-reference/builders.md#promptbuilder) - Full API reference
+- [Modules Guide](modules.md) - Custom business logic
+- [Tools Guide](tools.md) - External integrations
+- [Workflows](workflows.md) - Using prompts in workflows

@@ -343,8 +343,8 @@ Just like:
 - **[Platform Boundaries](platform-boundaries.md)** - What the SDK cannot do
 - **[Agent Definition](agent-definition.md)** - What you're building
 - **[Architecture Overview](architecture-overview.md)** - How the SDK works
-- **[Validation](../user-guide/validation.md)** - Validating definitions
-- **[Exporting](../user-guide/exporting.md)** - Compiling to YAML
+- **[Validation](../guides/validation.md)** - Validating definitions
+- **[YAML Export](../guides/yaml-export.md)** - Compiling to YAML
 
 ---
 

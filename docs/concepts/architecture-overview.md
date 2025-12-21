@@ -490,11 +490,7 @@ ainalyn/
 
 ## Further Reading
 
-- **[Domain Layer](../contributor-guide/architecture/layer-01-domain.md)** - Detailed domain layer docs
-- **[Ports Layer](../contributor-guide/architecture/layer-02-ports.md)** - Protocol definitions
-- **[Adapters Layer](../contributor-guide/architecture/layer-03-adapters.md)** - Implementations
-- **[Application Layer](../contributor-guide/architecture/layer-04-application.md)** - Use cases
-- **[API Layer](../contributor-guide/architecture/layer-05-api-cli.md)** - Public interfaces
+For detailed architecture and contribution guidelines, see the CONTRIBUTING.md file in the repository root.
 
 ---
 

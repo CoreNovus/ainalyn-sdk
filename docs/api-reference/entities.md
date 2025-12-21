@@ -1,0 +1,197 @@
+# Entities
+
+Core domain entities represent the structure of agent definitions.
+
+## AgentDefinition
+
+The complete agent specification.
+
+**Attributes:**
+- `name` (str) - Unique agent identifier (lowercase, hyphens only)
+- `version` (str) - Version string (e.g., "1.0.0")
+- `description` (str) - What the agent does
+- `workflows` (tuple) - List of workflows (required, at least one)
+- `modules` (tuple) - Reusable modules (optional)
+- `prompts` (tuple) - LLM prompt templates (optional)
+- `tools` (tuple) - External tool definitions (optional)
+
+**Example:**
+```python
+from ainalyn.domain.entities import AgentDefinition
+
+agent = AgentDefinition(
+    name="my-agent",
+    version="1.0.0",
+    description="Does something useful",
+    workflows=(workflow,),
+    modules=(),
+    prompts=(),
+    tools=()
+)
+```
+
+**Note:** Usually created via `AgentBuilder`, not directly.
+
+## Workflow
+
+A task execution flow.
+
+**Attributes:**
+- `name` (str) - Workflow identifier
+- `description` (str) - What this workflow does (optional)
+- `entry_node` (str) - Which node starts the workflow
+- `nodes` (tuple) - List of nodes in this workflow
+
+**Example:**
+```python
+from ainalyn.domain.entities import Workflow
+
+workflow = Workflow(
+    name="main",
+    description="Main workflow",
+    entry_node="start",
+    nodes=(node1, node2)
+)
+```
+
+## Node
+
+A single task unit within a workflow.
+
+**Attributes:**
+- `name` (str) - Node identifier
+- `goal` (str) - What this node should accomplish
+- `description` (str) - Additional details (optional)
+- `node_type` (NodeType) - Type: TASK, MODULE, or SUBWORKFLOW
+- `outputs` (tuple) - Output variable names (optional)
+- `dependencies` (tuple) - Names of nodes this depends on (optional)
+- `reference` (str) - Reference to module/workflow (optional)
+
+**Example:**
+```python
+from ainalyn.domain.entities import Node, NodeType
+
+node = Node(
+    name="process-data",
+    goal="Process the input data",
+    description="Cleans and validates data",
+    node_type=NodeType.TASK,
+    outputs=("cleaned_data",),
+    dependencies=("load-data",),
+    reference=None
+)
+```
+
+## NodeType
+
+Enum for node types.
+
+**Values:**
+- `NodeType.TASK` - A task node
+- `NodeType.MODULE` - References a module
+- `NodeType.SUBWORKFLOW` - References another workflow
+
+**Example:**
+```python
+from ainalyn.domain.entities import NodeType
+
+# Use in node creation
+node_type = NodeType.TASK
+```
+
+## Module
+
+A reusable capability unit.
+
+**Attributes:**
+- `name` (str) - Module identifier
+- `description` (str) - What this module does
+- `input_schema` (dict) - JSON Schema for inputs (optional)
+- `output_schema` (dict) - JSON Schema for outputs (optional)
+
+**Example:**
+```python
+from ainalyn.domain.entities import Module
+
+module = Module(
+    name="http-client",
+    description="Makes HTTP requests",
+    input_schema={"type": "object", "properties": {"url": {"type": "string"}}},
+    output_schema={"type": "object", "properties": {"body": {"type": "string"}}}
+)
+```
+
+## Prompt
+
+An LLM prompt template.
+
+**Attributes:**
+- `name` (str) - Prompt identifier
+- `template` (str) - Prompt text with placeholders
+
+**Example:**
+```python
+from ainalyn.domain.entities import Prompt
+
+prompt = Prompt(
+    name="greeting",
+    template="Hello {name}, welcome to {place}!"
+)
+```
+
+## Tool
+
+An external tool definition.
+
+**Attributes:**
+- `name` (str) - Tool identifier
+- `description` (str) - What this tool does
+
+**Example:**
+```python
+from ainalyn.domain.entities import Tool
+
+tool = Tool(
+    name="calculator",
+    description="Performs mathematical operations"
+)
+```
+
+## Immutability
+
+All entities are **frozen dataclasses** - they cannot be modified after creation.
+
+```python
+# ✅ Create new entity
+agent = AgentDefinition(name="my-agent", ...)
+
+# ❌ Cannot modify
+agent.name = "new-name"  # Error!
+
+# ✅ Create new version instead
+agent_v2 = AgentDefinition(name="new-name", ...)
+```
+
+## Creating Entities
+
+**Direct creation** (advanced):
+```python
+from ainalyn.domain.entities import AgentDefinition, Workflow, Node
+
+agent = AgentDefinition(...)
+```
+
+**Using builders** (recommended):
+```python
+from ainalyn import AgentBuilder, WorkflowBuilder, NodeBuilder
+
+agent = (
+    AgentBuilder("my-agent")
+    .version("1.0.0")
+    .description("My agent")
+    .add_workflow(...)
+    .build()
+)
+```
+
+Builders are easier and include validation.

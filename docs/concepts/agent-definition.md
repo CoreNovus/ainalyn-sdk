@@ -52,7 +52,7 @@ workflow = WorkflowBuilder("main_flow")
 
 **Purpose**: Organize nodes into logical execution flows
 
-**See**: [Defining Workflows](../user-guide/building-agents/defining-workflows.md)
+**See**: [Workflows Guide](../guides/workflows.md)
 
 ### 3. Nodes
 
@@ -68,7 +68,7 @@ node = NodeBuilder("process_data")
 
 **Purpose**: Represent individual sub-tasks
 
-**See**: [Creating Nodes](../user-guide/building-agents/creating-nodes.md)
+**See**: [Workflows Guide](../guides/workflows.md)
 
 ### 4. Modules
 
@@ -84,7 +84,7 @@ module = ModuleBuilder("DataProcessor")
 
 **Purpose**: Share common functionality across workflows
 
-**See**: [Adding Modules](../user-guide/building-agents/adding-modules.md)
+**See**: [Modules Guide](../guides/modules.md)
 
 ### 5. Prompts
 
@@ -476,10 +476,10 @@ workflow = (
 
 ## Further Reading
 
-- **[Using Builder API](../user-guide/building-agents/using-builder-api.md)** - How to build definitions
-- **[Validation](../user-guide/validation.md)** - Validating definitions
+- **[Builders API](../api-reference/builders.md)** - How to build definitions
+- **[Validation](../guides/validation.md)** - Validating definitions
 - **[Platform Boundaries](platform-boundaries.md)** - What definitions cannot include
-- **[Examples](../examples/basic-agent.md)** - Complete example definitions
+- **[Your First Agent](../getting-started/your-first-agent.md)** - Complete tutorial
 
 ---
 

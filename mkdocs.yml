@@ -167,7 +167,17 @@ nav:
   - API Reference:
     - api-reference/api.md
     - api-reference/builders.md
+    - api-reference/entities.md
     - api-reference/cli.md
+
+  - Guides:
+    - guides/validation.md
+    - guides/yaml-export.md
+    - guides/workflows.md
+    - guides/modules.md
+    - guides/prompts.md
+    - guides/tools.md
+    - guides/errors.md
 
 # Watch additional files for live reload
 watch:
