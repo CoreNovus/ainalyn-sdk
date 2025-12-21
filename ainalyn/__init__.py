@@ -43,6 +43,7 @@ from ainalyn.adapters.primary import (
     WorkflowBuilder,
 )
 from ainalyn.adapters.secondary import SchemaValidator, StaticAnalyzer, YamlExporter
+from ainalyn.api import compile_agent, export_yaml, validate
 from ainalyn.application import (
     CompilationResult,
     CompileDefinitionUseCase,
@@ -67,6 +68,10 @@ from ainalyn.ports import (
 )
 
 __all__ = [
+    # High-level API Functions
+    "validate",
+    "export_yaml",
+    "compile_agent",
     # Domain Entities
     "AgentDefinition",
     "Module",

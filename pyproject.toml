@@ -73,6 +73,9 @@ all = [
     "ainalyn-sdk[dev,docs]",
 ]
 
+[project.scripts]
+ainalyn = "ainalyn.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/ainalyn/ainalyn-sdk"
 Documentation = "https://docs.ainalyn.io/sdk"
@@ -195,6 +198,22 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 "scripts/**/*.py" = ["T201"]
 # __init__.py can have unused imports (re-exports)
 "**/__init__.py" = ["F401"]
+# CLI can use print, exec, and simple error handling
+"ainalyn/cli.py" = [
+    "T201",    # print (needed for CLI output)
+    "S102",    # exec (needed to load agent definitions)
+    "TRY300",  # else after return (stylistic)
+    "BLE001",  # blind exception (user-facing error messages)
+    "RET505",  # unnecessary else (stylistic)
+]
+# Exporters can use assert for type narrowing
+"ainalyn/adapters/secondary/exporters.py" = [
+    "S101",    # assert (used for type narrowing)
+]
+# API module can use global state
+"ainalyn/api.py" = [
+    "PLW0603", # global statement (intentional singleton pattern)
+]
 
 [tool.ruff.lint.isort]
 known-first-party = ["ainalyn"]
@@ -356,6 +375,9 @@ output = "coverage.xml"
 # ============================================================================
 [tool.hatch.build.targets.wheel]
 packages = ["ainalyn"]
+include = [
+    "ainalyn/py.typed",
+]
 
 [tool.hatch.build.targets.sdist]
 include = [
