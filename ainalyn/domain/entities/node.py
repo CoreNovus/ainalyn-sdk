@@ -30,7 +30,7 @@ class Node:
     Node represents a single unit of work in a Workflow. Each Node
     references exactly one Module, Prompt, or Tool to perform its
     designated task. Nodes can be connected to form a directed graph
-    that describes the execution flow.
+    that describes the task flow.
 
     This is a pure description entity with no execution semantics.
     The actual execution is handled by Platform Core.
@@ -47,7 +47,7 @@ class Node:
             These are mapped from outputs of previous Nodes.
         outputs: Names of output parameters this Node produces.
             These can be consumed by subsequent Nodes.
-        next_nodes: Names of Nodes that should execute after this one.
+        next_nodes: Names of Nodes that follow this one in the flow.
             Empty tuple indicates this is a terminal Node.
 
     Example:

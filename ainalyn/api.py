@@ -112,6 +112,11 @@ def compile_agent(
         CompilationResult: Contains validation result, YAML content,
             and output path (if file was written).
 
+    Important:
+        The output of this function is an Agent Definition for platform
+        submission. **Local compilation does NOT equal platform execution.**
+        The actual execution is handled exclusively by Platform Core.
+
     Example:
         >>> from ainalyn import AgentBuilder, compile_agent
         >>> from pathlib import Path

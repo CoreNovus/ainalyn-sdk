@@ -12,7 +12,7 @@ class Workflow:
     """
     A structural description of a task flow.
 
-    Workflow defines a complete task execution flow composed of multiple
+    Workflow defines a complete task flow composed of multiple
     Nodes. It describes the sequence and data flow between processing
     steps, forming a directed graph of operations.
 
@@ -26,7 +26,7 @@ class Workflow:
             accomplishes.
         nodes: Tuple of Nodes that comprise this Workflow. Each Node
             represents a processing step in the flow.
-        entry_node: Name of the Node where execution begins. This Node
+        entry_node: Name of the starting Node in this flow. This Node
             must exist in the nodes tuple.
 
     Example:

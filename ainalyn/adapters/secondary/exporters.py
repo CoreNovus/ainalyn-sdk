@@ -43,6 +43,15 @@ class YamlExporter:
         >>> exporter.write(yaml_content, Path("agent.yaml"))
     """
 
+    # YAML header comment explaining the file's purpose
+    _YAML_HEADER = """# Ainalyn Agent Definition
+# This file is a description submitted to Platform Core for review.
+# It does NOT execute by itself. Execution is handled by Platform Core.
+#
+# Local compilation does NOT equal platform execution.
+
+"""
+
     def export(self, definition: AgentDefinition) -> str:
         """
         Export an AgentDefinition to YAML format.
@@ -54,7 +63,7 @@ class YamlExporter:
             definition: The AgentDefinition to export.
 
         Returns:
-            str: The YAML-formatted string representation.
+            str: The YAML-formatted string representation with header comments.
 
         Raises:
             yaml.YAMLError: If YAML serialization fails.
@@ -63,15 +72,17 @@ class YamlExporter:
         data = self._to_dict(definition)
 
         # Serialize to YAML with Unicode support and readable formatting
-        result = yaml.dump(
+        yaml_content = yaml.dump(
             data,
             allow_unicode=True,
             default_flow_style=False,
             sort_keys=False,
             indent=2,
         )
-        assert isinstance(result, str)  # yaml.dump returns str
-        return result
+        assert isinstance(yaml_content, str)  # yaml.dump returns str
+
+        # Prepend header comment to explain the file's purpose
+        return self._YAML_HEADER + yaml_content
 
     def write(self, content: str, path: Path) -> None:
         """

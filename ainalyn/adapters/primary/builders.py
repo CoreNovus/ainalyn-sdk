@@ -467,7 +467,7 @@ class NodeBuilder:
         Set the next nodes in the workflow.
 
         Args:
-            *node_names: Names of Nodes that should execute after this one.
+            *node_names: Names of Nodes that follow this one in the flow.
 
         Returns:
             Self: This builder for method chaining.
@@ -621,7 +621,7 @@ class WorkflowBuilder:
         Set the entry node for this Workflow.
 
         Args:
-            node_name: The name of the Node where execution begins.
+            node_name: The name of the starting Node in this Workflow.
 
         Returns:
             Self: This builder for method chaining.
