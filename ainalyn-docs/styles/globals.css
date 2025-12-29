@@ -1,0 +1,52 @@
+html,
+body {
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+article {
+  line-height: 1.7;
+}
+
+pre {
+  border-radius: 14px;
+  padding: 16px;
+}
+
+/* Pagefind modal styles */
+#pagefind-modal.open {
+  display: block !important;
+}
+
+.pagefind-ui {
+  --pagefind-ui-scale: 1;
+  --pagefind-ui-primary: #0070f3;
+  --pagefind-ui-text: #111;
+  --pagefind-ui-background: #fff;
+  --pagefind-ui-border: #eeeeee;
+  --pagefind-ui-tag: #eeeeee;
+  --pagefind-ui-border-width: 1px;
+  --pagefind-ui-border-radius: 8px;
+}
+
+/* Dark mode support */
+.dark .pagefind-ui {
+  --pagefind-ui-primary: #60a5fa;
+  --pagefind-ui-text: #f3f4f6;
+  --pagefind-ui-background: #1f2937;
+  --pagefind-ui-border: #374151;
+  --pagefind-ui-tag: #374151;
+}
+
+.dark #pagefind-modal {
+  background-color: #1f2937;
+}
+
+/* Code block styling */
+.nextra-code-block pre {
+  border-radius: 12px;
+}
+
+/* Callout/admonition styling */
+.nextra-callout {
+  border-radius: 8px;
+}

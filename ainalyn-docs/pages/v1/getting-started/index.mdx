@@ -1,0 +1,89 @@
+import { Callout } from 'nextra/components'
+
+# Ainalyn SDK
+
+Build task-oriented agents with Python. The Ainalyn SDK is a compiler that turns your Python code into platform-ready agent definitions.
+
+<Callout type="info">
+**SDK = Compiler, Not Runtime**
+
+The SDK creates agent descriptions. The Ainalyn Platform executes them.
+</Callout>
+
+## What it does
+
+- **Define** agents with a Python API
+- **Validate** definitions before deployment
+- **Export** to YAML for the platform
+
+## Features
+
+- **Type-safe API** - Full type hints and IDE autocomplete
+- **Fluent builders** - Chainable, intuitive API
+- **Validation** - Catch errors before deployment
+- **YAML export** - One command to platform-ready format
+
+## Example
+
+```python
+from ainalyn import AgentBuilder, WorkflowBuilder, NodeBuilder
+from ainalyn.api import validate, export_yaml
+
+# Define an agent
+agent = (
+    AgentBuilder("GreetingAgent")
+    .description("Generates personalized greetings")
+    .version("1.0.0")
+    .add_workflow(
+        WorkflowBuilder("greet_user")
+        .add_node(
+            NodeBuilder("generate_greeting")
+            .goal("Generate a personalized greeting")
+            .build()
+        )
+        .build()
+    )
+    .build()
+)
+
+# Validate and export
+validate(agent)
+yaml_output = export_yaml(agent)
+```
+
+## Getting Started
+
+**New to the SDK?**
+
+1. [Install](/docs/v1/getting-started/installation/) the SDK
+2. Try the [5-minute quickstart](/docs/v1/getting-started/quickstart/)
+3. Build [your first agent](/docs/v1/getting-started/your-first-agent/)
+
+**Understanding the SDK**
+
+- [Platform Boundaries](/docs/v1/concepts/platform-boundaries/) - What the SDK can and cannot do
+- [Compiler vs Runtime](/docs/v1/concepts/compiler-not-runtime/) - Why the SDK is a compiler
+- [Architecture](/docs/v1/concepts/architecture-overview/) - How it's built
+- [Agent Definitions](/docs/v1/concepts/agent-definition/) - What you're creating
+
+## Important: SDK Boundaries
+
+**The SDK creates descriptions. The platform runs them.**
+
+What the SDK does:
+- Define agent structures
+- Validate definitions
+- Export to YAML
+
+What the SDK does NOT do:
+- Execute agents
+- Handle billing
+- Manage retries or timeouts
+
+[Learn more about platform boundaries](/docs/v1/concepts/platform-boundaries/)
+
+## Support
+
+- [Report issues](https://github.com/CoreNovus/ainalyn-sdk/issues)
+- [Ask questions](https://github.com/CoreNovus/ainalyn-sdk/discussions)
+- [View source](https://github.com/CoreNovus/ainalyn-sdk)

@@ -1,0 +1,270 @@
+# YAML Export
+
+Convert agent definitions to platform-ready YAML format.
+
+## What is YAML Export?
+
+YAML export transforms your Python agent definition into a YAML file that the Ainalyn Platform can execute.
+
+**Key points:**
+- YAML is the platform's input format
+- Export does NOT execute your agent
+- The platform reads YAML files to run agents
+- SDK is a compiler, not a runtime
+
+## Using export_yaml()
+
+```python
+from ainalyn import AgentBuilder, export_yaml
+
+agent = (
+    AgentBuilder("my-agent")
+    .version("1.0.0")
+    .description("Process data")
+    .add_workflow(workflow)
+    .build()
+)
+
+# Export to YAML string
+yaml_output = export_yaml(agent)
+print(yaml_output)
+```
+
+**Output:**
+```yaml
+name: my-agent
+version: 1.0.0
+description: Process data
+workflows:
+  - name: main-workflow
+    description: Main processing workflow
+    entry_node: start
+    nodes:
+      - name: start
+        description: Start processing
+        type: prompt
+        reference: data-processor
+```
+
+## Saving to File
+
+```python
+from ainalyn import export_yaml
+
+# Export to string
+yaml_output = export_yaml(agent)
+
+# Save to file
+with open("agent.yaml", "w") as f:
+    f.write(yaml_output)
+
+print("Saved to agent.yaml")
+```
+
+## Using compile_agent()
+
+**Recommended:** Use `compile_agent()` for automatic validation and export.
+
+```python
+from ainalyn.api import compile_agent
+from pathlib import Path
+
+# Validates and exports in one step
+result = compile_agent(agent, Path("agent.yaml"))
+
+if result.is_successful:
+    print(f"Compiled to {result.output_path}")
+    print(result.yaml_content)
+else:
+    print("Compilation failed:")
+    for error in result.validation_result.errors:
+        print(f"  {error.message}")
+```
+
+**Advantages:**
+- Validates before exporting
+- Prevents invalid YAML files
+- Returns detailed error messages
+- Creates parent directories automatically
+
+## YAML Structure
+
+The exported YAML follows this structure:
+
+```yaml
+# Required fields
+name: agent-name
+version: 1.0.0
+description: What the agent does
+
+# Workflows (required, at least one)
+workflows:
+  - name: workflow-name
+    description: What this workflow does
+    entry_node: first-node
+    nodes:
+      - name: node-name
+        description: What this node does
+        type: prompt|module|tool
+        reference: resource-name
+        next_nodes:
+          - next-node-name
+        inputs:
+          - input-name
+        outputs:
+          - output-name
+
+# Resources (optional)
+modules:
+  - name: module-name
+    description: What the module does
+    input_schema: {}
+    output_schema: {}
+
+prompts:
+  - name: prompt-name
+    description: What the prompt does
+    template: "Prompt text with {variables}"
+    variables:
+      - variable-name
+
+tools:
+  - name: tool-name
+    description: What the tool does
+    input_schema: {}
+    output_schema: {}
+```
+
+## Export Features
+
+**Unicode Support:**
+```python
+agent = (
+    AgentBuilder("translator")
+    .version("1.0.0")
+    .description("翻譯助手")  # Unicode supported
+    .build()
+)
+
+yaml_output = export_yaml(agent)
+# Output preserves Unicode characters
+```
+
+**Deterministic Ordering:**
+- Keys appear in consistent order
+- Workflows, modules, prompts, tools grouped logically
+- Readable and version-control friendly
+
+**Human-Readable:**
+```yaml
+# Indentation: 2 spaces
+# Flow style: False (multiline)
+# Sort keys: False (manual ordering)
+```
+
+## Export vs Validation
+
+**export_yaml()** - No validation
+```python
+# Exports without checking validity
+yaml_output = export_yaml(agent)
+# May produce invalid YAML if agent is malformed
+```
+
+**compile_agent()** - Validates first
+```python
+# Validates before exporting
+result = compile_agent(agent)
+if result.is_successful:
+    yaml_output = result.yaml_content
+# Only exports if valid
+```
+
+## Common Patterns
+
+### Export to String
+
+```python
+from ainalyn import export_yaml
+
+yaml_string = export_yaml(agent)
+print(yaml_string)
+```
+
+### Export to File
+
+```python
+from ainalyn import export_yaml
+
+yaml_output = export_yaml(agent)
+
+with open("agent.yaml", "w", encoding="utf-8") as f:
+    f.write(yaml_output)
+```
+
+### Validate and Export
+
+```python
+from ainalyn import validate, export_yaml
+
+# Validate first
+result = validate(agent)
+
+if result.is_valid:
+    # Then export
+    yaml_output = export_yaml(agent)
+    with open("agent.yaml", "w") as f:
+        f.write(yaml_output)
+else:
+    print("Cannot export: validation failed")
+```
+
+### Safe Compilation
+
+```python
+from ainalyn.api import compile_agent
+from pathlib import Path
+
+# All-in-one: validate + export + save
+result = compile_agent(agent, Path("agent.yaml"))
+
+if result.is_successful:
+    print("Ready for platform deployment")
+else:
+    print(f"Fix these errors first:")
+    for error in result.validation_result.errors:
+        print(f"  - {error.message}")
+```
+
+## File Output
+
+**Creating parent directories:**
+
+```python
+from pathlib import Path
+from ainalyn.api import compile_agent
+
+# Creates 'output/' directory if it doesn't exist
+result = compile_agent(agent, Path("output/agent.yaml"))
+```
+
+**UTF-8 encoding:**
+
+All files are written with UTF-8 encoding to support Unicode content.
+
+## What Happens Next?
+
+After exporting your agent:
+
+1. **You created:** YAML definition file
+2. **Platform reads:** YAML to understand agent structure
+3. **Platform executes:** Agent based on definition
+4. **SDK's job is done:** No runtime involvement
+
+See [Platform Boundaries](/docs/v1/concepts/platform-boundaries/) for the SDK's role.
+
+## See Also
+
+- [Validation](/docs/v1/guides/validation/) - Validate before export
+- [compile_agent() API](/docs/v1/api-reference/api/#compile_agent) - Full API reference
+- [Platform Boundaries](/docs/v1/concepts/platform-boundaries/) - SDK vs Platform roles

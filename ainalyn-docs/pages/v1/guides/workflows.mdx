@@ -1,0 +1,379 @@
+# Workflows
+
+How to structure task flows with nodes and dependencies.
+
+## What is a Workflow?
+
+A workflow defines the execution flow of tasks in your agent. It's a directed graph where:
+
+- **Nodes** are processing steps
+- **next_nodes** define execution order
+- **entry_node** is where execution starts
+
+## Basic Workflow
+
+```python
+from ainalyn import WorkflowBuilder, NodeBuilder, NodeType
+
+workflow = (
+    WorkflowBuilder("process-data")
+    .description("Fetch and process data")
+    .entry_node("fetch")
+    .add_node(
+        NodeBuilder("fetch")
+        .description("Fetch raw data")
+        .node_type(NodeType.MODULE)
+        .reference("http-client")
+        .outputs(["raw_data"])
+        .next_nodes(["process"])
+        .build()
+    )
+    .add_node(
+        NodeBuilder("process")
+        .description("Process the data")
+        .node_type(NodeType.PROMPT)
+        .reference("analyzer")
+        .inputs(["raw_data"])
+        .build()
+    )
+    .build()
+)
+```
+
+**Execution flow:** fetch → process
+
+## Node Dependencies
+
+Dependencies define execution order through `next_nodes`.
+
+**Linear flow:**
+```python
+# A → B → C
+node_a = (
+    NodeBuilder("step-a")
+    .description("First step")
+    .next_nodes(["step-b"])
+    .build()
+)
+
+node_b = (
+    NodeBuilder("step-b")
+    .description("Second step")
+    .next_nodes(["step-c"])
+    .build()
+)
+
+node_c = (
+    NodeBuilder("step-c")
+    .description("Final step")
+    .build()
+)
+```
+
+**Parallel execution:**
+```python
+# A → [B, C] → D
+node_a = (
+    NodeBuilder("start")
+    .description("Start processing")
+    .next_nodes(["process-1", "process-2"])  # Both run in parallel
+    .build()
+)
+
+node_b = (
+    NodeBuilder("process-1")
+    .description("First parallel task")
+    .next_nodes(["merge"])
+    .build()
+)
+
+node_c = (
+    NodeBuilder("process-2")
+    .description("Second parallel task")
+    .next_nodes(["merge"])
+    .build()
+)
+
+node_d = (
+    NodeBuilder("merge")
+    .description("Merge results")
+    .build()
+)
+```
+
+**Conditional branching:**
+```python
+# A → [B or C] (decided by platform)
+node_a = (
+    NodeBuilder("analyze")
+    .description("Analyze input")
+    .next_nodes(["path-a", "path-b"])  # Platform decides which path
+    .build()
+)
+```
+
+## Entry Node
+
+Every workflow must specify where execution starts.
+
+```python
+workflow = (
+    WorkflowBuilder("my-workflow")
+    .entry_node("start")  # Execution begins here
+    .add_node(
+        NodeBuilder("start")
+        .description("Starting point")
+        .build()
+    )
+    .build()
+)
+```
+
+**Rules:**
+- Entry node must exist in the workflow's nodes
+- Only one entry node per workflow
+- Entry node name must match exactly
+
+## Data Flow
+
+Nodes pass data using `inputs` and `outputs`.
+
+```python
+# Node 1: Produces data
+producer = (
+    NodeBuilder("fetch-user")
+    .description("Fetch user data")
+    .outputs(["user_id", "user_name"])  # Outputs these values
+    .next_nodes(["process"])
+    .build()
+)
+
+# Node 2: Consumes data
+consumer = (
+    NodeBuilder("process")
+    .description("Process user data")
+    .inputs(["user_id", "user_name"])  # Uses these inputs
+    .outputs(["result"])
+    .build()
+)
+```
+
+**Notes:**
+- Input/output names are descriptive
+- Platform handles actual data passing
+- SDK just defines the structure
+
+## Multiple Workflows
+
+Agents can have multiple workflows for different tasks.
+
+```python
+from ainalyn import AgentBuilder
+
+# Workflow 1: Data processing
+processing_workflow = WorkflowBuilder("process-data").build()
+
+# Workflow 2: Reporting
+reporting_workflow = WorkflowBuilder("generate-report").build()
+
+# Agent with both workflows
+agent = (
+    AgentBuilder("data-agent")
+    .version("1.0.0")
+    .add_workflow(processing_workflow)
+    .add_workflow(reporting_workflow)
+    .build()
+)
+```
+
+Each workflow is independent and can be invoked separately by the platform.
+
+## Node Types
+
+**NodeType.PROMPT** - Uses a prompt template
+```python
+NodeBuilder("analyze")
+    .node_type(NodeType.PROMPT)
+    .reference("analyzer-prompt")  # References a Prompt
+```
+
+**NodeType.MODULE** - Executes custom logic
+```python
+NodeBuilder("fetch")
+    .node_type(NodeType.MODULE)
+    .reference("http-client")  # References a Module
+```
+
+**NodeType.TOOL** - Calls an external tool
+```python
+NodeBuilder("search")
+    .node_type(NodeType.TOOL)
+    .reference("web-search")  # References a Tool
+```
+
+## Common Patterns
+
+### Sequential Processing
+
+```python
+# Step 1 → Step 2 → Step 3
+workflow = (
+    WorkflowBuilder("sequential")
+    .entry_node("step1")
+    .add_node(
+        NodeBuilder("step1")
+        .description("First")
+        .next_nodes(["step2"])
+        .build()
+    )
+    .add_node(
+        NodeBuilder("step2")
+        .description("Second")
+        .next_nodes(["step3"])
+        .build()
+    )
+    .add_node(
+        NodeBuilder("step3")
+        .description("Final")
+        .build()
+    )
+    .build()
+)
+```
+
+### Fan-Out, Fan-In
+
+```python
+# One node → Multiple parallel nodes → Merge
+workflow = (
+    WorkflowBuilder("parallel")
+    .entry_node("split")
+    .add_node(
+        NodeBuilder("split")
+        .description("Split work")
+        .next_nodes(["work1", "work2", "work3"])
+        .build()
+    )
+    .add_node(NodeBuilder("work1").next_nodes(["merge"]).build())
+    .add_node(NodeBuilder("work2").next_nodes(["merge"]).build())
+    .add_node(NodeBuilder("work3").next_nodes(["merge"]).build())
+    .add_node(
+        NodeBuilder("merge")
+        .description("Combine results")
+        .build()
+    )
+    .build()
+)
+```
+
+### Pipeline Processing
+
+```python
+# Input → Transform → Filter → Output
+workflow = (
+    WorkflowBuilder("pipeline")
+    .entry_node("input")
+    .add_node(
+        NodeBuilder("input")
+        .next_nodes(["transform"])
+        .outputs(["raw_data"])
+        .build()
+    )
+    .add_node(
+        NodeBuilder("transform")
+        .inputs(["raw_data"])
+        .next_nodes(["filter"])
+        .outputs(["transformed_data"])
+        .build()
+    )
+    .add_node(
+        NodeBuilder("filter")
+        .inputs(["transformed_data"])
+        .next_nodes(["output"])
+        .outputs(["filtered_data"])
+        .build()
+    )
+    .add_node(
+        NodeBuilder("output")
+        .inputs(["filtered_data"])
+        .build()
+    )
+    .build()
+)
+```
+
+## Validation Rules
+
+**Valid workflows:**
+- At least one node
+- Entry node exists in nodes
+- All next_nodes references exist
+- No circular dependencies (A → B → A)
+
+**Invalid workflows:**
+
+```python
+# No nodes
+workflow = WorkflowBuilder("empty").build()
+
+# Entry node doesn't exist
+workflow = (
+    WorkflowBuilder("bad")
+    .entry_node("missing")  # No node named "missing"
+    .add_node(NodeBuilder("actual").build())
+    .build()
+)
+
+# Undefined next_node reference
+node = (
+    NodeBuilder("broken")
+    .next_nodes(["nonexistent"])  # No node named "nonexistent"
+    .build()
+)
+```
+
+## Best Practices
+
+**1. Use descriptive names**
+
+```python
+# Clear names
+NodeBuilder("fetch-user-data")
+NodeBuilder("validate-email")
+NodeBuilder("send-notification")
+
+# Unclear names
+NodeBuilder("step1")
+NodeBuilder("process")
+NodeBuilder("do-stuff")
+```
+
+**2. Define clear data flow**
+
+```python
+# Explicit inputs/outputs
+NodeBuilder("transform")
+    .inputs(["raw_data"])
+    .outputs(["clean_data"])
+
+# No data flow specified
+NodeBuilder("transform")
+    # Where does data come from?
+```
+
+**3. Keep workflows focused**
+
+```python
+# Single responsibility
+process_workflow = WorkflowBuilder("process-orders")
+report_workflow = WorkflowBuilder("generate-reports")
+
+# Too many responsibilities
+everything_workflow = WorkflowBuilder("do-everything")
+```
+
+## See Also
+
+- [Your First Agent](/docs/v1/getting-started/your-first-agent/) - Complete workflow example
+- [NodeBuilder API](/docs/v1/api-reference/builders/#nodebuilder) - All node options
+- [Validation](/docs/v1/guides/validation/) - Workflow validation rules

@@ -1,0 +1,390 @@
+# Modules
+
+How to define reusable capability units for your agents.
+
+## What is a Module?
+
+A module is a self-contained functional component that can perform specific tasks. It defines:
+
+- **What it does** (description)
+- **What input it expects** (input schema)
+- **What output it produces** (output schema)
+
+**Important:** The SDK only defines the module's contract. The actual implementation is provided by the platform.
+
+## Creating a Module
+
+```python
+from ainalyn import ModuleBuilder
+
+module = (
+    ModuleBuilder("http-client")
+    .description("Fetches data from HTTP endpoints")
+    .input_schema({
+        "type": "object",
+        "properties": {
+            "url": {"type": "string", "format": "uri"},
+            "method": {"type": "string", "enum": ["GET", "POST"]}
+        },
+        "required": ["url"]
+    })
+    .output_schema({
+        "type": "object",
+        "properties": {
+            "status": {"type": "integer"},
+            "body": {"type": "string"}
+        }
+    })
+    .build()
+)
+```
+
+## Using Modules in Workflows
+
+**Step 1: Define the module**
+
+```python
+http_module = (
+    ModuleBuilder("http-client")
+    .description("Fetches data from HTTP endpoints")
+    .input_schema({...})
+    .output_schema({...})
+    .build()
+)
+```
+
+**Step 2: Add module to agent**
+
+```python
+agent = (
+    AgentBuilder("data-agent")
+    .version("1.0.0")
+    .add_module(http_module)  # Register module
+    .add_workflow(workflow)
+    .build()
+)
+```
+
+**Step 3: Reference in node**
+
+```python
+from ainalyn import NodeBuilder, NodeType
+
+node = (
+    NodeBuilder("fetch-data")
+    .description("Fetch user data")
+    .node_type(NodeType.MODULE)
+    .reference("http-client")  # References the module
+    .inputs(["url"])
+    .outputs(["response"])
+    .build()
+)
+```
+
+## JSON Schema
+
+Modules use JSON Schema to define input/output contracts.
+
+**Basic types:**
+
+```python
+# String
+{"type": "string"}
+
+# Number
+{"type": "number"}
+
+# Integer
+{"type": "integer"}
+
+# Boolean
+{"type": "boolean"}
+
+# Array
+{"type": "array", "items": {"type": "string"}}
+
+# Object
+{
+    "type": "object",
+    "properties": {
+        "name": {"type": "string"},
+        "age": {"type": "integer"}
+    }
+}
+```
+
+**Required fields:**
+
+```python
+input_schema = {
+    "type": "object",
+    "properties": {
+        "url": {"type": "string"},
+        "timeout": {"type": "integer"}
+    },
+    "required": ["url"]  # url is required, timeout is optional
+}
+```
+
+**Default values:**
+
+```python
+input_schema = {
+    "type": "object",
+    "properties": {
+        "method": {
+            "type": "string",
+            "default": "GET"  # Default if not provided
+        }
+    }
+}
+```
+
+**Enums:**
+
+```python
+input_schema = {
+    "type": "object",
+    "properties": {
+        "status": {
+            "type": "string",
+            "enum": ["active", "inactive", "pending"]
+        }
+    }
+}
+```
+
+## Common Module Patterns
+
+### HTTP Client
+
+```python
+http_module = (
+    ModuleBuilder("http-client")
+    .description("Makes HTTP requests")
+    .input_schema({
+        "type": "object",
+        "properties": {
+            "url": {"type": "string", "format": "uri"},
+            "method": {"type": "string", "enum": ["GET", "POST", "PUT", "DELETE"]},
+            "headers": {"type": "object"},
+            "body": {"type": "string"}
+        },
+        "required": ["url", "method"]
+    })
+    .output_schema({
+        "type": "object",
+        "properties": {
+            "status": {"type": "integer"},
+            "headers": {"type": "object"},
+            "body": {"type": "string"}
+        }
+    })
+    .build()
+)
+```
+
+### Data Processor
+
+```python
+processor = (
+    ModuleBuilder("data-processor")
+    .description("Processes and transforms data")
+    .input_schema({
+        "type": "object",
+        "properties": {
+            "data": {"type": "array", "items": {"type": "object"}},
+            "operation": {"type": "string", "enum": ["filter", "map", "reduce"]}
+        },
+        "required": ["data", "operation"]
+    })
+    .output_schema({
+        "type": "object",
+        "properties": {
+            "result": {"type": "array"},
+            "count": {"type": "integer"}
+        }
+    })
+    .build()
+)
+```
+
+### File Operations
+
+```python
+file_module = (
+    ModuleBuilder("file-handler")
+    .description("Reads and writes files")
+    .input_schema({
+        "type": "object",
+        "properties": {
+            "path": {"type": "string"},
+            "operation": {"type": "string", "enum": ["read", "write"]},
+            "content": {"type": "string"}
+        },
+        "required": ["path", "operation"]
+    })
+    .output_schema({
+        "type": "object",
+        "properties": {
+            "success": {"type": "boolean"},
+            "content": {"type": "string"},
+            "size": {"type": "integer"}
+        }
+    })
+    .build()
+)
+```
+
+## Module Naming
+
+**Valid names:**
+```python
+"http-client"        # Lowercase with hyphens
+"data-processor"     # Descriptive
+"file-handler-v2"    # With version suffix
+```
+
+**Invalid names:**
+```python
+"HttpClient"         # Must be lowercase
+"data_processor"     # No underscores
+"my module"          # No spaces
+```
+
+## Best Practices
+
+**1. Keep schemas simple**
+
+```python
+# Simple, focused schema
+input_schema = {
+    "type": "object",
+    "properties": {
+        "url": {"type": "string"}
+    },
+    "required": ["url"]
+}
+
+# Avoid overly complex nested schemas
+```
+
+**2. Use descriptive property names**
+
+```python
+# Clear property names
+{
+    "properties": {
+        "user_id": {"type": "string"},
+        "email_address": {"type": "string"}
+    }
+}
+
+# Avoid unclear names like "id" or "data"
+```
+
+**3. Document expected formats**
+
+```python
+# Specify format
+{
+    "properties": {
+        "email": {"type": "string", "format": "email"},
+        "url": {"type": "string", "format": "uri"},
+        "date": {"type": "string", "format": "date"}
+    }
+}
+```
+
+**4. Define required fields**
+
+```python
+# Explicit required fields
+{
+    "properties": {
+        "id": {"type": "string"},
+        "name": {"type": "string"},
+        "age": {"type": "integer"}
+    },
+    "required": ["id", "name"]  # age is optional
+}
+```
+
+## Module vs Prompt vs Tool
+
+**Use Module when:**
+- You need custom business logic
+- Platform provides the implementation
+- Input/output are structured data
+
+**Use Prompt when:**
+- You need LLM-based reasoning
+- Input/output are text-based
+- See [Prompts Guide](/docs/v1/guides/prompts/)
+
+**Use Tool when:**
+- You need external services (APIs, databases)
+- Platform provides the integration
+- See [Tools Guide](/docs/v1/guides/tools/)
+
+## Complete Example
+
+```python
+from ainalyn import AgentBuilder, WorkflowBuilder, NodeBuilder, ModuleBuilder, NodeType
+
+# Define module
+email_module = (
+    ModuleBuilder("email-sender")
+    .description("Sends emails via SMTP")
+    .input_schema({
+        "type": "object",
+        "properties": {
+            "to": {"type": "string", "format": "email"},
+            "subject": {"type": "string"},
+            "body": {"type": "string"}
+        },
+        "required": ["to", "subject", "body"]
+    })
+    .output_schema({
+        "type": "object",
+        "properties": {
+            "sent": {"type": "boolean"},
+            "message_id": {"type": "string"}
+        }
+    })
+    .build()
+)
+
+# Use in workflow
+workflow = (
+    WorkflowBuilder("send-notification")
+    .entry_node("send")
+    .add_node(
+        NodeBuilder("send")
+        .description("Send email notification")
+        .node_type(NodeType.MODULE)
+        .reference("email-sender")  # Reference module
+        .inputs(["to", "subject", "body"])
+        .outputs(["sent", "message_id"])
+        .build()
+    )
+    .build()
+)
+
+# Create agent
+agent = (
+    AgentBuilder("notification-agent")
+    .version("1.0.0")
+    .description("Sends email notifications")
+    .add_module(email_module)  # Register module
+    .add_workflow(workflow)
+    .build()
+)
+```
+
+## See Also
+
+- [ModuleBuilder API](/docs/v1/api-reference/builders/#modulebuilder) - Full API reference
+- [Prompts Guide](/docs/v1/guides/prompts/) - Using prompt templates
+- [Tools Guide](/docs/v1/guides/tools/) - External tool integration
+- [Workflows](/docs/v1/guides/workflows/) - Using modules in workflows
