@@ -5,49 +5,85 @@ on:
     branches:
       - master
       - main
+    paths:
+      - 'ainalyn-docs/**'
+      - '.github/workflows/docs.yml'
   pull_request:
     branches:
       - master
       - main
+    paths:
+      - 'ainalyn-docs/**'
+      - '.github/workflows/docs.yml'
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ainalyn-docs
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          python-version: '3.11'
-          cache: 'pip'
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: ./ainalyn-docs/package-lock.json
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install ".[docs]"
+        run: npm ci
 
       - name: Build documentation
-        run: |
-          mkdocs build --strict
+        run: npm run build
 
-      - name: Deploy to GitHub Pages
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Run postbuild (Pagefind indexing)
+        run: npm run postbuild
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./site
-          commit_message: 'docs: update documentation'
+          path: ./ainalyn-docs/out
 
-      - name: Upload documentation artifact
-        if: github.event_name == 'pull_request'
+  deploy:
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  # For PR preview - upload as artifact
+  preview:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: github-pages
+          path: ./preview
+
+      - name: Upload PR preview
         uses: actions/upload-artifact@v4
         with:
-          name: documentation
-          path: site/
+          name: docs-preview
+          path: ./preview
           retention-days: 7
