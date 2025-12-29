@@ -45,13 +45,7 @@ const config: DocsThemeConfig = {
       <meta property="og:title" content="Ainalyn SDK Documentation" />
       <meta property="og:description" content="Build task-oriented agents with Python" />
     </>
-  ),
-
-  useNextSeoProps() {
-    return {
-      titleTemplate: "%s – Ainalyn Docs"
-    };
-  }
+  )
 };
 
 export default config;
