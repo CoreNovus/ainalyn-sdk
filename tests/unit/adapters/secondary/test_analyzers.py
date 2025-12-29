@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ainalyn.adapters.secondary.analyzers import StaticAnalyzer
+from ainalyn.adapters.outbound.static_analyzer import StaticAnalyzer
 from ainalyn.domain.entities import (
     AgentDefinition,
     Module,
@@ -12,7 +12,7 @@ from ainalyn.domain.entities import (
     Tool,
     Workflow,
 )
-from ainalyn.ports.inbound.validator import Severity
+from ainalyn.application.ports.inbound.validate_agent_definition import Severity
 
 
 class TestStaticAnalyzerCircularDependencies:

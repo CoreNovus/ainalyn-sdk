@@ -42,7 +42,7 @@ from ainalyn.adapters.primary import (
     ToolBuilder,
     WorkflowBuilder,
 )
-from ainalyn.adapters.secondary import SchemaValidator, StaticAnalyzer, YamlExporter
+from ainalyn.adapters.outbound import SchemaValidator, StaticAnalyzer, YamlExporter
 from ainalyn.api import compile_agent, export_yaml, validate
 from ainalyn.application import (
     CompilationResult,

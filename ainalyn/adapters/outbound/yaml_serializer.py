@@ -1,8 +1,9 @@
 """
-YAML exporter for Agent Definitions.
+YAML serializer for Agent Definitions.
 
-This module implements YAML export functionality as a Secondary Adapter,
+This module implements YAML serialization as an outbound adapter,
 converting AgentDefinition entities to YAML format for platform submission.
+It implements the IDefinitionSerializer port interface.
 """
 
 from __future__ import annotations
@@ -19,11 +20,14 @@ if TYPE_CHECKING:
 
 class YamlExporter:
     """
-    YAML exporter for AgentDefinition entities.
+    YAML serializer for AgentDefinition entities.
 
-    This class implements the IDefinitionWriter outbound port,
-    converting AgentDefinition entities to YAML format and
-    writing them to files.
+    This class implements the IDefinitionSerializer outbound port,
+    converting AgentDefinition entities to YAML format.
+
+    ⚠️ SDK BOUNDARY WARNING ⚠️
+    The serialized YAML is a DESCRIPTION for platform submission,
+    not an executable. Platform Core controls all execution.
 
     The YAML output follows a specific structure suitable for
     platform submission, with keys ordered for readability.
@@ -32,27 +36,31 @@ class YamlExporter:
     - Full Unicode support for international content
     - Deterministic key ordering
     - Human-readable formatting
-    - Automatic parent directory creation
+    - Platform boundary warnings in header
 
     Example:
-        >>> from ainalyn.adapters.secondary.exporters import YamlExporter
+        >>> from ainalyn.adapters.outbound.yaml_serializer import YamlExporter
         >>> from ainalyn.domain.entities import AgentDefinition
-        >>> from pathlib import Path
         >>> exporter = YamlExporter()
-        >>> yaml_content = exporter.export(agent_definition)
-        >>> exporter.write(yaml_content, Path("agent.yaml"))
+        >>> yaml_content = exporter.serialize(agent_definition)
     """
 
-    # YAML header comment explaining the file's purpose
+    # YAML header comment with platform boundary warning
     _YAML_HEADER = """# Ainalyn Agent Definition
-# This file is a description submitted to Platform Core for review.
-# It does NOT execute by itself. Execution is handled by Platform Core.
+# This file is a DESCRIPTION submitted to Platform Core for review.
+# It does NOT execute by itself. Execution is handled exclusively by Platform Core.
+#
+# ⚠️  CRITICAL BOUNDARY WARNING ⚠️
+# - SDK validation passed ≠ Platform will execute this definition
+# - Platform performs additional governance, security, and resource checks
+# - Platform Core has sole authority over execution, billing, and lifecycle
 #
 # Local compilation does NOT equal platform execution.
+# See: https://docs.ainalyn.io/sdk/platform-boundaries/
 
 """
 
-    def export(self, definition: AgentDefinition) -> str:
+    def serialize(self, definition: AgentDefinition) -> str:
         """
         Export an AgentDefinition to YAML format.
 
@@ -83,6 +91,24 @@ class YamlExporter:
 
         # Prepend header comment to explain the file's purpose
         return self._YAML_HEADER + yaml_content
+
+    def export(self, definition: AgentDefinition) -> str:
+        """
+        Export an AgentDefinition to YAML format (legacy alias).
+
+        This method is an alias for serialize() to maintain backward
+        compatibility. New code should use serialize() instead.
+
+        Args:
+            definition: The AgentDefinition to export.
+
+        Returns:
+            str: The YAML-formatted string representation with header comments.
+
+        Deprecated:
+            Use serialize() instead. This method will be removed in a future version.
+        """
+        return self.serialize(definition)
 
     def write(self, content: str, path: Path) -> None:
         """

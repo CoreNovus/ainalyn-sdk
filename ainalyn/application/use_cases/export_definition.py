@@ -12,7 +12,9 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from ainalyn.adapters.secondary.exporters import YamlExporter
+    from ainalyn.application.ports.outbound.definition_serialization import (
+        IDefinitionSerializer,
+    )
     from ainalyn.domain.entities import AgentDefinition
 
 
@@ -28,7 +30,7 @@ class ExportDefinitionUseCase:
     programmatic use) and file export (for platform submission).
 
     Example:
-        >>> from ainalyn.adapters.secondary import YamlExporter
+        >>> from ainalyn.adapters.outbound import YamlExporter
         >>> from ainalyn.application.use_cases import ExportDefinitionUseCase
         >>> from pathlib import Path
         >>> exporter = YamlExporter()
@@ -39,14 +41,14 @@ class ExportDefinitionUseCase:
         >>> use_case.execute_to_file(agent_definition, Path("agent.yaml"))
     """
 
-    def __init__(self, exporter: YamlExporter) -> None:
+    def __init__(self, serializer: IDefinitionSerializer) -> None:
         """
         Initialize the export use case.
 
         Args:
-            exporter: The YAML exporter to use for serialization.
+            serializer: The serializer to use for converting to YAML format.
         """
-        self._exporter = exporter
+        self._serializer = serializer
 
     def execute(self, definition: AgentDefinition) -> str:
         """
@@ -64,7 +66,7 @@ class ExportDefinitionUseCase:
         Raises:
             yaml.YAMLError: If YAML serialization fails.
         """
-        return self._exporter.export(definition)
+        return self._serializer.serialize(definition)
 
     def execute_to_file(self, definition: AgentDefinition, path: Path) -> None:
         """
@@ -83,5 +85,7 @@ class ExportDefinitionUseCase:
             IOError: If the file cannot be written.
             PermissionError: If write permission is denied.
         """
-        yaml_content = self._exporter.export(definition)
-        self._exporter.write(yaml_content, path)
+        yaml_content = self._serializer.serialize(definition)
+        # Write to file
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(yaml_content, encoding="utf-8")

@@ -1,16 +1,20 @@
 """
 Static analyzer for Agent Definitions.
 
-This module implements static analysis as a Secondary Adapter,
+This module implements static analysis as an outbound adapter,
 performing logical consistency checks on AgentDefinition entities.
+It implements the IDefinitionAnalyzer port interface.
 """
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from ainalyn.application.ports.inbound.validate_agent_definition import (
+    Severity,
+    ValidationError,
+)
 from ainalyn.domain.rules import DefinitionRules
-from ainalyn.ports.inbound.validator import Severity, ValidationError
 
 if TYPE_CHECKING:
     from ainalyn.domain.entities import AgentDefinition
@@ -20,8 +24,15 @@ class StaticAnalyzer:
     """
     Static analyzer for AgentDefinition entities.
 
-    This class performs logical consistency checks and detects
-    potential issues in Agent Definitions, including:
+    This class implements the IDefinitionAnalyzer outbound port,
+    performing logical consistency checks and detecting potential
+    issues in Agent Definitions.
+
+    ⚠️ SDK BOUNDARY WARNING ⚠️
+    This analysis checks SDK-level logical correctness only.
+    Platform Core applies additional checks during submission.
+
+    The analyzer checks:
     - Circular dependencies in workflows
     - Unreachable nodes
     - Unused resources (modules, prompts, tools)
@@ -31,14 +42,14 @@ class StaticAnalyzer:
     StaticAnalyzer checks logical consistency and code quality.
 
     Example:
-        >>> from ainalyn.adapters.secondary.analyzers import StaticAnalyzer
+        >>> from ainalyn.adapters.outbound.static_analyzer import StaticAnalyzer
         >>> analyzer = StaticAnalyzer()
         >>> warnings = analyzer.analyze(agent_definition)
         >>> for warning in warnings:
         ...     print(f"{warning.code}: {warning.message}")
     """
 
-    def analyze(self, definition: AgentDefinition) -> list[ValidationError]:
+    def analyze(self, definition: AgentDefinition) -> tuple[ValidationError, ...]:
         """
         Analyze an AgentDefinition for logical issues.
 
@@ -52,7 +63,7 @@ class StaticAnalyzer:
             definition: The AgentDefinition to analyze.
 
         Returns:
-            list[ValidationError]: A list of warnings and errors found.
+            tuple[ValidationError, ...]: Tuple of warnings and errors found.
                 Most issues are warnings (Severity.WARNING) unless they
                 indicate critical logical errors.
         """
@@ -70,7 +81,7 @@ class StaticAnalyzer:
         # Detect dead-end nodes
         issues.extend(self._detect_dead_end_nodes(definition))
 
-        return issues
+        return tuple(issues)
 
     def _detect_circular_dependencies(
         self,

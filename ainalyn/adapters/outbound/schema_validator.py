@@ -1,16 +1,20 @@
 """
 Schema validator for Agent Definitions.
 
-This module implements schema validation as a Secondary Adapter,
+This module implements schema validation as an outbound adapter,
 checking structural correctness of AgentDefinition entities.
+It implements the IDefinitionSchemaValidator port interface.
 """
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from ainalyn.application.ports.inbound.validate_agent_definition import (
+    Severity,
+    ValidationError,
+)
 from ainalyn.domain.rules import DefinitionRules
-from ainalyn.ports.inbound.validator import Severity, ValidationError
 
 if TYPE_CHECKING:
     from ainalyn.domain.entities import AgentDefinition
@@ -20,8 +24,12 @@ class SchemaValidator:
     """
     Schema validator for AgentDefinition entities.
 
-    This class implements the ISchemaValidator outbound port,
+    This class implements the IDefinitionSchemaValidator outbound port,
     performing structural and type validation of Agent Definitions.
+
+    ⚠️ SDK BOUNDARY WARNING ⚠️
+    This validation checks SDK-level structural correctness only.
+    Platform Core applies additional validation during submission.
 
     The validator checks:
     - Required fields are present and non-empty
@@ -31,7 +39,7 @@ class SchemaValidator:
     - References are defined
 
     Example:
-        >>> from ainalyn.adapters.secondary.validators import SchemaValidator
+        >>> from ainalyn.adapters.outbound.schema_validator import SchemaValidator
         >>> from ainalyn.domain.entities import AgentDefinition
         >>> validator = SchemaValidator()
         >>> errors = validator.validate_schema(agent_definition)
@@ -40,7 +48,9 @@ class SchemaValidator:
         ...         print(f"{error.code}: {error.message}")
     """
 
-    def validate_schema(self, definition: AgentDefinition) -> list[ValidationError]:
+    def validate_schema(
+        self, definition: AgentDefinition
+    ) -> tuple[ValidationError, ...]:
         """
         Validate the schema of an AgentDefinition.
 
@@ -54,8 +64,8 @@ class SchemaValidator:
             definition: The AgentDefinition to validate.
 
         Returns:
-            list[ValidationError]: A list of validation errors found.
-                Empty list indicates the schema is valid.
+            tuple[ValidationError, ...]: Tuple of validation errors found.
+                Empty tuple indicates the schema is valid.
         """
         errors: list[ValidationError] = []
 
@@ -68,7 +78,7 @@ class SchemaValidator:
         # Validate resources
         errors.extend(self._validate_resources(definition))
 
-        return errors
+        return tuple(errors)
 
     def _validate_agent_fields(
         self,

@@ -7,7 +7,7 @@ from pathlib import Path
 
 import yaml
 
-from ainalyn.adapters.secondary.exporters import YamlExporter
+from ainalyn.adapters.outbound.yaml_serializer import YamlExporter
 from ainalyn.domain.entities import (
     AgentDefinition,
     Module,

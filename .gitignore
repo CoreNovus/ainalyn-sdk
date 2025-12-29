@@ -278,7 +278,7 @@ service-account.json
 docs/build/
 docs/site/
 issues/
-ref-boundary/
+rule-docs/
 
 # Profiling
 *.prof

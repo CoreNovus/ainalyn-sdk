@@ -9,11 +9,19 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ainalyn.ports.inbound.validator import Severity, ValidationError, ValidationResult
+from ainalyn.application.ports.inbound.validate_agent_definition import (
+    Severity,
+    ValidationError,
+    ValidationResult,
+)
 
 if TYPE_CHECKING:
-    from ainalyn.adapters.secondary.analyzers import StaticAnalyzer
-    from ainalyn.adapters.secondary.validators import SchemaValidator
+    from ainalyn.application.ports.outbound.definition_schema_validation import (
+        IDefinitionSchemaValidator,
+    )
+    from ainalyn.application.ports.outbound.definition_static_analysis import (
+        IDefinitionAnalyzer,
+    )
     from ainalyn.domain.entities import AgentDefinition
 
 
@@ -42,8 +50,8 @@ class ValidateDefinitionUseCase:
 
     def __init__(
         self,
-        schema_validator: SchemaValidator,
-        static_analyzer: StaticAnalyzer,
+        schema_validator: IDefinitionSchemaValidator,
+        static_analyzer: IDefinitionAnalyzer,
     ) -> None:
         """
         Initialize the validation use case.

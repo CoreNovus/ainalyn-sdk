@@ -8,9 +8,9 @@ concrete adapter selection from the application core.
 
 from __future__ import annotations
 
-from ainalyn.adapters.secondary.analyzers import StaticAnalyzer
-from ainalyn.adapters.secondary.exporters import YamlExporter
-from ainalyn.adapters.secondary.validators import SchemaValidator
+from ainalyn.adapters.outbound.schema_validator import SchemaValidator
+from ainalyn.adapters.outbound.static_analyzer import StaticAnalyzer
+from ainalyn.adapters.outbound.yaml_serializer import YamlExporter
 from ainalyn.application.services import DefinitionService
 
 
