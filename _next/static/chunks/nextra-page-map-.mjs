@@ -1,5 +1,6 @@
 import meta from "../../../pages/_meta.ts";
 import v1_meta from "../../../pages/v1/_meta.ts";
+import v1_advanced_meta from "../../../pages/v1/advanced/_meta.ts";
 import v1_api_reference_meta from "../../../pages/v1/api-reference/_meta.ts";
 import v1_concepts_meta from "../../../pages/v1/concepts/_meta.ts";
 import v1_getting_started_meta from "../../../pages/v1/getting-started/_meta.ts";
@@ -17,6 +18,18 @@ export const pageMap = [{
   route: "/v1",
   children: [{
     data: v1_meta
+  }, {
+    name: "advanced",
+    route: "/v1/advanced",
+    children: [{
+      data: v1_advanced_meta
+    }, {
+      name: "architecture-overview",
+      route: "/v1/advanced/architecture-overview",
+      frontMatter: {
+        "sidebarTitle": "Architecture Overview"
+      }
+    }]
   }, {
     name: "api-reference",
     route: "/v1/api-reference",
@@ -53,28 +66,28 @@ export const pageMap = [{
     children: [{
       data: v1_concepts_meta
     }, {
-      name: "agent-definition",
-      route: "/v1/concepts/agent-definition",
+      name: "building-your-agent",
+      route: "/v1/concepts/building-your-agent",
       frontMatter: {
-        "sidebarTitle": "Agent Definition"
+        "sidebarTitle": "Building Your Agent"
       }
     }, {
-      name: "architecture-overview",
-      route: "/v1/concepts/architecture-overview",
+      name: "how-the-sdk-works",
+      route: "/v1/concepts/how-the-sdk-works",
       frontMatter: {
-        "sidebarTitle": "Architecture Overview"
+        "sidebarTitle": "How the Sdk Works"
       }
     }, {
-      name: "compiler-not-runtime",
-      route: "/v1/concepts/compiler-not-runtime",
+      name: "what-is-an-agent",
+      route: "/v1/concepts/what-is-an-agent",
       frontMatter: {
-        "sidebarTitle": "Compiler Not Runtime"
+        "sidebarTitle": "What Is an Agent"
       }
     }, {
-      name: "platform-boundaries",
-      route: "/v1/concepts/platform-boundaries",
+      name: "what-you-control",
+      route: "/v1/concepts/what-you-control",
       frontMatter: {
-        "sidebarTitle": "Platform Boundaries"
+        "sidebarTitle": "What You Control"
       }
     }]
   }, {
