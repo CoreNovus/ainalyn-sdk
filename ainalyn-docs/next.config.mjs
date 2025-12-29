@@ -5,10 +5,9 @@ const withNextra = nextra({
   themeConfig: "./theme.config.tsx"
 });
 
-// 部署到 ainalyn.corenovus.com/docs
+// 部署到 docs.ainalyn.corenovus.com
 export default withNextra({
   output: "export",
   images: { unoptimized: true },
-  trailingSlash: true,
-  basePath: "/docs"
+  trailingSlash: true
 });
