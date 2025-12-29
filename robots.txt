@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ainalyn.corenovus.com/docs/sitemap.xml
