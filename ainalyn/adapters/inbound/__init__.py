@@ -15,7 +15,7 @@ This module exports the Fluent Builder API and error types.
 
 from __future__ import annotations
 
-from ainalyn.adapters.primary.builders import (
+from ainalyn.adapters.inbound.builders import (
     AgentBuilder,
     ModuleBuilder,
     NodeBuilder,
@@ -23,7 +23,7 @@ from ainalyn.adapters.primary.builders import (
     ToolBuilder,
     WorkflowBuilder,
 )
-from ainalyn.adapters.primary.errors import (
+from ainalyn.adapters.inbound.errors import (
     BuilderError,
     DuplicateNameError,
     EmptyCollectionError,

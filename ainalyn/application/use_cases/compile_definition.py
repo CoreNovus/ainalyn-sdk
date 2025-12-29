@@ -18,7 +18,9 @@ if TYPE_CHECKING:
         ValidateDefinitionUseCase,
     )
     from ainalyn.domain.entities import AgentDefinition
-    from ainalyn.ports.inbound.validator import ValidationResult
+    from ainalyn.application.ports.inbound.validate_agent_definition import (
+        ValidationResult,
+    )
 
 
 @dataclass(frozen=True, slots=True)

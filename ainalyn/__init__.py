@@ -28,7 +28,7 @@ For more information, see the documentation at https://docs.ainalyn.io/sdk
 from __future__ import annotations
 
 from ainalyn._version import __version__
-from ainalyn.adapters.primary import (
+from ainalyn.adapters.inbound import (
     AgentBuilder,
     BuilderError,
     DuplicateNameError,
@@ -60,12 +60,12 @@ from ainalyn.domain.entities import (
     Tool,
     Workflow,
 )
-from ainalyn.domain.rules import DefinitionRules
-from ainalyn.ports import (
+from ainalyn.application.ports.inbound.validate_agent_definition import (
     Severity,
     ValidationError,
     ValidationResult,
 )
+from ainalyn.domain.rules import DefinitionRules
 
 __all__ = [
     # High-level API Functions

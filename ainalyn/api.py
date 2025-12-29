@@ -20,7 +20,9 @@ if TYPE_CHECKING:
     from ainalyn.application.services import DefinitionService
     from ainalyn.application.use_cases.compile_definition import CompilationResult
     from ainalyn.domain.entities import AgentDefinition
-    from ainalyn.ports.inbound.validator import ValidationResult
+    from ainalyn.application.ports.inbound.validate_agent_definition import (
+        ValidationResult,
+    )
 
 
 # Module-level service instance (singleton pattern)

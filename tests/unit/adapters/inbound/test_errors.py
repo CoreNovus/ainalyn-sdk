@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ainalyn.adapters.primary.errors import (
+from ainalyn.adapters.inbound.errors import (
     BuilderError,
     DuplicateNameError,
     EmptyCollectionError,
@@ -28,18 +28,16 @@ class TestBuilderError:
 
 
 class TestMissingRequiredFieldError:
-    """Tests for MissingRequiredFieldError."""
+    """Tests for MissingRequiredFieldError (alias to MissingFieldError)."""
 
     def test_missing_field_error_message(self) -> None:
         """Test the error message format."""
         error = MissingRequiredFieldError("name", "ModuleBuilder")
-        expected = (
-            "Required field 'name' is not set in ModuleBuilder. "
-            "Please call .name(...) before .build()"
-        )
+        # Domain error format
+        expected = "Required field 'name' is missing or empty in ModuleBuilder"
         assert str(error) == expected
         assert error.field_name == "name"
-        assert error.builder_type == "ModuleBuilder"
+        assert error.entity_type == "ModuleBuilder"
 
     def test_missing_field_error_is_builder_error(self) -> None:
         """Test inheritance."""
@@ -70,17 +68,18 @@ class TestInvalidValueError:
 
 
 class TestInvalidReferenceError:
-    """Tests for InvalidReferenceError."""
+    """Tests for InvalidReferenceError (alias to ReferenceError)."""
 
     def test_invalid_reference_error_message(self) -> None:
         """Test the error message format."""
         error = InvalidReferenceError("fetch", "module", "http-fetcher")
+        # Domain error format
         expected = (
-            "Node 'fetch' references undefined module 'http-fetcher'. "
-            "Please ensure the module is defined before building."
+            "'fetch' references undefined module 'http-fetcher'. "
+            "The module must be defined in the agent."
         )
         assert str(error) == expected
-        assert error.node_name == "fetch"
+        assert error.source == "fetch"
         assert error.resource_type == "module"
         assert error.reference == "http-fetcher"
 
@@ -117,7 +116,8 @@ class TestEmptyCollectionError:
     def test_empty_collection_error_message(self) -> None:
         """Test the error message format."""
         error = EmptyCollectionError("nodes", "Workflow 'main'")
-        expected = "Workflow 'main' has no nodes. At least one node is required."
+        # Domain error format
+        expected = "'Workflow 'main'' has no nodes. At least one node is required."
         assert str(error) == expected
         assert error.collection_name == "nodes"
         assert error.parent_name == "Workflow 'main'"

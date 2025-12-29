@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from ainalyn.adapters.primary.builders import (
+from ainalyn.adapters.inbound.builders import (
     AgentBuilder,
     ModuleBuilder,
     NodeBuilder,
@@ -12,7 +12,7 @@ from ainalyn.adapters.primary.builders import (
     ToolBuilder,
     WorkflowBuilder,
 )
-from ainalyn.adapters.primary.errors import (
+from ainalyn.adapters.inbound.errors import (
     DuplicateNameError,
     EmptyCollectionError,
     InvalidReferenceError,
@@ -78,7 +78,7 @@ class TestModuleBuilder:
             builder.build()
 
         assert exc_info.value.field_name == "description"
-        assert exc_info.value.builder_type == "ModuleBuilder"
+        assert exc_info.value.entity_type == "ModuleBuilder"
 
     def test_module_builder_fluent_interface(self) -> None:
         """Test that methods return self for chaining."""

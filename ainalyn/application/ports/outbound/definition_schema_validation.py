@@ -12,7 +12,9 @@ from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
     from ainalyn.domain.entities import AgentDefinition
-    from ainalyn.ports.inbound.validator import ValidationError
+    from ainalyn.application.ports.inbound.validate_agent_definition import (
+        ValidationError,
+    )
 
 
 class IDefinitionSchemaValidator(Protocol):
