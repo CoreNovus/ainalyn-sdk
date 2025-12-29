@@ -12,11 +12,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ainalyn.application.services import DefinitionService
+from ainalyn.infrastructure.service_factory import create_default_service
 
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from ainalyn.application.services import DefinitionService
     from ainalyn.application.use_cases.compile_definition import CompilationResult
     from ainalyn.domain.entities import AgentDefinition
     from ainalyn.ports.inbound.validator import ValidationResult
@@ -27,10 +28,16 @@ _service: DefinitionService | None = None
 
 
 def _get_service() -> DefinitionService:
-    """Get or create the module-level DefinitionService instance."""
+    """
+    Get or create the module-level DefinitionService instance.
+
+    Uses the infrastructure factory to create a service with default
+    adapter implementations. This provides consistent behavior across
+    all high-level API functions.
+    """
     global _service
     if _service is None:
-        _service = DefinitionService()
+        _service = create_default_service()
     return _service
 
 
