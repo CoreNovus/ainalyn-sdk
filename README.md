@@ -115,6 +115,7 @@ ainalyn compile my_agent.py --output agent.yaml
 
 **Quick Links:**
 
+- [What is an Agent?](https://corenovus.github.io/ainalyn-sdk/concepts/what-is-an-agent/) - Understand the vision
 - [Installation Guide](https://corenovus.github.io/ainalyn-sdk/getting-started/installation/)
 - [5-Minute Quickstart](https://corenovus.github.io/ainalyn-sdk/getting-started/quickstart/)
 - [Your First Agent Tutorial](https://corenovus.github.io/ainalyn-sdk/getting-started/your-first-agent/)

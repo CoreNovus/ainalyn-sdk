@@ -1,6 +1,6 @@
 export default {
-  "platform-boundaries": "Platform Boundaries",
-  "compiler-not-runtime": "Compiler vs Runtime",
-  "agent-definition": "Agent Definition",
-  "architecture-overview": "Architecture Overview"
+  "what-is-an-agent": "What is an Agent?",
+  "how-the-sdk-works": "How the SDK Works",
+  "what-you-control": "What You Control",
+  "building-your-agent": "Building Your Agent"
 }

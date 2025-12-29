@@ -1,0 +1,570 @@
+import { Callout } from 'nextra/components'
+
+# What You Control (And What You Don't Have To)
+
+Building traditional software means managing everything. Building Agents means focusing on what matters.
+
+This document clarifies what you're responsible for—and celebrates everything you're **not** responsible for.
+
+## The Great News First
+
+<Callout type="success">
+**You DON'T Have To:**
+
+- Build authentication systems
+- Manage user accounts
+- Handle payment processing
+- Scale infrastructure
+- Monitor servers
+- Deal with security patches
+- Write billing logic
+- Handle execution retries
+- Manage databases
+- Build admin dashboards
+- Worry about uptime
+- Handle user support infrastructure
+</Callout>
+
+**The platform handles all of that.**
+
+Your job is simpler and more valuable: **solve the actual problem your Agent addresses.**
+
+## What You Control
+
+### 1. The Task Logic
+
+This is your domain—the actual problem-solving:
+
+```python
+# You define WHAT your Agent does
+agent = (
+    AgentBuilder("InvoiceProcessor")
+    .description("Extract line items from invoices")
+    .add_workflow(processing_logic)  # ← This is yours
+    .build()
+)
+```
+
+**You decide:**
+- What inputs are needed
+- What processing happens
+- What outputs are produced
+- How to handle edge cases
+- What quality standards to maintain
+
+**You don't decide:**
+- When executions happen (users do)
+- How execution is scheduled (platform does)
+- How much to charge (market dynamics + your pricing)
+- How to scale (platform does)
+
+### 2. The User Experience of Your Task
+
+You design how users interact with **your specific task**:
+
+```python
+# Clear, minimal inputs
+input_schema = {
+    "document": "PDF file to process",
+    "extract_tables": "boolean (optional)"
+}
+
+# Useful, structured outputs
+output_schema = {
+    "line_items": "array of extracted items",
+    "confidence_scores": "reliability metrics"
+}
+```
+
+**You control:**
+- What users need to provide
+- How results are structured
+- What information is returned
+- Error messages for your task
+
+**You don't control:**
+- The overall Client interface (platform does)
+- Authentication flows (platform does)
+- Payment screens (platform does)
+- Marketplace presentation (platform does, with your metadata)
+
+### 3. Your Agent's Quality
+
+You're responsible for making your Agent work well:
+
+**You ensure:**
+- ✅ Correct outputs for valid inputs
+- ✅ Clear error messages for invalid inputs
+- ✅ Reasonable handling of edge cases
+- ✅ Consistent behavior across invocations
+- ✅ Appropriate use of resources
+
+**You don't ensure:**
+- ❌ Platform uptime (platform's job)
+- ❌ Network reliability (platform's job)
+- ❌ User quota limits (platform's job)
+- ❌ Payment processing (platform's job)
+
+### 4. Your Agent's Evolution
+
+You decide how your Agent improves over time:
+
+```python
+# Version 1.0.0: Basic extraction
+agent_v1 = (
+    AgentBuilder("InvoiceProcessor")
+    .version("1.0.0")
+    .add_workflow(basic_extraction)
+    .build()
+)
+
+# Version 1.1.0: Add table extraction
+agent_v1_1 = (
+    AgentBuilder("InvoiceProcessor")
+    .version("1.1.0")  # You control versioning
+    .add_workflow(enhanced_extraction)
+    .build()
+)
+```
+
+**You control:**
+- When to release updates
+- What features to add
+- How to version changes
+- Whether to deprecate old versions
+
+**Platform controls:**
+- How users migrate between versions
+- Backward compatibility enforcement
+- Which version users see by default
+
+## What You're Free From
+
+Let's celebrate what you DON'T have to manage:
+
+### Infrastructure Management
+
+**You don't:**
+```python
+# ❌ Configure servers
+# ❌ Set up load balancers
+# ❌ Manage databases
+# ❌ Handle deployments
+# ❌ Monitor logs
+# ❌ Debug networking issues
+# ❌ Optimize resource allocation
+```
+
+**The platform handles:**
+- Automatic scaling
+- Resource allocation
+- Load balancing
+- Monitoring and alerting
+- Infrastructure security
+
+**You just define your Agent.** The platform runs it.
+
+### User Management
+
+**You don't:**
+```python
+# ❌ Build signup flows
+# ❌ Verify emails
+# ❌ Reset passwords
+# ❌ Manage sessions
+# ❌ Handle 2FA
+# ❌ Store user data
+# ❌ Comply with GDPR for user accounts
+```
+
+**The platform handles:**
+- User authentication
+- User authorization
+- Account management
+- Privacy compliance
+- Security measures
+
+**Users are already authenticated.** Your Agent just works.
+
+### Payment Processing
+
+**You don't:**
+```python
+# ❌ Integrate payment gateways
+# ❌ Handle credit cards
+# ❌ Manage subscriptions
+# ❌ Calculate taxes
+# ❌ Process refunds
+# ❌ Handle chargebacks
+# ❌ Generate invoices
+```
+
+**The platform handles:**
+- Payment collection
+- Billing calculations
+- Revenue distribution
+- Tax compliance
+- Financial reporting
+
+**You just get paid.** The platform handles the complexity.
+
+### Execution Management
+
+**You don't:**
+```python
+# ❌ Decide when to retry
+# ❌ Implement timeout logic
+# ❌ Handle execution failures
+# ❌ Track execution state
+# ❌ Manage execution queues
+# ❌ Balance execution load
+```
+
+**The platform handles:**
+- Execution scheduling
+- Retry strategies
+- Failure recovery
+- State management
+- Resource fairness
+
+**You define the logic.** The platform executes it reliably.
+
+## The Freedom This Gives You
+
+### Focus on Value Creation
+
+Traditional software development:
+```
+1 week: Actual feature
+3 weeks: Infrastructure, auth, billing, UI, deployment
+```
+
+Agent development:
+```
+1 week: Actual feature
+1 day: SDK integration and validation
+```
+
+**4x more time on what matters.**
+
+### Rapid Experimentation
+
+Want to try a new Agent idea?
+
+**Traditional approach:**
+- Set up infrastructure
+- Build authentication
+- Create UI
+- Handle payments
+- Deploy
+- Market to get users
+- **Weeks of work before you know if it's useful**
+
+**Agent approach:**
+```python
+# Define your Agent
+agent = AgentBuilder("NewIdea").add_workflow(...).build()
+
+# Validate it
+validate(agent)
+
+# Deploy to marketplace
+export_yaml(agent)
+```
+
+**Ship in hours. Learn immediately.**
+
+### Sustainable Maintenance
+
+Traditional software gets harder to maintain over time:
+- Security patches
+- Dependency updates
+- Infrastructure changes
+- Scaling challenges
+
+**Agents stay simple:**
+- Update task logic when needed
+- SDK handles validation
+- Platform handles execution
+- No infrastructure to maintain
+
+**Your Agent from 2024 still works in 2025.** No maintenance burden.
+
+## Understanding the Boundaries
+
+These boundaries exist to **protect you**, not limit you:
+
+### Why You Can't Control Execution
+
+**Scenario:** What if every developer implemented their own retry logic?
+
+```python
+# Developer A: Retry 3 times
+# Developer B: Retry 100 times
+# Developer C: Retry forever
+```
+
+**Result:** Platform overload, unfair resource usage, unreliable billing.
+
+**Solution:** Platform handles retry logic consistently.
+
+**Benefit to you:** You don't have to think about it. Just define the task.
+
+### Why You Can't Control Billing
+
+**Scenario:** What if every developer calculated their own costs?
+
+```python
+# Developer A: Charges $0.01 per execution
+# Developer B: Forgot to count LLM tokens
+# Developer C: Charges $100 for a simple task
+```
+
+**Result:** Confused users, unfair pricing, marketplace chaos.
+
+**Solution:** Platform calculates costs based on actual resource usage.
+
+**Benefit to you:** Fair, transparent pricing without your effort.
+
+### Why You Can't Control Authentication
+
+**Scenario:** What if every Agent required separate login?
+
+```
+User workflow:
+1. Login to Platform
+2. Login to Agent A
+3. Login to Agent B
+4. Login to Agent C
+```
+
+**Result:** Terrible user experience, security vulnerabilities, low adoption.
+
+**Solution:** Platform handles authentication once.
+
+**Benefit to you:** Users can use your Agent immediately, no friction.
+
+## What This Means Practically
+
+### You Write This
+
+```python
+from ainalyn import AgentBuilder, WorkflowBuilder
+
+# Just describe the task
+agent = (
+    AgentBuilder("DataProcessor")
+    .description("Process user data efficiently")
+    .version("1.0.0")
+    .add_workflow(
+        WorkflowBuilder("process")
+        .add_node(processing_node)
+        .build()
+    )
+    .build()
+)
+
+# Validate and export
+validate(agent)
+yaml = export_yaml(agent)
+```
+
+**That's it.** ~20 lines of focused code.
+
+### You DON'T Write This
+
+```python
+# ❌ You don't write any of this:
+
+class UserAuth:
+    def signup(self, email, password): ...
+    def login(self, credentials): ...
+    def verify_email(self, token): ...
+
+class PaymentProcessor:
+    def charge_card(self, amount): ...
+    def handle_webhook(self, event): ...
+
+class ExecutionManager:
+    def schedule(self, agent, input): ...
+    def retry(self, execution): ...
+    def monitor(self, execution): ...
+
+class InfrastructureManager:
+    def scale_up(self, load): ...
+    def handle_failure(self, instance): ...
+
+class BillingCalculator:
+    def calculate_cost(self, usage): ...
+    def distribute_revenue(self, payment): ...
+```
+
+**Hundreds of lines you never have to write.**
+
+## The Developer's Perspective
+
+### What You Focus On
+
+```
+90% - Task logic (the interesting part)
+5%  - Input/output design
+5%  - SDK integration
+```
+
+**The work you actually want to do.**
+
+### What You Don't Worry About
+
+```
+0% - Infrastructure
+0% - Authentication
+0% - Payment processing
+0% - User management
+0% - Scaling
+0% - Monitoring
+0% - Security patches
+0% - Compliance
+```
+
+**The work that drains energy without adding value.**
+
+## Real-World Example
+
+Let's compare building a PDF text extractor:
+
+### Traditional Approach
+
+**What you build:**
+1. Web application with login
+2. File upload handling
+3. PDF processing logic ← The actual value
+4. Result display UI
+5. Payment integration
+6. Database for user data
+7. API for third-party access
+8. Admin dashboard
+9. User support system
+
+**Effort distribution:**
+- 10% - PDF extraction logic (the valuable part)
+- 90% - Everything else
+
+**Time to market:** 2-3 months
+
+### Agent Approach
+
+**What you build:**
+```python
+agent = (
+    AgentBuilder("PDFTextExtractor")
+    .description("Extract text from PDF documents")
+    .version("1.0.0")
+    .add_workflow(extraction_workflow)
+    .build()
+)
+```
+
+**Effort distribution:**
+- 95% - PDF extraction logic (the valuable part)
+- 5% - SDK integration
+
+**Time to market:** 1-2 weeks
+
+**The difference is massive.**
+
+## Embracing the Boundaries
+
+These boundaries aren't limitations—they're **liberation**.
+
+### You're Not Limited
+
+You can still build:
+- ✅ Complex processing logic
+- ✅ Multi-step workflows
+- ✅ LLM-powered features
+- ✅ External API integrations
+- ✅ Sophisticated algorithms
+- ✅ Any task-oriented solution
+
+### You're Just Freed
+
+From:
+- ❌ Infrastructure concerns
+- ❌ User management
+- ❌ Payment processing
+- ❌ Execution orchestration
+- ❌ Scaling challenges
+
+**All your energy goes into the problem you're solving.**
+
+## The Mental Shift
+
+### Old Way of Thinking
+
+"I need to build a complete product with login, hosting, payments, UI, and the actual feature."
+
+**Result:** Overwhelmed, slow progress, maintenance burden.
+
+### New Way of Thinking
+
+"I need to solve this specific problem really well and let the platform handle the rest."
+
+**Result:** Focused, rapid progress, sustainable maintenance.
+
+## Common Questions
+
+### "What if I need custom authentication for my Agent?"
+
+Users are already authenticated with the platform. Your Agent receives authorized requests.
+
+**You don't need custom auth.** The platform handles it.
+
+### "What if I want to charge custom pricing?"
+
+You set pricing guidance, but actual charges depend on real resource usage.
+
+**You influence pricing.** The platform ensures fairness.
+
+### "What if I need to store user data between requests?"
+
+Agents are stateless—each execution is independent.
+
+**You process inputs and return outputs.** The platform manages state if needed.
+
+### "What if my Agent needs special infrastructure?"
+
+Declare your requirements in the Agent definition:
+
+```python
+agent = (
+    AgentBuilder("MyAgent")
+    .add_tool(special_tool_definition)
+    .build()
+)
+```
+
+**You declare needs.** The platform provisions resources.
+
+## Next Steps
+
+Now that you understand what you control:
+
+<Callout type="success">
+**Ready to Focus on What Matters?**
+
+1. [Agent Definition](/v1/concepts/agent-definition/) - Learn how to describe your Agent
+2. [Your First Agent](/v1/getting-started/your-first-agent/) - Build something real
+3. [Workflow Guide](/v1/guides/workflows/) - Design complex task logic
+
+**You control the task. The platform handles everything else.**
+</Callout>
+
+---
+
+**Remember:** The best software is focused software.
+
+You focus on **solving one problem brilliantly**.
+
+The platform focuses on **running it reliably for everyone**.
+
+That's how great products get built.

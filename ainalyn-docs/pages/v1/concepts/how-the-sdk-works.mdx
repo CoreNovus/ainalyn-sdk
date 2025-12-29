@@ -1,0 +1,610 @@
+import { Callout } from 'nextra/components'
+
+# How the SDK Works
+
+The Ainalyn SDK has one job: **help you describe your Agent clearly so the platform can execute it reliably.**
+
+Think of it as a specialized compiler—you write Python code that describes what your Agent does, and the SDK transforms that into a format the platform understands.
+
+## The Core Concept
+
+<Callout type="info">
+**You describe, the platform executes.**
+
+The SDK doesn't run your Agent. It helps you define it precisely so the platform can run it perfectly.
+</Callout>
+
+### Why This Separation Matters
+
+When you build traditional software, description and execution are tangled together:
+
+```python
+# Traditional code: describes AND executes
+def process_data(input):
+    # This code runs directly
+    result = do_processing(input)
+    return result
+```
+
+With Ainalyn, they're separate:
+
+```python
+# Agent definition: describes WHAT to do
+agent = (
+    AgentBuilder("DataProcessor")
+    .description("Process user data and return results")
+    .add_workflow(processing_workflow)
+    .build()  # ← This creates a description, not an execution
+)
+```
+
+**Why?** Because the platform needs to:
+- Schedule executions fairly
+- Bill accurately
+- Handle failures gracefully
+- Scale automatically
+- Enforce security
+
+You shouldn't have to worry about any of that.
+
+## Your Development Flow
+
+Here's what actually happens when you build an Agent:
+
+### Step 1: You Write Python Code
+
+```python
+from ainalyn import AgentBuilder, WorkflowBuilder, NodeBuilder
+
+# Define what your Agent does
+my_workflow = (
+    WorkflowBuilder("main")
+    .description("Process the user's request")
+    .add_node(
+        NodeBuilder("process")
+        .description("Do the actual processing")
+        .build()
+    )
+    .entry_node("process")
+    .build()
+)
+
+agent = (
+    AgentBuilder("MyAgent")
+    .description("Solves a specific problem")
+    .version("1.0.0")
+    .add_workflow(my_workflow)
+    .build()
+)
+```
+
+At this point, you have a Python object that describes your Agent. **Nothing has executed.**
+
+### Step 2: SDK Validates Your Description
+
+```python
+from ainalyn.api import validate
+
+validate(agent)  # SDK checks your description makes sense
+```
+
+The SDK verifies:
+- ✅ Names follow conventions
+- ✅ Versions are valid
+- ✅ Workflows are properly connected
+- ✅ No circular dependencies
+- ✅ All references exist
+
+**Still no execution.** Just validation.
+
+### Step 3: SDK Exports to YAML
+
+```python
+from ainalyn.api import export_yaml
+
+yaml_definition = export_yaml(agent)
+print(yaml_definition)
+```
+
+Output:
+```yaml
+name: MyAgent
+version: 1.0.0
+description: Solves a specific problem
+workflows:
+  - name: main
+    description: Process the user's request
+    entry_node: process
+    nodes:
+      - name: process
+        description: Do the actual processing
+```
+
+This YAML is what you submit to the platform. **It's a description, not executable code.**
+
+### Step 4: Platform Takes Over
+
+```
+You upload YAML to platform
+    ↓
+Platform reviews and approves
+    ↓
+Agent appears in marketplace
+    ↓
+User requests execution
+    ↓
+Platform creates Execution
+    ↓
+Platform runs your Agent
+    ↓
+Platform returns results
+    ↓
+Platform bills user
+    ↓
+Platform pays you
+```
+
+**The SDK's job ended at step 3.** Everything else is the platform's responsibility.
+
+## What the SDK Actually Does
+
+### For You (The Developer)
+
+**Provides a clean API:**
+```python
+agent = (
+    AgentBuilder("MyAgent")  # Clear, fluent interface
+    .description("What it does")
+    .version("1.0.0")
+    .build()  # Type-safe construction
+)
+```
+
+**Catches errors early:**
+```python
+validate(agent)  # Immediate feedback
+# ValidationError: Node 'missing' referenced but not defined
+```
+
+**Generates correct output:**
+```python
+yaml = export_yaml(agent)  # Platform-compatible format
+```
+
+**Offers great IDE support:**
+```python
+builder: AgentBuilder = AgentBuilder("MyAgent")
+# ↑ Your IDE knows what methods are available
+```
+
+### For the Platform
+
+**Ensures definitions are valid:**
+- All required fields present
+- No invalid references
+- Proper structure
+- Semantic correctness
+
+**Provides consistent format:**
+- Standardized YAML schema
+- Predictable structure
+- Easy to parse and validate
+
+**Enables governance:**
+- Version tracking
+- Dependency analysis
+- Security scanning
+- Policy enforcement
+
+## What the SDK Does NOT Do
+
+Let's be crystal clear about what the SDK doesn't handle:
+
+<Callout type="warning">
+**The SDK Does NOT:**
+
+- Execute your Agent
+- Run workflows or nodes
+- Make network requests (for your Agent)
+- Calculate execution costs
+- Manage user authentication
+- Handle billing
+- Store execution results
+- Retry failed operations
+- Decide when to run your Agent
+</Callout>
+
+**All of that is the platform's job.**
+
+### Why This Matters
+
+You might think: "Why can't I just test my Agent locally?"
+
+Here's the thing—execution involves:
+
+```
+User authentication
+  ↓
+Quota checking
+  ↓
+Resource allocation
+  ↓
+Secure sandboxing
+  ↓
+Actual execution
+  ↓
+Result storage
+  ↓
+Usage tracking
+  ↓
+Billing calculation
+  ↓
+Payment processing
+```
+
+**The SDK can't replicate this.** Nor should it try.
+
+What the SDK CAN do:
+```python
+validate(agent)  # Check structure is valid
+export_yaml(agent)  # Generate correct description
+```
+
+That's focused. That's reliable. That's what you need.
+
+## The Analogy: Building Blueprints
+
+Think of it like architecture:
+
+### Architect (You with SDK)
+
+```python
+# You create a blueprint
+building = (
+    BuildingBuilder("MyBuilding")
+    .floors(10)
+    .add_room("Office", square_feet=500)
+    .build()
+)
+
+# SDK validates it makes sense
+validate(building)  # Are 10 floors structurally sound?
+
+# SDK produces construction documents
+blueprints = export_blueprints(building)
+```
+
+**You're not constructing the building. You're describing it precisely.**
+
+### Construction Company (Platform)
+
+- Reads your blueprints
+- Orders materials
+- Hires workers
+- Builds the actual building
+- Handles inspections
+- Manages costs
+
+**The platform handles execution details.**
+
+### Why Separation Works
+
+- **You focus on design** (what the building should be)
+- **Platform focuses on execution** (how to build it reliably)
+- **No confusion** about responsibilities
+- **No duplication** of effort
+
+Same with Agents.
+
+## Understanding the Workflow
+
+Let's trace a complete example from your perspective:
+
+### 1. You Have an Idea
+
+"I want to build an Agent that extracts email addresses from documents."
+
+### 2. You Define It
+
+```python
+from ainalyn import AgentBuilder, WorkflowBuilder, NodeBuilder
+
+extraction_workflow = (
+    WorkflowBuilder("extract")
+    .description("Extract emails from document")
+    .add_node(
+        NodeBuilder("parse_document")
+        .description("Parse the document")
+        .outputs("parsed_text")
+        .build()
+    )
+    .add_node(
+        NodeBuilder("extract_emails")
+        .description("Find email addresses in text")
+        .depends_on("parse_document")
+        .outputs("email_list")
+        .build()
+    )
+    .entry_node("parse_document")
+    .build()
+)
+
+agent = (
+    AgentBuilder("EmailExtractor")
+    .description("Extract email addresses from documents")
+    .version("1.0.0")
+    .add_workflow(extraction_workflow)
+    .build()
+)
+```
+
+**You've described the logic.** The SDK ensures this description is valid.
+
+### 3. You Validate
+
+```python
+from ainalyn.api import validate
+
+validate(agent)  # ✓ Structure is valid
+```
+
+The SDK checks:
+- ✅ Workflow has entry node
+- ✅ All dependencies exist
+- ✅ No circular references
+- ✅ Names are valid
+
+### 4. You Export
+
+```python
+from ainalyn.api import export_yaml
+
+yaml = export_yaml(agent)
+```
+
+The SDK generates a platform-compatible YAML description.
+
+### 5. You Deploy
+
+```bash
+# Upload to platform (exact mechanism TBD)
+ainalyn deploy email_extractor.yaml
+```
+
+**The SDK's job is done.**
+
+### 6. Platform Takes Over
+
+When a user requests your Agent:
+
+```
+Platform receives request
+    ↓
+Creates Execution (with unique executionId)
+    ↓
+Allocates resources
+    ↓
+Runs your workflow logic
+    ↓
+  • Parses document
+    ↓
+  • Extracts emails
+    ↓
+Returns results to user
+    ↓
+Calculates cost
+    ↓
+Bills user, pays you
+```
+
+**You didn't have to implement any of that.**
+
+## Development Best Practices
+
+### Start Simple
+
+Don't overcomplicate your first Agent:
+
+```python
+# Good first Agent
+agent = (
+    AgentBuilder("SimpleExtractor")
+    .description("Extract emails from text")
+    .version("1.0.0")
+    .add_workflow(simple_workflow)
+    .build()
+)
+```
+
+Get the basics working, then iterate.
+
+### Validate Often
+
+```python
+# After every significant change
+validate(agent)
+```
+
+Catch issues immediately, not during deployment.
+
+### Read the Generated YAML
+
+```python
+yaml = export_yaml(agent)
+print(yaml)  # Review what you're actually submitting
+```
+
+The YAML is the source of truth. Make sure it matches your intent.
+
+### Use Version Control
+
+```python
+# Track your Agent definitions in git
+agent = (
+    AgentBuilder("MyAgent")
+    .version("1.0.0")  # ← Semantic versioning
+    .build()
+)
+```
+
+Version your Agents like you version your code.
+
+## Common Questions
+
+### "Can I test my Agent locally before deploying?"
+
+You can validate the **structure**:
+```python
+validate(agent)  # ✓ Structure is correct
+```
+
+But you can't test the **behavior** locally, because behavior depends on platform execution, which includes:
+- User authentication context
+- Resource allocation
+- Actual tool integrations
+- LLM interactions
+- Billing calculations
+
+**Deploy to a test environment on the platform instead.**
+
+### "What if my Agent needs external APIs?"
+
+You declare them in your definition:
+
+```python
+tool = (
+    ToolBuilder("weather_api")
+    .description("Fetches weather data")
+    .add_parameter("location")
+    .build()
+)
+
+agent = (
+    AgentBuilder("WeatherAgent")
+    .add_tool(tool)  # ← SDK records this requirement
+    .build()
+)
+```
+
+The platform handles the actual API calls during execution.
+
+### "How do I debug if something goes wrong?"
+
+1. **First, validate your definition:**
+   ```python
+   validate(agent)  # SDK catches structural issues
+   ```
+
+2. **Then, review the YAML:**
+   ```python
+   print(export_yaml(agent))  # Is this what you intended?
+   ```
+
+3. **Finally, check platform execution logs:**
+   The platform provides execution logs for runtime issues.
+
+### "Can I simulate execution to estimate costs?"
+
+No, because costs depend on:
+- Actual LLM token usage
+- Actual tool calls made
+- Actual execution time
+- Actual resource usage
+
+**You can't predict these from a static definition.**
+
+The platform provides cost estimates based on historical data.
+
+## The Mental Model
+
+Keep this mental model in mind:
+
+```
+┌─────────────────────────────────────────┐
+│          YOUR WORLD (SDK)               │
+│                                         │
+│  Define → Validate → Export             │
+│                                         │
+│  Focus: WHAT the Agent does             │
+└─────────────────────────────────────────┘
+                  │
+                  │ YAML Description
+                  ↓
+┌─────────────────────────────────────────┐
+│       PLATFORM WORLD (Runtime)          │
+│                                         │
+│  Schedule → Execute → Bill → Pay        │
+│                                         │
+│  Focus: HOW to run reliably             │
+└─────────────────────────────────────────┘
+```
+
+**You describe. Platform executes.**
+
+Clean separation. Clear responsibilities.
+
+## Why You'll Love This Approach
+
+### Focus on Your Expertise
+
+You're good at solving problems, not managing infrastructure.
+
+**With the SDK, you just describe the solution.**
+
+### Rapid Iteration
+
+```python
+# Change your definition
+agent = agent_builder.version("1.0.1").build()
+
+# Validate
+validate(agent)
+
+# Deploy
+export_yaml(agent)
+```
+
+**No infrastructure changes needed.**
+
+### Confidence in Correctness
+
+```python
+validate(agent)  # ✓ If this passes, your definition is solid
+```
+
+**No surprises during deployment.**
+
+### Let the Platform Handle Complexity
+
+You don't debug:
+- Scaling issues
+- Authentication failures
+- Billing errors
+- Network timeouts
+- Resource exhaustion
+
+**The platform handles all of that.**
+
+## Next Steps
+
+Now that you understand how the SDK works:
+
+<Callout type="success">
+**Ready to Build?**
+
+1. [Install the SDK](/v1/getting-started/installation/) - 60 second setup
+2. [Your First Agent](/v1/getting-started/your-first-agent/) - Build something real
+3. [Agent Definition Reference](/v1/concepts/agent-definition/) - Deep dive into structure
+
+**You're just describing Agents. The platform does the heavy lifting.**
+</Callout>
+
+---
+
+**Remember:** The SDK is a specialized compiler, not a runtime engine.
+
+Your job: **Describe your Agent clearly.**
+
+Platform's job: **Execute it reliably.**
+
+That's how great software gets built.

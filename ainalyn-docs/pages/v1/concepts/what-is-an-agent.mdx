@@ -1,0 +1,520 @@
+import { Callout } from 'nextra/components'
+
+# What is an Agent?
+
+**Agents are the heart of Ainalyn.** When you build an Agent, you're creating something powerful: a task that anyone can use, from anywhere, without leaving their workflow.
+
+## The Big Idea
+
+Imagine if every useful task you've ever automated could be:
+- Used by millions of people
+- Accessible from a single, unified interface
+- Automatically handled for infrastructure, billing, and security
+- Monetized fairly based on actual usage
+
+**That's what Agents are.**
+
+<Callout type="info">
+An Agent is a complete, self-contained solution to a specific task that users can invoke with a single request and get results—without ever thinking about how it works.
+</Callout>
+
+## Why This Matters
+
+### The Problem with Traditional Software
+
+When you build traditional software, you spend time on:
+
+```
+10% - The actual problem you're solving
+90% - Everything else (auth, hosting, UI, billing, deployment, maintenance...)
+```
+
+And your users have to:
+- Create yet another account
+- Learn yet another interface
+- Switch between yet another app
+- Manage yet another subscription
+
+**Everyone loses time. Everyone loses focus.**
+
+### The Agent Solution
+
+With Agents, you focus on what you do best:
+
+```
+95% - Solving the actual problem
+5%  - Integrating with Ainalyn SDK
+```
+
+And your users get:
+- **One Client** for all tasks
+- **Zero context switching**
+- **Pay-per-use** pricing
+- **Instant access** to your solution
+
+**Everyone wins.**
+
+## What Makes Agents Special
+
+### 1. Task-Focused, Not Screen-Focused
+
+Traditional apps are about screens and navigation:
+```
+Login → Dashboard → Settings → Features → Sub-menus → Finally do the thing
+```
+
+Agents are about accomplishing goals:
+```
+"I need to extract emails from this PDF" → Done
+```
+
+No navigation. No learning curve. Just results.
+
+### 2. One Client, Infinite Capabilities
+
+Users don't install your Agent. They don't visit your website. They don't create an account.
+
+They simply:
+1. Open the Ainalyn Client (which they already have)
+2. Find your Agent
+3. Use it
+4. Get results
+
+**Your Agent becomes part of their workflow, not a distraction from it.**
+
+### 3. You Build the Logic, Platform Handles the Rest
+
+When you define an Agent:
+
+**You focus on:**
+- What inputs are needed
+- What processing should happen
+- What outputs to provide
+- What makes your solution unique
+
+**The platform handles:**
+- User authentication
+- Execution infrastructure
+- Billing and payments
+- Scaling and reliability
+- Security and compliance
+
+## Real Examples
+
+Let's see what Agents look like in practice:
+
+### Example 1: PDF Data Extractor
+
+**Traditional approach:**
+- Build a web app with login
+- Create file upload UI
+- Set up payment processing
+- Deploy and maintain servers
+- Market to get users to find you
+
+**Agent approach:**
+```python
+agent = (
+    AgentBuilder("PDFDataExtractor")
+    .description("Extract structured data from any PDF")
+    .add_workflow(extraction_workflow)
+    .build()
+)
+```
+
+Done. Users find it in the Ainalyn marketplace and use it instantly.
+
+### Example 2: Email Report Generator
+
+**Traditional approach:**
+- Build email integration
+- Create dashboard for viewing reports
+- Handle user data storage
+- Manage scheduled jobs
+
+**Agent approach:**
+```python
+agent = (
+    AgentBuilder("EmailReportGenerator")
+    .description("Generate weekly email activity reports")
+    .add_workflow(report_workflow)
+    .build()
+)
+```
+
+That's it. The platform handles scheduling, storage, and delivery.
+
+## The Developer Experience You Deserve
+
+### Write in Python, Deploy Anywhere
+
+```python
+from ainalyn import AgentBuilder, WorkflowBuilder
+
+# Define your Agent
+agent = (
+    AgentBuilder("MyAwesomeAgent")
+    .description("Solves a real problem for real people")
+    .version("1.0.0")
+    .add_workflow(my_workflow)
+    .build()
+)
+
+# Validate it works
+validate(agent)
+
+# Export and deploy
+yaml = export_yaml(agent)
+```
+
+Clean. Simple. Focused.
+
+### Type-Safe Development
+
+Your IDE knows exactly what you're building:
+
+```python
+builder: AgentBuilder = AgentBuilder("MyAgent")
+# ↑ Full autocomplete and type checking
+```
+
+Catch errors before they happen, not in production.
+
+### Instant Validation
+
+```python
+from ainalyn.api import validate
+
+validate(agent)  # Immediate feedback on any issues
+```
+
+No surprises during deployment.
+
+## The Vision: A Unified Task Platform
+
+### For Users
+
+Imagine opening **one app** and being able to:
+- Extract data from PDFs
+- Generate reports from emails
+- Analyze customer feedback
+- Process invoices
+- Summarize documents
+- And anything else they need
+
+**No app switching. No account juggling. One workflow.**
+
+That's what Ainalyn is building.
+
+### For Developers
+
+Imagine solving **one problem really well** and having:
+- Millions of potential users
+- Zero infrastructure management
+- Fair, automatic revenue sharing
+- A community of peers solving adjacent problems
+
+**No distraction. No overhead. Pure problem-solving.**
+
+That's what building Agents enables.
+
+## What Agents Are NOT
+
+Let's be clear about what you're NOT building:
+
+<Callout type="warning">
+**Agents Are NOT:**
+
+- Chatbots for open-ended conversation
+- Long-running background services
+- Platforms or frameworks themselves
+- Autonomous AI that acts independently
+- Replacements for every type of software
+</Callout>
+
+Agents are **focused task solvers** that complete specific jobs when users need them.
+
+### Not a Chat Interface
+
+While your Agent might use LLMs internally, it's not designed for:
+```
+User: "Hey, how's it going?"
+Agent: "I'm doing well! How can I help?"
+User: "What can you do?"
+```
+
+It's designed for:
+```
+User: [Uploads PDF] "Extract the invoices"
+Agent: [Returns structured data]
+```
+
+**Input → Processing → Output → Done.**
+
+### Not Autonomous Systems
+
+Agents don't:
+- Run continuously in the background
+- Make decisions without user input
+- Act on their own initiative
+- Maintain state across invocations
+
+They **execute tasks on demand**, then complete.
+
+### Not Everything
+
+Some things still need traditional apps:
+- Complex multi-screen workflows
+- Real-time collaborative editing
+- Persistent state management
+- Gaming and entertainment
+
+**Agents excel at discrete, goal-oriented tasks.**
+
+## The Community We're Building
+
+### Developers Helping Users
+
+Every Agent you build makes the platform more valuable:
+
+- You solve one problem brilliantly
+- Users get access to that solution instantly
+- Other developers build complementary Agents
+- The ecosystem grows stronger
+
+**Your contribution matters.**
+
+### Quality Through Specialization
+
+Because you're only responsible for task logic:
+
+✅ You can perfect edge cases
+✅ You can optimize performance
+✅ You can iterate based on feedback
+✅ You can maintain focus on quality
+
+Instead of spreading thin across infrastructure concerns.
+
+### Fair Value Exchange
+
+```
+You build → Users use → You earn
+
+No ads. No dark patterns. No growth hacking.
+Just fair compensation for valuable work.
+```
+
+## How Users Experience Your Agent
+
+Understanding the user journey helps you design better Agents:
+
+### Discovery
+
+User searches for "PDF extraction" in the Ainalyn marketplace:
+- Sees your Agent name and description
+- Reads ratings and reviews
+- Checks pricing estimate
+- Decides to try it
+
+**Your job:** Make the value proposition crystal clear.
+
+### Execution Request
+
+User clicks "Use This Agent":
+- Provides their PDF file
+- Reviews what the Agent will do
+- Confirms the request
+
+**Your job:** Design intuitive, minimal input requirements.
+
+### Results
+
+User receives results in seconds or minutes:
+- Downloads extracted data
+- Sees exactly what they were charged
+- Continues with their work
+- Rates their experience
+
+**Your job:** Deliver accurate, useful results consistently.
+
+## The Agent Lifecycle (Your Perspective)
+
+### 1. Define
+
+You describe what your Agent does:
+
+```python
+agent = (
+    AgentBuilder("InvoiceProcessor")
+    .description("Extract line items from invoice PDFs")
+    .version("1.0.0")
+    .add_workflow(processing_workflow)
+    .build()
+)
+```
+
+### 2. Validate
+
+You ensure it meets platform requirements:
+
+```python
+from ainalyn.api import validate
+
+validate(agent)  # Catches issues early
+```
+
+### 3. Deploy
+
+You export and submit to the platform:
+
+```python
+yaml = export_yaml(agent)
+# Upload to Ainalyn platform
+```
+
+### 4. Iterate
+
+Users use it, you improve it:
+- Monitor usage patterns
+- Read feedback
+- Fix edge cases
+- Release new versions
+
+**The platform handles backwards compatibility.**
+
+## Getting Started
+
+Ready to build your first Agent?
+
+### Step 1: Identify a Clear Task
+
+Ask yourself:
+- What specific problem am I solving?
+- Can it be completed in one request?
+- Will users get verifiable results?
+
+**Good task:** "Extract all email addresses from a document"
+**Bad task:** "Help users with various text processing needs"
+
+### Step 2: Design for Simplicity
+
+Think from the user's perspective:
+- What's the minimum input needed?
+- What's the clearest output format?
+- How can I make this dead simple?
+
+**Remember:** Users should be able to use your Agent without reading documentation.
+
+### Step 3: Build with the SDK
+
+```python
+from ainalyn import AgentBuilder
+
+agent = (
+    AgentBuilder("MyAgent")
+    .description("One clear sentence about what it does")
+    .version("1.0.0")
+    # ... add your workflows
+    .build()
+)
+```
+
+### Step 4: Test Thoroughly
+
+Validate your Agent catches edge cases:
+- Empty inputs
+- Malformed data
+- Unexpected formats
+- Large files
+
+**Quality matters.** Your reputation is on the line.
+
+### Step 5: Deploy and Learn
+
+Ship your Agent to the platform, then:
+- Monitor how users interact with it
+- Read reviews and feedback
+- Iterate to improve
+- Build trust over time
+
+## Why You'll Love Building Agents
+
+### Focus on What Matters
+
+No more:
+- Debugging authentication flows
+- Scaling database clusters
+- Writing payment integration code
+- Designing responsive UIs
+- Managing cloud infrastructure
+
+**Just solve the problem.**
+
+### Reach Millions
+
+Your solution becomes instantly accessible to every Ainalyn user.
+
+No marketing campaigns. No user acquisition costs. No growth hacking.
+
+**Just good work that people find and use.**
+
+### Fair Compensation
+
+Get paid based on the value you provide:
+- Users pay per use
+- You earn per execution
+- Platform takes a fair cut for infrastructure
+- Everyone's incentives align
+
+**No ads. No subscriptions. No gimmicks.**
+
+### Join a Community
+
+Connect with developers who:
+- Share your values
+- Solve complementary problems
+- Respect focused, quality work
+- Build for users, not metrics
+
+**A community of makers, not growth hackers.**
+
+## The Bigger Picture
+
+### One Agent at a Time
+
+You don't need to build a platform. You don't need to change the world.
+
+**You just need to solve one problem really well.**
+
+That's enough. That's valuable. That's what Agents are for.
+
+### Together, We Build the Future
+
+When thousands of developers each solve one problem brilliantly:
+
+- Users get a unified experience for any task
+- Developers earn fair compensation for good work
+- The ecosystem grows organically
+- Everyone benefits from specialization
+
+**That's the Ainalyn vision.**
+
+## Next Steps
+
+Ready to build?
+
+<Callout type="success">
+**Start Here:**
+
+1. [Install the SDK](/v1/getting-started/installation/) - Get set up in 60 seconds
+2. [Build Your First Agent](/v1/getting-started/your-first-agent/) - Step-by-step tutorial
+3. [Join the Community](https://github.com/CoreNovus/ainalyn-sdk/discussions) - Connect with other developers
+
+**Welcome to Ainalyn. Let's build something great.**
+</Callout>
+
+---
+
+**Remember:** You're not building infrastructure. You're not managing users. You're not scaling servers.
+
+**You're solving problems.** And that's exactly where your talent should be spent.

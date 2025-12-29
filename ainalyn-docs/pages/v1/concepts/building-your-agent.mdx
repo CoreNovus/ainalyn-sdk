@@ -1,0 +1,644 @@
+import { Callout } from 'nextra/components'
+
+# Building Your Agent
+
+An Agent Definition is your blueprint for solving a specific problem. This guide shows you how to think about and structure your Agent for success.
+
+## The Core Structure
+
+Every Agent has three essential parts:
+
+```python
+agent = (
+    AgentBuilder("YourAgent")
+    .description("What it does")     # 1. Identity
+    .version("1.0.0")
+    .add_workflow(your_workflow)     # 2. Logic
+    .build()                         # 3. Validation
+)
+```
+
+Let's break down each part:
+
+### 1. Identity: What Your Agent Is
+
+```python
+AgentBuilder("EmailExtractor")
+    .description("Extract email addresses from documents")
+    .version("1.0.0")
+```
+
+**Think about:**
+- What problem does this solve?
+- How would you explain it in one sentence?
+- What version of the solution is this?
+
+**Good names:**
+- Clear: "InvoiceProcessor", "EmailExtractor"
+- Specific: "PDFTableExtractor" not "DataProcessor"
+- Memorable: Users will search for these
+
+**Good descriptions:**
+- One clear sentence
+- Focus on the outcome
+- Avoid technical jargon
+
+### 2. Logic: How Your Agent Works
+
+```python
+.add_workflow(extraction_workflow)
+```
+
+Workflows define the steps your Agent takes:
+
+```python
+workflow = (
+    WorkflowBuilder("extract_emails")
+    .description("Find and validate email addresses")
+    .add_node(parse_node)
+    .add_node(extract_node)
+    .add_node(validate_node)
+    .entry_node("parse")
+    .build()
+)
+```
+
+**Think about:**
+- What steps are needed?
+- What's the logical flow?
+- How do steps connect?
+
+### 3. Validation: Making Sure It's Right
+
+```python
+.build()  # ← This validates your definition
+```
+
+The SDK checks:
+- ✅ All required fields present
+- ✅ Names are valid
+- ✅ Workflows are connected properly
+- ✅ No circular dependencies
+
+## Workflows: Your Agent's Brain
+
+Workflows are where your Agent's logic lives.
+
+### Simple Linear Workflow
+
+```python
+workflow = (
+    WorkflowBuilder("process_data")
+    .description("Process user input step by step")
+    .add_node(
+        NodeBuilder("step1")
+        .description("Load and validate input")
+        .outputs("validated_data")
+        .build()
+    )
+    .add_node(
+        NodeBuilder("step2")
+        .description("Process the data")
+        .depends_on("step1")
+        .outputs("result")
+        .build()
+    )
+    .entry_node("step1")
+    .build()
+)
+```
+
+**Flow:**
+```
+step1 (load and validate)
+  ↓
+step2 (process)
+  ↓
+result
+```
+
+### Parallel Processing Workflow
+
+```python
+workflow = (
+    WorkflowBuilder("analyze_document")
+    .description("Extract multiple types of data in parallel")
+    .add_node(
+        NodeBuilder("load")
+        .description("Load document")
+        .outputs("document")
+        .build()
+    )
+    .add_node(
+        NodeBuilder("extract_text")
+        .description("Extract text content")
+        .depends_on("load")
+        .outputs("text")
+        .build()
+    )
+    .add_node(
+        NodeBuilder("extract_images")
+        .description("Extract images")
+        .depends_on("load")
+        .outputs("images")
+        .build()
+    )
+    .add_node(
+        NodeBuilder("combine")
+        .description("Combine results")
+        .depends_on("extract_text", "extract_images")
+        .outputs("final_result")
+        .build()
+    )
+    .entry_node("load")
+    .build()
+)
+```
+
+**Flow:**
+```
+         load
+          ↓
+    ┌─────┴─────┐
+    ↓           ↓
+extract_text  extract_images
+    └─────┬─────┘
+          ↓
+       combine
+```
+
+### Conditional Workflow
+
+```python
+workflow = (
+    WorkflowBuilder("smart_processor")
+    .description("Process based on input type")
+    .add_node(
+        NodeBuilder("detect_type")
+        .description("Determine input type")
+        .outputs("input_type")
+        .build()
+    )
+    .add_node(
+        NodeBuilder("process_pdf")
+        .description("Handle PDF inputs")
+        .depends_on("detect_type")
+        .outputs("result")
+        .build()
+    )
+    .add_node(
+        NodeBuilder("process_image")
+        .description("Handle image inputs")
+        .depends_on("detect_type")
+        .outputs("result")
+        .build()
+    )
+    .entry_node("detect_type")
+    .build()
+)
+```
+
+The platform routes to the appropriate node based on your logic.
+
+## Nodes: Individual Steps
+
+Each node represents one focused task:
+
+```python
+node = (
+    NodeBuilder("extract_emails")
+    .description("Find all email addresses in text")
+    .depends_on("parse_text")       # What comes before
+    .outputs("email_list")           # What this produces
+    .build()
+)
+```
+
+### Node Design Principles
+
+**1. Single Responsibility**
+
+```python
+# Good: Each node does one thing
+parse_node = NodeBuilder("parse").description("Parse document").build()
+extract_node = NodeBuilder("extract").description("Extract emails").build()
+
+# Bad: Node does too much
+process_node = NodeBuilder("process").description("Parse and extract").build()
+```
+
+**2. Clear Dependencies**
+
+```python
+# Good: Explicit dependencies
+NodeBuilder("step2").depends_on("step1").build()
+
+# Bad: Unclear flow
+NodeBuilder("process").build()  # What runs before this?
+```
+
+**3. Meaningful Outputs**
+
+```python
+# Good: Clear output names
+.outputs("validated_emails", "confidence_scores")
+
+# Bad: Generic names
+.outputs("result", "data")
+```
+
+## Prompts: Guiding LLMs
+
+If your Agent uses LLMs, define prompts:
+
+```python
+prompt = (
+    PromptBuilder("analyze_sentiment")
+    .description("Analyze text sentiment")
+    .template("""
+        Analyze the sentiment of the following text:
+
+        {text}
+
+        Provide a sentiment score from -1 (negative) to 1 (positive).
+    """)
+    .variables("text")
+    .build()
+)
+
+agent = (
+    AgentBuilder("SentimentAnalyzer")
+    .add_prompt(prompt)
+    .add_workflow(workflow)
+    .build()
+)
+```
+
+**Prompt tips:**
+- Be specific about what you want
+- Provide clear output format instructions
+- Use variables for dynamic content
+- Test with edge cases
+
+## Tools: External Capabilities
+
+Declare external services your Agent needs:
+
+```python
+weather_tool = (
+    ToolBuilder("weather_api")
+    .description("Fetch current weather data")
+    .add_parameter("location")
+    .add_parameter("units")
+    .build()
+)
+
+agent = (
+    AgentBuilder("WeatherAgent")
+    .add_tool(weather_tool)
+    .add_workflow(workflow)
+    .build()
+)
+```
+
+The platform handles the actual API integration.
+
+## Modules: Reusable Capabilities
+
+Share functionality across workflows:
+
+```python
+# Define reusable module
+data_validator = (
+    ModuleBuilder("DataValidator")
+    .description("Common validation utilities")
+    .add_capability("validate_email")
+    .add_capability("validate_phone")
+    .add_capability("validate_url")
+    .build()
+)
+
+# Use in multiple agents
+agent1 = AgentBuilder("EmailProcessor").add_module(data_validator).build()
+agent2 = AgentBuilder("ContactManager").add_module(data_validator).build()
+```
+
+## Complete Example: Invoice Processor
+
+Let's build a real Agent from scratch:
+
+```python
+from ainalyn import (
+    AgentBuilder,
+    WorkflowBuilder,
+    NodeBuilder,
+    PromptBuilder,
+    ToolBuilder,
+)
+
+# Define tools
+ocr_tool = (
+    ToolBuilder("ocr_service")
+    .description("Extract text from images")
+    .add_parameter("image_data")
+    .build()
+)
+
+# Define prompts
+extraction_prompt = (
+    PromptBuilder("extract_invoice_data")
+    .description("Extract structured data from invoice text")
+    .template("""
+        Extract the following fields from this invoice:
+
+        {invoice_text}
+
+        Fields to extract:
+        - Invoice number
+        - Date
+        - Vendor name
+        - Total amount
+        - Line items
+
+        Return as JSON.
+    """)
+    .variables("invoice_text")
+    .build()
+)
+
+# Define workflow
+processing_workflow = (
+    WorkflowBuilder("process_invoice")
+    .description("Extract and structure invoice data")
+    .add_node(
+        NodeBuilder("load_image")
+        .description("Load invoice image")
+        .outputs("image_data")
+        .build()
+    )
+    .add_node(
+        NodeBuilder("extract_text")
+        .description("OCR the invoice")
+        .depends_on("load_image")
+        .uses_tool("ocr_service")
+        .outputs("invoice_text")
+        .build()
+    )
+    .add_node(
+        NodeBuilder("parse_data")
+        .description("Extract structured fields")
+        .depends_on("extract_text")
+        .uses_prompt("extract_invoice_data")
+        .outputs("structured_data")
+        .build()
+    )
+    .add_node(
+        NodeBuilder("validate")
+        .description("Validate extracted data")
+        .depends_on("parse_data")
+        .outputs("validated_data")
+        .build()
+    )
+    .entry_node("load_image")
+    .build()
+)
+
+# Build the Agent
+invoice_processor = (
+    AgentBuilder("InvoiceProcessor")
+    .description("Extract structured data from invoice images")
+    .version("1.0.0")
+    .add_tool(ocr_tool)
+    .add_prompt(extraction_prompt)
+    .add_workflow(processing_workflow)
+    .build()
+)
+
+# Validate
+from ainalyn.api import validate
+validate(invoice_processor)
+
+# Export
+from ainalyn.api import export_yaml
+yaml_output = export_yaml(invoice_processor)
+```
+
+## Design Guidelines
+
+### Start Simple
+
+Your first version doesn't need to be perfect:
+
+```python
+# Version 1.0.0: Basic extraction
+agent = (
+    AgentBuilder("EmailExtractor")
+    .version("1.0.0")
+    .add_workflow(basic_workflow)
+    .build()
+)
+
+# Version 1.1.0: Add validation
+agent = (
+    AgentBuilder("EmailExtractor")
+    .version("1.1.0")
+    .add_workflow(enhanced_workflow)
+    .build()
+)
+```
+
+**Ship early, iterate based on feedback.**
+
+### Think About Edge Cases
+
+```python
+workflow = (
+    WorkflowBuilder("process")
+    .add_node(
+        NodeBuilder("validate_input")
+        .description("Check input is valid")  # ← Handle bad inputs
+        .build()
+    )
+    .add_node(
+        NodeBuilder("process")
+        .description("Process validated input")
+        .depends_on("validate_input")
+        .build()
+    )
+    .build()
+)
+```
+
+**Good Agents handle edge cases gracefully.**
+
+### Design for Users
+
+```python
+# Good: Clear output
+.outputs("extracted_emails", "confidence_scores", "invalid_addresses")
+
+# Bad: Unclear output
+.outputs("result")
+```
+
+**Users should understand what they get.**
+
+### Keep Workflows Focused
+
+```python
+# Good: One workflow, one purpose
+workflow = WorkflowBuilder("extract_emails").build()
+
+# Consider splitting if it does too much
+workflow = WorkflowBuilder("extract_and_validate_and_categorize").build()
+```
+
+**Focused workflows are easier to debug and maintain.**
+
+## Validation and Testing
+
+### Always Validate
+
+```python
+from ainalyn.api import validate
+
+try:
+    validate(agent)
+    print("✓ Agent definition is valid")
+except ValidationError as e:
+    print(f"✗ Validation failed: {e}")
+```
+
+Validation catches:
+- Missing required fields
+- Invalid names
+- Circular dependencies
+- Broken references
+
+### Review Generated YAML
+
+```python
+yaml = export_yaml(agent)
+print(yaml)
+```
+
+**The YAML is what the platform sees.** Make sure it matches your intent.
+
+### Iterate Based on Feedback
+
+Once deployed:
+- Monitor usage patterns
+- Read user feedback
+- Fix edge cases
+- Release improved versions
+
+## Versioning Your Agent
+
+Use semantic versioning:
+
+```python
+# Initial release
+.version("1.0.0")
+
+# Bug fix (backwards compatible)
+.version("1.0.1")
+
+# New feature (backwards compatible)
+.version("1.1.0")
+
+# Breaking change
+.version("2.0.0")
+```
+
+**The platform helps users migrate between versions.**
+
+## Common Patterns
+
+### Input Validation Pattern
+
+```python
+workflow = (
+    WorkflowBuilder("safe_processing")
+    .add_node(
+        NodeBuilder("validate")
+        .description("Validate input meets requirements")
+        .build()
+    )
+    .add_node(
+        NodeBuilder("process")
+        .description("Process validated input")
+        .depends_on("validate")
+        .build()
+    )
+    .entry_node("validate")
+    .build()
+)
+```
+
+### Error Handling Pattern
+
+```python
+workflow = (
+    WorkflowBuilder("robust_processing")
+    .add_node(
+        NodeBuilder("try_process")
+        .description("Attempt processing")
+        .build()
+    )
+    .add_node(
+        NodeBuilder("handle_error")
+        .description("Provide helpful error message")
+        .depends_on("try_process")
+        .build()
+    )
+    .build()
+)
+```
+
+### Multi-Stage Processing Pattern
+
+```python
+workflow = (
+    WorkflowBuilder("multi_stage")
+    .add_node(NodeBuilder("stage1").description("Initial processing").build())
+    .add_node(NodeBuilder("stage2").depends_on("stage1").build())
+    .add_node(NodeBuilder("stage3").depends_on("stage2").build())
+    .entry_node("stage1")
+    .build()
+)
+```
+
+## Best Practices Summary
+
+<Callout type="success">
+**Agent Design Checklist:**
+
+- ✅ Clear, specific name
+- ✅ One-sentence description
+- ✅ Semantic version
+- ✅ Focused workflows
+- ✅ Single-responsibility nodes
+- ✅ Clear dependencies
+- ✅ Meaningful output names
+- ✅ Edge case handling
+- ✅ Validated definition
+- ✅ Reviewed YAML output
+</Callout>
+
+## Next Steps
+
+Now that you understand Agent structure:
+
+1. [Build Your First Agent](/v1/getting-started/your-first-agent/) - Hands-on tutorial
+2. [Workflow Guide](/v1/guides/workflows/) - Advanced workflow patterns
+3. [API Reference](/v1/api-reference/builders/) - Complete builder documentation
+
+---
+
+**Remember:** Your Agent definition is a blueprint, not executable code.
+
+Focus on **describing the solution clearly**.
+
+The platform handles **executing it reliably**.
+
+That's how great Agents are built.
