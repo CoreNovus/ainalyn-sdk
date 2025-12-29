@@ -9,9 +9,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ainalyn.adapters.secondary.analyzers import StaticAnalyzer
-from ainalyn.adapters.secondary.exporters import YamlExporter
-from ainalyn.adapters.secondary.validators import SchemaValidator
 from ainalyn.application.use_cases.compile_definition import (
     CompilationResult,
     CompileDefinitionUseCase,
@@ -22,8 +19,22 @@ from ainalyn.application.use_cases.validate_definition import ValidateDefinition
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from ainalyn.application.ports.inbound.validate_agent_definition import (
+        ValidationResult,
+    )
+    from ainalyn.application.ports.outbound.definition_persistence import (
+        IDefinitionWriter,
+    )
+    from ainalyn.application.ports.outbound.definition_schema_validation import (
+        IDefinitionSchemaValidator,
+    )
+    from ainalyn.application.ports.outbound.definition_serialization import (
+        IDefinitionSerializer,
+    )
+    from ainalyn.application.ports.outbound.definition_static_analysis import (
+        IDefinitionAnalyzer,
+    )
     from ainalyn.domain.entities import AgentDefinition
-    from ainalyn.ports.inbound.validator import ValidationResult
 
 
 class DefinitionService:
@@ -58,24 +69,49 @@ class DefinitionService:
         ... )
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        schema_validator: IDefinitionSchemaValidator,
+        static_analyzer: IDefinitionAnalyzer,
+        serializer: IDefinitionSerializer,
+        writer: IDefinitionWriter | None = None,
+    ) -> None:
         """
-        Initialize the definition service.
+        Initialize the definition service with injected dependencies.
 
-        This constructor sets up all necessary adapters and use cases
-        with their proper dependencies.
+        This constructor uses dependency injection to wire the service
+        with concrete adapter implementations. The adapters are provided
+        through port interfaces, maintaining clean separation between
+        application core and adapters.
+
+        Args:
+            schema_validator: Port for schema validation capability.
+            static_analyzer: Port for static analysis capability.
+            serializer: Port for serialization capability (e.g., YAML).
+            writer: Optional port for persistence capability (e.g., file writer).
+
+        Example:
+            >>> from ainalyn.infrastructure import create_default_service
+            >>> service = create_default_service()
+            >>> # Or with custom adapters:
+            >>> service = DefinitionService(
+            ...     schema_validator=MyCustomValidator(),
+            ...     static_analyzer=MyCustomAnalyzer(),
+            ...     serializer=MyCustomSerializer(),
+            ... )
         """
-        # Initialize secondary adapters
-        self._schema_validator = SchemaValidator()
-        self._static_analyzer = StaticAnalyzer()
-        self._yaml_exporter = YamlExporter()
+        # Store injected adapters
+        self._schema_validator = schema_validator
+        self._static_analyzer = static_analyzer
+        self._serializer = serializer
+        self._writer = writer
 
-        # Initialize use cases
+        # Initialize use cases with injected dependencies
         self._validate_use_case = ValidateDefinitionUseCase(
             self._schema_validator,
             self._static_analyzer,
         )
-        self._export_use_case = ExportDefinitionUseCase(self._yaml_exporter)
+        self._export_use_case = ExportDefinitionUseCase(self._serializer)
         self._compile_use_case = CompileDefinitionUseCase(
             self._validate_use_case,
             self._export_use_case,

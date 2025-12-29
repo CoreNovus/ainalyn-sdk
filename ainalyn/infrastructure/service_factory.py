@@ -42,10 +42,13 @@ def create_default_service() -> DefinitionService:
     # Create concrete adapter instances
     schema_validator = SchemaValidator()
     static_analyzer = StaticAnalyzer()
-    yaml_exporter = YamlExporter()
+    yaml_serializer = YamlExporter()
 
-    # Wire adapters into the service
-    # Note: In the current implementation, DefinitionService.__init__
-    # doesn't yet accept injected dependencies. This will be updated
-    # in Step 3 of the refactoring plan.
-    return DefinitionService()
+    # Wire adapters into the service through dependency injection
+    # The service depends on port interfaces (abstractions), not concrete classes
+    return DefinitionService(
+        schema_validator=schema_validator,
+        static_analyzer=static_analyzer,
+        serializer=yaml_serializer,
+        writer=None,  # File writing is handled externally for now
+    )

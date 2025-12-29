@@ -7,7 +7,6 @@ from pathlib import Path
 
 import yaml
 
-from ainalyn.application.services import DefinitionService
 from ainalyn.domain.entities import (
     AgentDefinition,
     Module,
@@ -17,6 +16,7 @@ from ainalyn.domain.entities import (
     Tool,
     Workflow,
 )
+from ainalyn.infrastructure import create_default_service
 
 
 class TestEndToEndCompilation:
@@ -43,7 +43,7 @@ class TestEndToEndCompilation:
         )
 
         # Compile using DefinitionService
-        service = DefinitionService()
+        service = create_default_service()
         result = service.compile(agent)
 
         # Verify compilation succeeded
@@ -108,7 +108,7 @@ class TestEndToEndCompilation:
         )
 
         # Compile
-        service = DefinitionService()
+        service = create_default_service()
         result = service.compile(agent)
 
         # Verify
@@ -132,7 +132,7 @@ class TestEndToEndCompilation:
             modules=(module,),
         )
 
-        service = DefinitionService()
+        service = create_default_service()
         result = service.compile(agent)
 
         assert result.is_successful
@@ -154,7 +154,7 @@ class TestEndToEndCompilation:
             modules=(module,),
         )
 
-        service = DefinitionService()
+        service = create_default_service()
         result = service.compile(agent)
 
         # Should fail validation
@@ -177,7 +177,7 @@ class TestEndToEndCompilation:
             modules=(module1, module2),
         )
 
-        service = DefinitionService()
+        service = create_default_service()
         result = service.compile(agent)
 
         # Should succeed despite warnings
@@ -205,7 +205,7 @@ class TestEndToEndFileExport:
 
         with tempfile.TemporaryDirectory() as tmpdir:
             output_path = Path(tmpdir) / "agent.yaml"
-            service = DefinitionService()
+            service = create_default_service()
 
             result = service.compile_to_file(agent, output_path)
 
@@ -233,7 +233,7 @@ class TestEndToEndFileExport:
 
         with tempfile.TemporaryDirectory() as tmpdir:
             output_path = Path(tmpdir) / "agents" / "v1" / "agent.yaml"
-            service = DefinitionService()
+            service = create_default_service()
 
             result = service.compile_to_file(agent, output_path)
 
@@ -256,7 +256,7 @@ class TestEndToEndFileExport:
 
         with tempfile.TemporaryDirectory() as tmpdir:
             output_path = Path(tmpdir) / "agent.yaml"
-            service = DefinitionService()
+            service = create_default_service()
 
             result = service.compile_to_file(agent, output_path)
 
@@ -280,7 +280,7 @@ class TestDefinitionServiceAPI:
             modules=(module,),
         )
 
-        service = DefinitionService()
+        service = create_default_service()
         result = service.validate(agent)
 
         assert result.is_valid
@@ -298,7 +298,7 @@ class TestDefinitionServiceAPI:
             modules=(module,),
         )
 
-        service = DefinitionService()
+        service = create_default_service()
         yaml_content = service.export(agent)
 
         assert isinstance(yaml_content, str)
@@ -319,7 +319,7 @@ class TestDefinitionServiceAPI:
 
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "test.yaml"
-            service = DefinitionService()
+            service = create_default_service()
 
             service.export_to_file(agent, path)
 
@@ -340,7 +340,7 @@ class TestDefinitionServiceAPI:
             modules=(module,),
         )
 
-        service = DefinitionService()
+        service = create_default_service()
         result = service.compile(agent)
 
         assert result.is_successful
@@ -362,7 +362,7 @@ class TestDefinitionServiceAPI:
 
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "test.yaml"
-            service = DefinitionService()
+            service = create_default_service()
 
             result = service.compile_to_file(agent, path)
 
