@@ -4,32 +4,16 @@ on:
   push:
     branches:
       - master
-      - main
-      - develop
-    paths:
-      - 'ainalyn-docs/**'
-      - '.github/workflows/docs.yml'
-  pull_request:
-    branches:
-      - master
-      - main
-      - develop
     paths:
       - 'ainalyn-docs/**'
       - '.github/workflows/docs.yml'
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: true
+  contents: write
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -54,38 +38,9 @@ jobs:
       - name: Run postbuild (Pagefind indexing)
         run: npm run postbuild
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./ainalyn-docs/out
-
-  deploy:
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
       - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-
-  # For PR preview - upload as artifact
-  preview:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          name: github-pages
-          path: ./preview
-
-      - name: Upload PR preview
-        uses: actions/upload-artifact@v4
-        with:
-          name: docs-preview
-          path: ./preview
-          retention-days: 7
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./ainalyn-docs/out
+          cname: ainalyn.corenovus.com
