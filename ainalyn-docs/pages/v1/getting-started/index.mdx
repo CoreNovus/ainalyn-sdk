@@ -26,21 +26,35 @@ The SDK creates agent descriptions. The Ainalyn Platform executes them.
 ## Example
 
 ```python
-from ainalyn import AgentBuilder, WorkflowBuilder, NodeBuilder
+from ainalyn import AgentBuilder, WorkflowBuilder, NodeBuilder, PromptBuilder
 from ainalyn.api import validate, export_yaml
+
+# Define a prompt
+greeting_prompt = (
+    PromptBuilder("greeting-prompt")
+    .description("Generates a personalized greeting")
+    .template("Generate a personalized greeting for {{user_name}}")
+    .variables("user_name")
+    .build()
+)
 
 # Define an agent
 agent = (
-    AgentBuilder("GreetingAgent")
+    AgentBuilder("greeting-agent")
     .description("Generates personalized greetings")
     .version("1.0.0")
+    .add_prompt(greeting_prompt)
     .add_workflow(
-        WorkflowBuilder("greet_user")
+        WorkflowBuilder("greet-user")
+        .description("Main greeting workflow")
         .add_node(
-            NodeBuilder("generate_greeting")
-            .goal("Generate a personalized greeting")
+            NodeBuilder("generate-greeting")
+            .description("Generate a personalized greeting")
+            .uses_prompt("greeting-prompt")
+            .outputs("greeting")
             .build()
         )
+        .entry_node("generate-greeting")
         .build()
     )
     .build()

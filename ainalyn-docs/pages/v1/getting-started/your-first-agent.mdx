@@ -9,80 +9,137 @@ A research assistant that:
 2. Analyzes findings
 3. Generates a report
 
-## Step 1: Create the Nodes
+## Step 1: Create the Prompts and Modules
+
+```python
+from ainalyn import ModuleBuilder, PromptBuilder
+
+# Module for search
+search_module = (
+    ModuleBuilder("search-module")
+    .description("Searches for relevant information")
+    .input_schema({
+        "type": "object",
+        "properties": {"query": {"type": "string"}},
+        "required": ["query"]
+    })
+    .output_schema({
+        "type": "object",
+        "properties": {"results": {"type": "array"}},
+    })
+    .build()
+)
+
+# Prompt for analysis
+analyze_prompt = (
+    PromptBuilder("analyze-prompt")
+    .description("Analyzes collected information")
+    .template("Analyze the following information: {{search_results}}")
+    .variables("search_results")
+    .build()
+)
+
+# Prompt for report generation
+report_prompt = (
+    PromptBuilder("report-prompt")
+    .description("Generates a structured research report")
+    .template("Create a report based on: {{analysis}}")
+    .variables("analysis")
+    .build()
+)
+```
+
+## Step 2: Create the Nodes
 
 ```python
 from ainalyn import NodeBuilder
 
 # Node 1: Search
 search_node = (
-    NodeBuilder("search_information")
-    .goal("Search and collect relevant information")
+    NodeBuilder("search-information")
+    .description("Search and collect relevant information")
+    .uses_module("search-module")
+    .inputs("query")
+    .outputs("search_results")
+    .next_nodes("analyze-findings")
     .build()
 )
 
-# Node 2: Analyze (depends on search)
+# Node 2: Analyze (follows search)
 analyze_node = (
-    NodeBuilder("analyze_findings")
-    .goal("Analyze the collected information")
-    .depends_on("search_information")
+    NodeBuilder("analyze-findings")
+    .description("Analyze the collected information")
+    .uses_prompt("analyze-prompt")
+    .inputs("search_results")
+    .outputs("analysis")
+    .next_nodes("generate-report")
     .build()
 )
 
-# Node 3: Report (depends on analyze)
+# Node 3: Report (follows analyze)
 report_node = (
-    NodeBuilder("generate_report")
-    .goal("Create a structured research report")
-    .depends_on("analyze_findings")
+    NodeBuilder("generate-report")
+    .description("Create a structured research report")
+    .uses_prompt("report-prompt")
+    .inputs("analysis")
+    .outputs("report")
     .build()
 )
 ```
 
-**Dependencies:** `search → analyze → report`
+**Flow:** `search → analyze → report`
 
-## Step 2: Create the Workflow
+## Step 3: Create the Workflow
 
 ```python
 from ainalyn import WorkflowBuilder
 
 research_workflow = (
-    WorkflowBuilder("conduct_research")
+    WorkflowBuilder("conduct-research")
     .description("Research and reporting workflow")
     .add_node(search_node)
     .add_node(analyze_node)
     .add_node(report_node)
+    .entry_node("search-information")
     .build()
 )
 ```
 
-## Step 3: Create the Agent
+## Step 4: Create the Agent
 
 ```python
 from ainalyn import AgentBuilder
 
 research_agent = (
-    AgentBuilder("ResearchAssistant")
+    AgentBuilder("research-assistant")
     .description("Searches, analyzes, and reports on topics")
     .version("1.0.0")
+    .add_module(search_module)
+    .add_prompt(analyze_prompt)
+    .add_prompt(report_prompt)
     .add_workflow(research_workflow)
     .build()
 )
 ```
 
-## Step 4: Validate and Export
+## Step 5: Validate and Export
 
 ```python
 from ainalyn.api import validate, export_yaml
 
 # Validate
-validate(research_agent)
-print("Valid!")
+result = validate(research_agent)
+if result.is_valid:
+    print("Valid!")
+else:
+    for error in result.errors:
+        print(f"Error: {error.message}")
 
 # Export
 yaml_output = export_yaml(research_agent)
 
 # Save to file
-with open("research_assistant.yaml", "w") as f:
+with open("research_assistant.yaml", "w", encoding="utf-8") as f:
     f.write(yaml_output)
 ```
 
@@ -91,57 +148,110 @@ with open("research_assistant.yaml", "w") as f:
 `research_agent.py`:
 
 ```python
-from ainalyn import AgentBuilder, WorkflowBuilder, NodeBuilder
+from ainalyn import (
+    AgentBuilder,
+    WorkflowBuilder,
+    NodeBuilder,
+    ModuleBuilder,
+    PromptBuilder,
+)
 from ainalyn.api import validate, export_yaml
+
+# Create resources
+search_module = (
+    ModuleBuilder("search-module")
+    .description("Searches for relevant information")
+    .input_schema({
+        "type": "object",
+        "properties": {"query": {"type": "string"}},
+        "required": ["query"]
+    })
+    .output_schema({
+        "type": "object",
+        "properties": {"results": {"type": "array"}},
+    })
+    .build()
+)
+
+analyze_prompt = (
+    PromptBuilder("analyze-prompt")
+    .description("Analyzes collected information")
+    .template("Analyze the following information: {{search_results}}")
+    .variables("search_results")
+    .build()
+)
+
+report_prompt = (
+    PromptBuilder("report-prompt")
+    .description("Generates a structured research report")
+    .template("Create a report based on: {{analysis}}")
+    .variables("analysis")
+    .build()
+)
 
 # Create nodes
 search_node = (
-    NodeBuilder("search_information")
-    .goal("Search and collect relevant information")
+    NodeBuilder("search-information")
+    .description("Search and collect relevant information")
+    .uses_module("search-module")
+    .inputs("query")
+    .outputs("search_results")
+    .next_nodes("analyze-findings")
     .build()
 )
 
 analyze_node = (
-    NodeBuilder("analyze_findings")
-    .goal("Analyze the collected information")
-    .depends_on("search_information")
+    NodeBuilder("analyze-findings")
+    .description("Analyze the collected information")
+    .uses_prompt("analyze-prompt")
+    .inputs("search_results")
+    .outputs("analysis")
+    .next_nodes("generate-report")
     .build()
 )
 
 report_node = (
-    NodeBuilder("generate_report")
-    .goal("Create a structured research report")
-    .depends_on("analyze_findings")
+    NodeBuilder("generate-report")
+    .description("Create a structured research report")
+    .uses_prompt("report-prompt")
+    .inputs("analysis")
+    .outputs("report")
     .build()
 )
 
 # Create workflow
 research_workflow = (
-    WorkflowBuilder("conduct_research")
+    WorkflowBuilder("conduct-research")
     .description("Research and reporting workflow")
     .add_node(search_node)
     .add_node(analyze_node)
     .add_node(report_node)
+    .entry_node("search-information")
     .build()
 )
 
 # Create agent
 research_agent = (
-    AgentBuilder("ResearchAssistant")
+    AgentBuilder("research-assistant")
     .description("Searches, analyzes, and reports on topics")
     .version("1.0.0")
+    .add_module(search_module)
+    .add_prompt(analyze_prompt)
+    .add_prompt(report_prompt)
     .add_workflow(research_workflow)
     .build()
 )
 
 # Validate and export
-validate(research_agent)
-yaml_output = export_yaml(research_agent)
-
-with open("research_assistant.yaml", "w") as f:
-    f.write(yaml_output)
-
-print("Agent created and saved!")
+result = validate(research_agent)
+if result.is_valid:
+    yaml_output = export_yaml(research_agent)
+    with open("research_assistant.yaml", "w", encoding="utf-8") as f:
+        f.write(yaml_output)
+    print("Agent created and saved!")
+else:
+    for error in result.errors:
+        print(f"Error: {error.message}")
 ```
 
 ## Run It
@@ -153,32 +263,76 @@ python research_agent.py
 ## The Generated YAML
 
 ```yaml
-name: ResearchAssistant
+name: research-assistant
 version: 1.0.0
 description: Searches, analyzes, and reports on topics
 workflows:
-  - name: conduct_research
-    description: Research and reporting workflow
-    nodes:
-      - name: search_information
-        goal: Search and collect relevant information
-        dependencies: []
-      - name: analyze_findings
-        goal: Analyze the collected information
-        dependencies:
-          - search_information
-      - name: generate_report
-        goal: Create a structured research report
-        dependencies:
-          - analyze_findings
+- name: conduct-research
+  description: Research and reporting workflow
+  entry_node: search-information
+  nodes:
+  - name: search-information
+    description: Search and collect relevant information
+    type: module
+    reference: search-module
+    next_nodes:
+    - analyze-findings
+    inputs:
+    - query
+    outputs:
+    - search_results
+  - name: analyze-findings
+    description: Analyze the collected information
+    type: prompt
+    reference: analyze-prompt
+    next_nodes:
+    - generate-report
+    inputs:
+    - search_results
+    outputs:
+    - analysis
+  - name: generate-report
+    description: Create a structured research report
+    type: prompt
+    reference: report-prompt
+    inputs:
+    - analysis
+    outputs:
+    - report
+modules:
+- name: search-module
+  description: Searches for relevant information
+  input_schema:
+    type: object
+    properties:
+      query:
+        type: string
+    required:
+    - query
+  output_schema:
+    type: object
+    properties:
+      results:
+        type: array
+prompts:
+- name: analyze-prompt
+  description: Analyzes collected information
+  template: 'Analyze the following information: {{search_results}}'
+  variables:
+  - search_results
+- name: report-prompt
+  description: Generates a structured research report
+  template: 'Create a report based on: {{analysis}}'
+  variables:
+  - analysis
 ```
 
 ## Key Concepts
 
-**Dependencies**
-- Use `.depends_on()` to set execution order
-- Dependencies create a task graph
-- Platform executes nodes in order
+**Workflow Flow**
+- Use `.next_nodes()` to define the next steps in the flow
+- Set `.entry_node()` on the workflow to specify where it starts
+- Nodes reference resources (modules, prompts, tools) via `.uses_*()`
 
 **Builder Pattern**
 - Always call `.build()` at the end
@@ -186,37 +340,47 @@ workflows:
 - Immutable entities created on `.build()`
 
 **Bottom-Up Construction**
-1. Build nodes first
-2. Add nodes to workflow
-3. Add workflow to agent
+1. Build resources first (modules, prompts, tools)
+2. Build nodes that reference those resources
+3. Add nodes to workflow with entry_node
+4. Add resources and workflows to agent
 
 ## Common Mistakes
 
 **Forgetting .build()**
 ```python
 # Wrong
-node = NodeBuilder("task").goal("Do something")
+node = NodeBuilder("task").description("Do something")
 
 # Correct
-node = NodeBuilder("task").goal("Do something").build()
+node = NodeBuilder("task").description("Do something").uses_prompt("task-prompt").build()
 ```
 
-**Circular dependencies**
+**Circular flow**
 ```python
-# Wrong (A depends on B, B depends on A)
-node_a = NodeBuilder("A").depends_on("B").build()
-node_b = NodeBuilder("B").depends_on("A").build()
+# Wrong (A points to B, B points to A)
+node_a = NodeBuilder("a").description("A").uses_prompt("prompt-a").next_nodes("b").build()
+node_b = NodeBuilder("b").description("B").uses_prompt("prompt-b").next_nodes("a").build()
+```
+
+**Not setting entry_node**
+```python
+# Wrong
+workflow = WorkflowBuilder("main").add_node(node).build()
+
+# Correct
+workflow = WorkflowBuilder("main").add_node(node).entry_node("node-name").build()
 ```
 
 **Invalid names**
 ```python
 # Wrong
-AgentBuilder("my-agent")   # No hyphens in Python-style names
 AgentBuilder("My Agent")   # No spaces
+AgentBuilder("MyAgent")    # Must start with lowercase
 
-# Correct
-AgentBuilder("MyAgent")    # CamelCase
-AgentBuilder("my_agent")   # snake_case
+# Correct (use lowercase with hyphens)
+AgentBuilder("my-agent")
+AgentBuilder("research-assistant")
 ```
 
 ## Next Steps

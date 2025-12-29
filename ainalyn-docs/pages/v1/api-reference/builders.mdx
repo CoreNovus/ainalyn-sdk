@@ -20,25 +20,36 @@ agent = (
 
 **Methods:**
 
-- `.description(text)` - Set agent description
-- `.version(version)` - Set version (e.g., "1.0.0")
-- `.add_workflow(workflow)` - Add a workflow
-- `.add_module(module)` - Add a reusable module
-- `.build()` - Create the AgentDefinition
+- `.description(text)` - Set agent description (required)
+- `.version(version)` - Set semantic version like "1.0.0" (required)
+- `.add_workflow(workflow)` - Add a workflow (at least one required)
+- `.workflows(*workflows)` - Add multiple workflows at once
+- `.add_module(module)` - Add a reusable module (optional)
+- `.modules(*modules)` - Add multiple modules at once
+- `.add_prompt(prompt)` - Add a prompt template (optional)
+- `.prompts(*prompts)` - Add multiple prompts at once
+- `.add_tool(tool)` - Add a tool definition (optional)
+- `.tools(*tools)` - Add multiple tools at once
+- `.build()` - Create the immutable AgentDefinition
+
+**Naming Convention:** Agent names must start with lowercase letter and contain only lowercase letters, numbers, and hyphens (e.g., "my-agent", "data-processor")
 
 ## WorkflowBuilder
 
 Creates a workflow.
 
 ```python
-from ainalyn import WorkflowBuilder, NodeBuilder
+from ainalyn import WorkflowBuilder, NodeBuilder, PromptBuilder
+
+prompt = PromptBuilder("task-prompt").description("Task prompt").template("Do task").build()
 
 workflow = (
-    WorkflowBuilder("main_flow")
+    WorkflowBuilder("main-flow")
     .description("Main workflow")
     .add_node(
         NodeBuilder("task1")
-        .goal("Complete task 1")
+        .description("Complete task 1")
+        .uses_prompt("task-prompt")
         .build()
     )
     .entry_node("task1")
@@ -48,37 +59,46 @@ workflow = (
 
 **Methods:**
 
-- `.description(text)` - Set workflow description
+- `.description(text)` - Set workflow description (required)
 - `.add_node(node)` - Add a node to this workflow
-- `.entry_node(name)` - Set which node starts the workflow
-- `.build()` - Create the Workflow
+- `.nodes(*nodes)` - Add multiple nodes at once
+- `.entry_node(name)` - Set which node starts the workflow (required)
+- `.build()` - Create the immutable Workflow
+
+**Naming Convention:** Workflow names must start with lowercase letter and contain only lowercase letters, numbers, and hyphens
 
 ## NodeBuilder
 
-Creates a node (task unit).
+Creates a node (workflow processing step).
 
 ```python
-from ainalyn import NodeBuilder, NodeType
+from ainalyn import NodeBuilder
 
 node = (
-    NodeBuilder("my_task")
-    .goal("What this task accomplishes")
-    .description("Optional details")
-    .node_type(NodeType.TASK)
-    .outputs(["result_data"])
-    .depends_on("previous_task")
+    NodeBuilder("my-task")
+    .description("What this task accomplishes")
+    .uses_prompt("my-prompt")  # or uses_module() or uses_tool()
+    .inputs("input_data")
+    .outputs("result_data")
+    .next_nodes("next-task")
     .build()
 )
 ```
 
 **Methods:**
 
-- `.goal(text)` - Set the task goal (required)
-- `.description(text)` - Add optional description
-- `.node_type(type)` - Set type (TASK, MODULE, SUBWORKFLOW)
-- `.outputs(list)` - Define output names
-- `.depends_on(*names)` - Set dependencies on other nodes
-- `.build()` - Create the Node
+- `.description(text)` - Set the node description (required)
+- `.uses_module(name)` - Set this node to use a module (choose one of uses_*)
+- `.uses_prompt(name)` - Set this node to use a prompt (choose one of uses_*)
+- `.uses_tool(name)` - Set this node to use a tool (choose one of uses_*)
+- `.inputs(*names)` - Define input parameter names (optional)
+- `.outputs(*names)` - Define output parameter names (optional)
+- `.next_nodes(*names)` - Specify which nodes follow this one (optional)
+- `.build()` - Create the immutable Node
+
+**Node Types:** Nodes must reference either a module, prompt, or tool. The type is automatically set based on which `.uses_*()` method you call.
+
+**Naming Convention:** Node names must start with lowercase letter and contain only lowercase letters, numbers, and hyphens
 
 ## ModuleBuilder
 
@@ -111,16 +131,24 @@ Creates an LLM prompt template.
 from ainalyn import PromptBuilder
 
 prompt = (
-    PromptBuilder("greeting")
-    .template("Hello {name}!")
+    PromptBuilder("greeting-prompt")
+    .description("Generates a greeting message")
+    .template("Hello {{name}}! Welcome to {{location}}.")
+    .variables("name", "location")
     .build()
 )
 ```
 
 **Methods:**
 
-- `.template(text)` - Set prompt template with placeholders
-- `.build()` - Create the Prompt
+- `.description(text)` - Set prompt description (required)
+- `.template(text)` - Set prompt template with `{{variable}}` placeholders (required)
+- `.variables(*names)` - List variable names used in template (optional)
+- `.build()` - Create the immutable Prompt
+
+**Template Syntax:** Use double curly braces `{{variable}}` for placeholders in the template.
+
+**Naming Convention:** Prompt names must start with lowercase letter and contain only lowercase letters, numbers, and hyphens
 
 ## ToolBuilder
 
@@ -130,32 +158,49 @@ Creates a tool definition.
 from ainalyn import ToolBuilder
 
 tool = (
-    ToolBuilder("calculator")
-    .description("Math operations")
+    ToolBuilder("calculator-tool")
+    .description("Performs mathematical calculations")
+    .input_schema({
+        "type": "object",
+        "properties": {
+            "expression": {"type": "string"}
+        },
+        "required": ["expression"]
+    })
+    .output_schema({
+        "type": "object",
+        "properties": {
+            "result": {"type": "number"}
+        }
+    })
     .build()
 )
 ```
 
 **Methods:**
 
-- `.description(text)` - Set tool description
-- `.build()` - Create the Tool
+- `.description(text)` - Set tool description (required)
+- `.input_schema(schema)` - Define input JSON Schema (optional)
+- `.output_schema(schema)` - Define output JSON Schema (optional)
+- `.build()` - Create the immutable Tool
+
+**Naming Convention:** Tool names must start with lowercase letter and contain only lowercase letters, numbers, and hyphens
 
 ## Common Patterns
 
 **Always call .build()**
 ```python
 # Correct
-node = NodeBuilder("task").goal("Do something").build()
+node = NodeBuilder("task").description("Do something").uses_prompt("task-prompt").build()
 
 # Wrong - missing .build()
-node = NodeBuilder("task").goal("Do something")
+node = NodeBuilder("task").description("Do something").uses_prompt("task-prompt")
 ```
 
 **Chain methods**
 ```python
 agent = (
-    AgentBuilder("MyAgent")
+    AgentBuilder("my-agent")
     .version("1.0.0")
     .description("My agent")
     .add_workflow(workflow)
@@ -163,17 +208,48 @@ agent = (
 )
 ```
 
-**Dependencies**
+**Sequential workflow with next_nodes**
 ```python
+prompt1 = PromptBuilder("prompt1").description("First").template("Step 1").build()
+prompt2 = PromptBuilder("prompt2").description("Second").template("Step 2").build()
+
 workflow = (
     WorkflowBuilder("process")
-    .add_node(NodeBuilder("step1").goal("First step").build())
+    .description("Sequential processing")
     .add_node(
-        NodeBuilder("step2")
-        .goal("Second step")
-        .depends_on("step1")  # Runs after step1
+        NodeBuilder("step1")
+        .description("First step")
+        .uses_prompt("prompt1")
+        .next_nodes("step2")  # Points to next step
         .build()
     )
+    .add_node(
+        NodeBuilder("step2")
+        .description("Second step")
+        .uses_prompt("prompt2")
+        .build()
+    )
+    .entry_node("step1")  # Start at step1
+    .build()
+)
+```
+
+**Branching workflow**
+```python
+# Node that splits into multiple paths
+workflow = (
+    WorkflowBuilder("branching")
+    .description("Branching workflow")
+    .add_node(
+        NodeBuilder("analyze")
+        .description("Analyze input")
+        .uses_module("analyzer")
+        .next_nodes("path-a", "path-b")  # Multiple next nodes
+        .build()
+    )
+    .add_node(NodeBuilder("path-a").description("Path A").uses_prompt("prompt-a").build())
+    .add_node(NodeBuilder("path-b").description("Path B").uses_prompt("prompt-b").build())
+    .entry_node("analyze")
     .build()
 )
 ```

@@ -142,8 +142,8 @@ agent = (
 # Error - prompt not defined
 node = (
     NodeBuilder("task")
-    .node_type(NodeType.PROMPT)
-    .reference("analyzer")  # No prompt named "analyzer"
+    .description("Task node")
+    .uses_prompt("analyzer")  # No prompt named "analyzer"
     .build()
 )
 

@@ -63,12 +63,14 @@ agent = AgentBuilder("MyAgent").build()
 # Error
 workflow = (
     WorkflowBuilder("main")
+    .description("Main workflow")
     .add_node(
         NodeBuilder("task1")
-        .node_type(NodeType.MODULE)
-        .reference("http-client")  # Module doesn't exist!
+        .description("Task 1")
+        .uses_module("http-client")  # Module doesn't exist!
         .build()
     )
+    .entry_node("task1")
     .build()
 )
 

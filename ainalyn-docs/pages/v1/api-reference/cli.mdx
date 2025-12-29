@@ -27,19 +27,30 @@ ainalyn validate agent.py
 
 ```python
 # agent.py
-from ainalyn import AgentBuilder
+from ainalyn import AgentBuilder, WorkflowBuilder, NodeBuilder, PromptBuilder
+
+prompt = PromptBuilder("my-prompt").description("Test").template("Hello").build()
+workflow = (
+    WorkflowBuilder("my-workflow")
+    .description("Test")
+    .add_node(NodeBuilder("node1").description("Node").uses_prompt("my-prompt").build())
+    .entry_node("node1")
+    .build()
+)
 
 agent = (
-    AgentBuilder("MyAgent")
+    AgentBuilder("my-agent")
     .version("1.0.0")
     .description("My agent")
+    .add_prompt(prompt)
+    .add_workflow(workflow)
     .build()
 )
 ```
 
 ```bash
 $ ainalyn validate agent.py
-✓ Validation successful
+Validation successful
 ```
 
 ### compile
@@ -58,7 +69,7 @@ ainalyn compile agent.py -o output.yaml
 
 ```bash
 $ ainalyn compile agent.py -o my_agent.yaml
-✓ Compiled successfully to my_agent.yaml
+Compiled successfully to my_agent.yaml
 ```
 
 ### --version

@@ -77,15 +77,14 @@ agent = (
 **Step 3: Reference in node**
 
 ```python
-from ainalyn import NodeBuilder, NodeType
+from ainalyn import NodeBuilder
 
 node = (
     NodeBuilder("search")
     .description("Search for information")
-    .node_type(NodeType.TOOL)
-    .reference("web-search")  # References the tool
-    .inputs(["query"])
-    .outputs(["results"])
+    .uses_tool("web-search")  # References the tool
+    .inputs("query")
+    .outputs("results")
     .build()
 )
 ```
@@ -361,10 +360,9 @@ workflow = (
     .add_node(
         NodeBuilder("search")
         .description("Search for research topic")
-        .node_type(NodeType.TOOL)
-        .reference("web-search")
-        .inputs(["query"])
-        .outputs(["results"])
+        .uses_tool("web-search")
+        .inputs("query")
+        .outputs("results")
         .build()
     )
     .build()

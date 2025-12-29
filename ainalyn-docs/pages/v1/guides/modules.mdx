@@ -68,15 +68,14 @@ agent = (
 **Step 3: Reference in node**
 
 ```python
-from ainalyn import NodeBuilder, NodeType
+from ainalyn import NodeBuilder
 
 node = (
     NodeBuilder("fetch-data")
     .description("Fetch user data")
-    .node_type(NodeType.MODULE)
-    .reference("http-client")  # References the module
-    .inputs(["url"])
-    .outputs(["response"])
+    .uses_module("http-client")  # References the module
+    .inputs("url")
+    .outputs("response")
     .build()
 )
 ```
@@ -362,10 +361,9 @@ workflow = (
     .add_node(
         NodeBuilder("send")
         .description("Send email notification")
-        .node_type(NodeType.MODULE)
-        .reference("email-sender")  # Reference module
-        .inputs(["to", "subject", "body"])
-        .outputs(["sent", "message_id"])
+        .uses_module("email-sender")  # Reference module
+        .inputs("to", "subject", "body")
+        .outputs("sent", "message_id")
         .build()
     )
     .build()

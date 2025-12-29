@@ -13,29 +13,27 @@ A workflow defines the execution flow of tasks in your agent. It's a directed gr
 ## Basic Workflow
 
 ```python
-from ainalyn import WorkflowBuilder, NodeBuilder, NodeType
+from ainalyn import WorkflowBuilder, NodeBuilder
 
 workflow = (
     WorkflowBuilder("process-data")
     .description("Fetch and process data")
-    .entry_node("fetch")
     .add_node(
         NodeBuilder("fetch")
         .description("Fetch raw data")
-        .node_type(NodeType.MODULE)
-        .reference("http-client")
-        .outputs(["raw_data"])
-        .next_nodes(["process"])
+        .uses_module("http-client")
+        .outputs("raw_data")
+        .next_nodes("process")
         .build()
     )
     .add_node(
         NodeBuilder("process")
         .description("Process the data")
-        .node_type(NodeType.PROMPT)
-        .reference("analyzer")
-        .inputs(["raw_data"])
+        .uses_prompt("analyzer")
+        .inputs("raw_data")
         .build()
     )
+    .entry_node("fetch")
     .build()
 )
 ```
@@ -52,20 +50,23 @@ Dependencies define execution order through `next_nodes`.
 node_a = (
     NodeBuilder("step-a")
     .description("First step")
-    .next_nodes(["step-b"])
+    .uses_prompt("prompt-a")
+    .next_nodes("step-b")
     .build()
 )
 
 node_b = (
     NodeBuilder("step-b")
     .description("Second step")
-    .next_nodes(["step-c"])
+    .uses_prompt("prompt-b")
+    .next_nodes("step-c")
     .build()
 )
 
 node_c = (
     NodeBuilder("step-c")
     .description("Final step")
+    .uses_prompt("prompt-c")
     .build()
 )
 ```
@@ -76,27 +77,31 @@ node_c = (
 node_a = (
     NodeBuilder("start")
     .description("Start processing")
-    .next_nodes(["process-1", "process-2"])  # Both run in parallel
+    .uses_prompt("start-prompt")
+    .next_nodes("process-1", "process-2")  # Both run in parallel
     .build()
 )
 
 node_b = (
     NodeBuilder("process-1")
     .description("First parallel task")
-    .next_nodes(["merge"])
+    .uses_prompt("process-prompt-1")
+    .next_nodes("merge")
     .build()
 )
 
 node_c = (
     NodeBuilder("process-2")
     .description("Second parallel task")
-    .next_nodes(["merge"])
+    .uses_prompt("process-prompt-2")
+    .next_nodes("merge")
     .build()
 )
 
 node_d = (
     NodeBuilder("merge")
     .description("Merge results")
+    .uses_prompt("merge-prompt")
     .build()
 )
 ```
@@ -107,7 +112,8 @@ node_d = (
 node_a = (
     NodeBuilder("analyze")
     .description("Analyze input")
-    .next_nodes(["path-a", "path-b"])  # Platform decides which path
+    .uses_module("analyzer")
+    .next_nodes("path-a", "path-b")  # Platform decides which path
     .build()
 )
 ```
@@ -190,26 +196,28 @@ Each workflow is independent and can be invoked separately by the platform.
 
 ## Node Types
 
-**NodeType.PROMPT** - Uses a prompt template
+**Uses Prompt** - Uses a prompt template
 ```python
 NodeBuilder("analyze")
-    .node_type(NodeType.PROMPT)
-    .reference("analyzer-prompt")  # References a Prompt
+    .description("Analyze data")
+    .uses_prompt("analyzer-prompt")  # References a Prompt
 ```
 
-**NodeType.MODULE** - Executes custom logic
+**Uses Module** - Executes custom logic
 ```python
 NodeBuilder("fetch")
-    .node_type(NodeType.MODULE)
-    .reference("http-client")  # References a Module
+    .description("Fetch data")
+    .uses_module("http-client")  # References a Module
 ```
 
-**NodeType.TOOL** - Calls an external tool
+**Uses Tool** - Calls an external tool
 ```python
 NodeBuilder("search")
-    .node_type(NodeType.TOOL)
-    .reference("web-search")  # References a Tool
+    .description("Search web")
+    .uses_tool("web-search")  # References a Tool
 ```
+
+**Note:** The node type is automatically determined by which `.uses_*()` method you call.
 
 ## Common Patterns
 
@@ -219,24 +227,28 @@ NodeBuilder("search")
 # Step 1 → Step 2 → Step 3
 workflow = (
     WorkflowBuilder("sequential")
-    .entry_node("step1")
+    .description("Sequential workflow")
     .add_node(
         NodeBuilder("step1")
         .description("First")
-        .next_nodes(["step2"])
+        .uses_prompt("prompt1")
+        .next_nodes("step2")
         .build()
     )
     .add_node(
         NodeBuilder("step2")
         .description("Second")
-        .next_nodes(["step3"])
+        .uses_prompt("prompt2")
+        .next_nodes("step3")
         .build()
     )
     .add_node(
         NodeBuilder("step3")
         .description("Final")
+        .uses_prompt("prompt3")
         .build()
     )
+    .entry_node("step1")
     .build()
 )
 ```
@@ -247,21 +259,42 @@ workflow = (
 # One node → Multiple parallel nodes → Merge
 workflow = (
     WorkflowBuilder("parallel")
-    .entry_node("split")
+    .description("Parallel workflow")
     .add_node(
         NodeBuilder("split")
         .description("Split work")
-        .next_nodes(["work1", "work2", "work3"])
+        .uses_prompt("split-prompt")
+        .next_nodes("work1", "work2", "work3")
         .build()
     )
-    .add_node(NodeBuilder("work1").next_nodes(["merge"]).build())
-    .add_node(NodeBuilder("work2").next_nodes(["merge"]).build())
-    .add_node(NodeBuilder("work3").next_nodes(["merge"]).build())
+    .add_node(
+        NodeBuilder("work1")
+        .description("Work 1")
+        .uses_prompt("work-prompt-1")
+        .next_nodes("merge")
+        .build()
+    )
+    .add_node(
+        NodeBuilder("work2")
+        .description("Work 2")
+        .uses_prompt("work-prompt-2")
+        .next_nodes("merge")
+        .build()
+    )
+    .add_node(
+        NodeBuilder("work3")
+        .description("Work 3")
+        .uses_prompt("work-prompt-3")
+        .next_nodes("merge")
+        .build()
+    )
     .add_node(
         NodeBuilder("merge")
         .description("Combine results")
+        .uses_prompt("merge-prompt")
         .build()
     )
+    .entry_node("split")
     .build()
 )
 ```
@@ -272,32 +305,41 @@ workflow = (
 # Input → Transform → Filter → Output
 workflow = (
     WorkflowBuilder("pipeline")
-    .entry_node("input")
+    .description("Pipeline workflow")
     .add_node(
         NodeBuilder("input")
-        .next_nodes(["transform"])
-        .outputs(["raw_data"])
+        .description("Read input")
+        .uses_module("input-reader")
+        .next_nodes("transform")
+        .outputs("raw_data")
         .build()
     )
     .add_node(
         NodeBuilder("transform")
-        .inputs(["raw_data"])
-        .next_nodes(["filter"])
-        .outputs(["transformed_data"])
+        .description("Transform data")
+        .uses_prompt("transform-prompt")
+        .inputs("raw_data")
+        .next_nodes("filter")
+        .outputs("transformed_data")
         .build()
     )
     .add_node(
         NodeBuilder("filter")
-        .inputs(["transformed_data"])
-        .next_nodes(["output"])
-        .outputs(["filtered_data"])
+        .description("Filter data")
+        .uses_prompt("filter-prompt")
+        .inputs("transformed_data")
+        .next_nodes("output")
+        .outputs("filtered_data")
         .build()
     )
     .add_node(
         NodeBuilder("output")
-        .inputs(["filtered_data"])
+        .description("Write output")
+        .uses_module("output-writer")
+        .inputs("filtered_data")
         .build()
     )
+    .entry_node("input")
     .build()
 )
 ```

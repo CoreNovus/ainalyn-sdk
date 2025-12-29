@@ -15,21 +15,35 @@ pip install ainalyn-sdk
 Create `my_agent.py`:
 
 ```python
-from ainalyn import AgentBuilder, WorkflowBuilder, NodeBuilder
+from ainalyn import AgentBuilder, WorkflowBuilder, NodeBuilder, PromptBuilder
 from ainalyn.api import validate, export_yaml
+
+# Define a prompt
+greeting_prompt = (
+    PromptBuilder("greeting-prompt")
+    .description("Generates a personalized greeting")
+    .template("Generate a personalized greeting for {{user_name}}")
+    .variables("user_name")
+    .build()
+)
 
 # Define the agent
 agent = (
-    AgentBuilder("GreetingAgent")
+    AgentBuilder("greeting-agent")
     .description("Generates personalized greetings")
     .version("1.0.0")
+    .add_prompt(greeting_prompt)
     .add_workflow(
-        WorkflowBuilder("greet_user")
+        WorkflowBuilder("greet-user")
+        .description("Main greeting workflow")
         .add_node(
-            NodeBuilder("generate_greeting")
-            .goal("Generate a personalized greeting")
+            NodeBuilder("generate-greeting")
+            .description("Generate a personalized greeting")
+            .uses_prompt("greeting-prompt")
+            .outputs("greeting")
             .build()
         )
+        .entry_node("generate-greeting")
         .build()
     )
     .build()
@@ -53,23 +67,42 @@ python my_agent.py
 Output:
 ```
 Valid!
-name: GreetingAgent
+# Ainalyn Agent Definition
+# This file is a description submitted to Platform Core for review.
+# It does NOT execute by itself. Execution is handled by Platform Core.
+#
+# Local compilation does NOT equal platform execution.
+
+name: greeting-agent
 version: 1.0.0
 description: Generates personalized greetings
 workflows:
-  - name: greet_user
-    nodes:
-      - name: generate_greeting
-        goal: Generate a personalized greeting
+- name: greet-user
+  description: Main greeting workflow
+  entry_node: generate-greeting
+  nodes:
+  - name: generate-greeting
+    description: Generate a personalized greeting
+    type: prompt
+    reference: greeting-prompt
+    outputs:
+    - greeting
+prompts:
+- name: greeting-prompt
+  description: Generates a personalized greeting
+  template: Generate a personalized greeting for {{user_name}}
+  variables:
+  - user_name
 ```
 
 ## What's Happening
 
-1. **AgentBuilder** creates an agent
-2. **WorkflowBuilder** adds a workflow
-3. **NodeBuilder** adds a task node
-4. **validate()** checks the definition
-5. **export_yaml()** converts to YAML
+1. **PromptBuilder** creates a prompt template
+2. **AgentBuilder** creates an agent
+3. **WorkflowBuilder** adds a workflow with entry_node
+4. **NodeBuilder** adds a task node that uses the prompt
+5. **validate()** checks the definition
+6. **export_yaml()** converts to YAML
 
 ## Next Steps
 
@@ -91,21 +124,25 @@ ainalyn compile my_agent.py -o output.yaml
 
 ## Common Patterns
 
-**Multiple nodes with dependencies:**
+**Multiple nodes with flow:**
 ```python
 workflow = (
     WorkflowBuilder("process")
+    .description("Sequential processing workflow")
     .add_node(
         NodeBuilder("step1")
-        .goal("First step")
+        .description("First step")
+        .uses_prompt("step1-prompt")
+        .next_nodes("step2")
         .build()
     )
     .add_node(
         NodeBuilder("step2")
-        .goal("Second step")
-        .depends_on("step1")
+        .description("Second step")
+        .uses_prompt("step2-prompt")
         .build()
     )
+    .entry_node("step1")
     .build()
 )
 ```
@@ -113,7 +150,7 @@ workflow = (
 **Multiple workflows:**
 ```python
 agent = (
-    AgentBuilder("MyAgent")
+    AgentBuilder("my-agent")
     .version("1.0.0")
     .add_workflow(workflow1)
     .add_workflow(workflow2)

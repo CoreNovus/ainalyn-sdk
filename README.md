@@ -12,10 +12,10 @@ Ainalyn SDK helps you define, validate, and export task-oriented agents using a 
 
 ## Why Ainalyn SDK?
 
-- ✅ **Type-safe Builder API** - Define agents with IDE autocomplete and compile-time checks
-- 📋 **Comprehensive Validation** - Catch errors before deployment
-- 📦 **YAML Export** - One-line compilation to platform-ready format
-- 🏗️ **Clean Architecture** - Well-tested, maintainable codebase
+- **Type-safe Builder API** - Define agents with IDE autocomplete and compile-time checks
+- **Comprehensive Validation** - Catch errors before deployment
+- **YAML Export** - One-line compilation to platform-ready format
+- **Clean Architecture** - Well-tested, maintainable codebase
 
 ## Quick Start
 
@@ -28,42 +28,75 @@ pip install ainalyn-sdk
 ### Your First Agent
 
 ```python
-from ainalyn import AgentBuilder, WorkflowBuilder, NodeBuilder
+from ainalyn import AgentBuilder, WorkflowBuilder, NodeBuilder, PromptBuilder
 from ainalyn.api import validate, export_yaml
+
+# Define a prompt
+greeting_prompt = (
+    PromptBuilder("greeting-prompt")
+    .description("Generates a personalized greeting")
+    .template("Generate a personalized greeting for {{user_name}}")
+    .variables("user_name")
+    .build()
+)
 
 # Define a simple agent
 agent = (
-    AgentBuilder("GreetingAgent")
+    AgentBuilder("greeting-agent")
     .description("Generates personalized greetings")
     .version("1.0.0")
+    .add_prompt(greeting_prompt)
     .add_workflow(
-        WorkflowBuilder("greet_user")
+        WorkflowBuilder("greet-user")
+        .description("Main greeting workflow")
         .add_node(
-            NodeBuilder("generate_greeting")
-            .goal("Generate a personalized greeting message")
+            NodeBuilder("generate-greeting")
+            .description("Generate a personalized greeting message")
+            .uses_prompt("greeting-prompt")
+            .outputs("greeting")
             .build()
         )
+        .entry_node("generate-greeting")
         .build()
     )
     .build()
 )
 
 # Validate and export
-validate(agent)
-yaml_output = export_yaml(agent)
-print(yaml_output)
+result = validate(agent)
+if result.is_valid:
+    yaml_output = export_yaml(agent)
+    print(yaml_output)
 ```
 
 **Output:**
 ```yaml
-name: GreetingAgent
+# Ainalyn Agent Definition
+# This file is a description submitted to Platform Core for review.
+# It does NOT execute by itself. Execution is handled by Platform Core.
+#
+# Local compilation does NOT equal platform execution.
+
+name: greeting-agent
 version: 1.0.0
 description: Generates personalized greetings
 workflows:
-  - name: greet_user
-    nodes:
-      - name: generate_greeting
-        goal: Generate a personalized greeting message
+- name: greet-user
+  description: Main greeting workflow
+  entry_node: generate-greeting
+  nodes:
+  - name: generate-greeting
+    description: Generate a personalized greeting message
+    type: prompt
+    reference: greeting-prompt
+    outputs:
+    - greeting
+prompts:
+- name: greeting-prompt
+  description: Generates a personalized greeting
+  template: Generate a personalized greeting for {{user_name}}
+  variables:
+  - user_name
 ```
 
 ### CLI Usage
@@ -78,9 +111,10 @@ ainalyn compile my_agent.py --output agent.yaml
 
 ## Documentation
 
-📚 **[Full Documentation](https://corenovus.github.io/ainalyn-sdk/)** - Complete guides, API reference, and examples
+**[Full Documentation](https://corenovus.github.io/ainalyn-sdk/)** - Complete guides, API reference, and examples
 
 **Quick Links:**
+
 - [Installation Guide](https://corenovus.github.io/ainalyn-sdk/getting-started/installation/)
 - [5-Minute Quickstart](https://corenovus.github.io/ainalyn-sdk/getting-started/quickstart/)
 - [Your First Agent Tutorial](https://corenovus.github.io/ainalyn-sdk/getting-started/your-first-agent/)
@@ -89,9 +123,10 @@ ainalyn compile my_agent.py --output agent.yaml
 
 ## Examples
 
-Check out the [`examples/`](examples/) directory:
-- **[basic_agent.py](examples/basic_agent.py)** - Simple greeting agent
-- **[multi_workflow_agent.py](examples/multi_workflow_agent.py)** - Complex data analysis agent
+Check out the `examples/` directory:
+
+- [basic_agent.py](examples/basic_agent.py) - Simple greeting agent
+- [multi_workflow_agent.py](examples/multi_workflow_agent.py) - Complex data analysis agent
 
 ## Contributing
 
@@ -110,10 +145,10 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## Support
 
-- 📖 [Documentation](https://corenovus.github.io/ainalyn-sdk/)
-- 🐛 [Report Issues](https://github.com/CoreNovus/ainalyn-sdk/issues)
-- 💬 [Discussions](https://github.com/CoreNovus/ainalyn-sdk/discussions)
+- [Documentation](https://corenovus.github.io/ainalyn-sdk/)
+- [Report Issues](https://github.com/CoreNovus/ainalyn-sdk/issues)
+- [Discussions](https://github.com/CoreNovus/ainalyn-sdk/discussions)
 
 ---
 
-Built with ❤️ by the CoreNovus Team
+Built by the CoreNovus Team

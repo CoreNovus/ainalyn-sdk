@@ -88,15 +88,14 @@ agent = (
 **Step 3: Reference in node**
 
 ```python
-from ainalyn import NodeBuilder, NodeType
+from ainalyn import NodeBuilder
 
 node = (
     NodeBuilder("analyze")
     .description("Analyze content")
-    .node_type(NodeType.PROMPT)
-    .reference("analyzer")  # References the prompt
-    .inputs(["content"])
-    .outputs(["analysis"])
+    .uses_prompt("analyzer")  # References the prompt
+    .inputs("content")
+    .outputs("analysis")
     .build()
 )
 ```
@@ -369,10 +368,9 @@ workflow = (
     .add_node(
         NodeBuilder("review")
         .description("Review submitted code")
-        .node_type(NodeType.PROMPT)
-        .reference("code-reviewer")
-        .inputs(["language", "code"])
-        .outputs(["review_result"])
+        .uses_prompt("code-reviewer")
+        .inputs("language", "code")
+        .outputs("review_result")
         .build()
     )
     .build()
