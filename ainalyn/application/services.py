@@ -14,6 +14,10 @@ from ainalyn.application.use_cases.compile_definition import (
     CompileDefinitionUseCase,
 )
 from ainalyn.application.use_cases.export_definition import ExportDefinitionUseCase
+from ainalyn.application.use_cases.submit_definition import (
+    SubmitDefinitionUseCase,
+    TrackSubmissionUseCase,
+)
 from ainalyn.application.use_cases.validate_definition import ValidateDefinitionUseCase
 
 if TYPE_CHECKING:
@@ -34,7 +38,11 @@ if TYPE_CHECKING:
     from ainalyn.application.ports.outbound.definition_static_analysis import (
         IDefinitionAnalyzer,
     )
-    from ainalyn.domain.entities import AgentDefinition
+    from ainalyn.application.ports.outbound.platform_submission import (
+        IPlatformClient,
+        SubmissionOptions,
+    )
+    from ainalyn.domain.entities import AgentDefinition, SubmissionResult
 
 
 class DefinitionService:
@@ -75,6 +83,7 @@ class DefinitionService:
         static_analyzer: IDefinitionAnalyzer,
         serializer: IDefinitionSerializer,
         writer: IDefinitionWriter | None = None,
+        platform_client: IPlatformClient | None = None,
     ) -> None:
         """
         Initialize the definition service with injected dependencies.
@@ -89,6 +98,8 @@ class DefinitionService:
             static_analyzer: Port for static analysis capability.
             serializer: Port for serialization capability (e.g., YAML).
             writer: Optional port for persistence capability (e.g., file writer).
+            platform_client: Optional port for Platform Core API communication.
+                Required for submission features.
 
         Example:
             >>> from ainalyn.infrastructure import create_default_service
@@ -98,6 +109,7 @@ class DefinitionService:
             ...     schema_validator=MyCustomValidator(),
             ...     static_analyzer=MyCustomAnalyzer(),
             ...     serializer=MyCustomSerializer(),
+            ...     platform_client=MyPlatformClient(),
             ... )
         """
         # Store injected adapters
@@ -105,6 +117,7 @@ class DefinitionService:
         self._static_analyzer = static_analyzer
         self._serializer = serializer
         self._writer = writer
+        self._platform_client = platform_client
 
         # Initialize use cases with injected dependencies
         self._validate_use_case = ValidateDefinitionUseCase(
@@ -116,6 +129,17 @@ class DefinitionService:
             self._validate_use_case,
             self._export_use_case,
         )
+
+        # Initialize submission use cases (lazy - only if platform_client provided)
+        self._submit_use_case: SubmitDefinitionUseCase | None = None
+        self._track_use_case: TrackSubmissionUseCase | None = None
+        if self._platform_client:
+            self._submit_use_case = SubmitDefinitionUseCase(
+                self._validate_use_case,
+                self._serializer,
+                self._platform_client,
+            )
+            self._track_use_case = TrackSubmissionUseCase(self._platform_client)
 
     def validate(self, definition: AgentDefinition) -> ValidationResult:
         """
@@ -260,3 +284,106 @@ class DefinitionService:
             ...     print("Validation failed")
         """
         return self._compile_use_case.execute_to_file(definition, output_path)
+
+    def submit(
+        self,
+        definition: AgentDefinition,
+        api_key: str,
+        options: SubmissionOptions | None = None,
+    ) -> SubmissionResult:
+        """
+        Submit an AgentDefinition to Platform Core for review.
+
+        This method performs the complete submission workflow:
+        1. Validate the definition (SDK-level validation)
+        2. Export to YAML format
+        3. Submit to Platform Core API
+
+        Per Platform Constitution:
+        - SDK can submit but NOT approve agents
+        - Platform Core has final authority over acceptance
+        - Submission does NOT create an Execution
+        - Submission does NOT incur billing (unless platform policy states)
+
+        Args:
+            definition: The AgentDefinition to submit.
+            api_key: Developer API key for authentication.
+            options: Optional submission configuration.
+
+        Returns:
+            SubmissionResult: Result containing review_id, status,
+                and tracking information.
+
+        Raises:
+            RuntimeError: If platform client was not provided during
+                service initialization.
+            SubmissionError: If SDK validation fails or submission fails.
+            AuthenticationError: If api_key is invalid or expired.
+            NetworkError: If network communication with Platform Core fails.
+
+        Example:
+            >>> service = DefinitionService(
+            ...     ...,
+            ...     platform_client=HttpPlatformClient()
+            ... )
+            >>> result = service.submit(
+            ...     definition=agent,
+            ...     api_key="dev_sk_abc123",
+            ...     options=SubmissionOptions(auto_deploy=True)
+            ... )
+            >>> print(f"Review ID: {result.review_id}")
+            >>> print(f"Track at: {result.tracking_url}")
+        """
+        if not self._submit_use_case:
+            raise RuntimeError(
+                "Platform client not configured. "
+                "Provide platform_client when initializing DefinitionService "
+                "to enable submission features."
+            )
+        return self._submit_use_case.execute(definition, api_key, options)
+
+    def track_submission(
+        self,
+        review_id: str,
+        api_key: str,
+    ) -> SubmissionResult:
+        """
+        Track the status of a previously submitted agent.
+
+        This method queries Platform Core for the current status
+        of a submission.
+
+        Args:
+            review_id: The review ID returned from submit().
+            api_key: Developer API key for authentication.
+
+        Returns:
+            SubmissionResult: Current status, feedback, and if approved,
+                the agent_id and marketplace URL.
+
+        Raises:
+            RuntimeError: If platform client was not provided during
+                service initialization.
+            AuthenticationError: If api_key is invalid.
+            NetworkError: If network communication fails.
+            SubmissionError: If review_id is not found or other errors.
+
+        Example:
+            >>> service = DefinitionService(..., platform_client=HttpPlatformClient())
+            >>> result = service.track_submission(
+            ...     review_id="review_abc123",
+            ...     api_key="dev_sk_abc123"
+            ... )
+            >>> if result.is_live:
+            ...     print(f"Agent is live: {result.marketplace_url}")
+            >>> elif result.is_rejected:
+            ...     for issue in result.get_blocking_issues():
+            ...         print(f"[ERROR] {issue.message}")
+        """
+        if not self._track_use_case:
+            raise RuntimeError(
+                "Platform client not configured. "
+                "Provide platform_client when initializing DefinitionService "
+                "to enable submission features."
+            )
+        return self._track_use_case.execute(review_id, api_key)

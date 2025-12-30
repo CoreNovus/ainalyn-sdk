@@ -13,11 +13,14 @@ This layer depends on the domain layer and defines interfaces
 
 from __future__ import annotations
 
+from ainalyn.application.ports.outbound.platform_submission import SubmissionOptions
 from ainalyn.application.services import DefinitionService
 from ainalyn.application.use_cases import (
     CompilationResult,
     CompileDefinitionUseCase,
     ExportDefinitionUseCase,
+    SubmitDefinitionUseCase,
+    TrackSubmissionUseCase,
     ValidateDefinitionUseCase,
 )
 
@@ -28,6 +31,10 @@ __all__ = [
     "ValidateDefinitionUseCase",
     "ExportDefinitionUseCase",
     "CompileDefinitionUseCase",
+    "SubmitDefinitionUseCase",
+    "TrackSubmissionUseCase",
     # Results
     "CompilationResult",
+    # Options
+    "SubmissionOptions",
 ]

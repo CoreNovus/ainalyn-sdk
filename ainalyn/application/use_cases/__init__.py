@@ -15,6 +15,10 @@ from ainalyn.application.use_cases.compile_definition import (
     CompileDefinitionUseCase,
 )
 from ainalyn.application.use_cases.export_definition import ExportDefinitionUseCase
+from ainalyn.application.use_cases.submit_definition import (
+    SubmitDefinitionUseCase,
+    TrackSubmissionUseCase,
+)
 from ainalyn.application.use_cases.validate_definition import ValidateDefinitionUseCase
 
 __all__ = [
@@ -22,4 +26,6 @@ __all__ = [
     "ExportDefinitionUseCase",
     "CompileDefinitionUseCase",
     "CompilationResult",
+    "SubmitDefinitionUseCase",
+    "TrackSubmissionUseCase",
 ]
