@@ -29,6 +29,18 @@ export const pageMap = [{
       frontMatter: {
         "sidebarTitle": "Architecture Overview"
       }
+    }, {
+      name: "compilation-flow",
+      route: "/v1/advanced/compilation-flow",
+      frontMatter: {
+        "sidebarTitle": "Compilation Flow"
+      }
+    }, {
+      name: "system-context",
+      route: "/v1/advanced/system-context",
+      frontMatter: {
+        "sidebarTitle": "System Context"
+      }
     }]
   }, {
     name: "api-reference",
