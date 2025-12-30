@@ -8,10 +8,13 @@ This SDK provides tools for developers to:
 - Define Agents using a fluent builder API or decorators
 - Validate Agent Definitions against platform requirements
 - Export definitions to YAML format for platform submission
+- Submit agents to Platform Core for review and deployment
 
 Important: This SDK is a compiler, not a runtime. It produces descriptions
 that are submitted to the Ainalyn Platform for execution. The SDK does not
 execute Agents or make any decisions about execution, billing, or pricing.
+Per Platform Constitution: SDK can submit but NOT approve - Platform Core
+has final authority over agent acceptance and execution.
 
 Example:
     >>> from ainalyn import AgentBuilder, workflow, node
@@ -43,7 +46,7 @@ from ainalyn.adapters.inbound import (
     WorkflowBuilder,
 )
 from ainalyn.adapters.outbound import SchemaValidator, StaticAnalyzer, YamlExporter
-from ainalyn.api import compile_agent, export_yaml, validate
+from ainalyn.api import compile_agent, export_yaml, submit_agent, track_submission, validate
 from ainalyn.application import (
     CompilationResult,
     CompileDefinitionUseCase,
@@ -60,6 +63,18 @@ from ainalyn.domain.entities import (
     Tool,
     Workflow,
 )
+from ainalyn.domain.entities.submission_result import SubmissionResult
+from ainalyn.domain.entities.submission_status import SubmissionStatus
+from ainalyn.domain.entities.review_feedback import (
+    FeedbackCategory,
+    FeedbackSeverity,
+    ReviewFeedback,
+)
+from ainalyn.domain.errors import (
+    AuthenticationError,
+    NetworkError,
+    SubmissionError,
+)
 from ainalyn.application.ports.inbound.validate_agent_definition import (
     Severity,
     ValidationError,
@@ -72,6 +87,8 @@ __all__ = [
     "validate",
     "export_yaml",
     "compile_agent",
+    "submit_agent",
+    "track_submission",
     # Domain Entities
     "AgentDefinition",
     "Module",
@@ -80,6 +97,12 @@ __all__ = [
     "Prompt",
     "Tool",
     "Workflow",
+    # Submission Entities
+    "SubmissionResult",
+    "SubmissionStatus",
+    "ReviewFeedback",
+    "FeedbackCategory",
+    "FeedbackSeverity",
     # Domain Rules
     "DefinitionRules",
     # Builders (Primary Adapters)
@@ -96,6 +119,10 @@ __all__ = [
     "InvalidReferenceError",
     "InvalidValueError",
     "MissingRequiredFieldError",
+    # Submission Errors
+    "SubmissionError",
+    "AuthenticationError",
+    "NetworkError",
     # Secondary Adapters
     "SchemaValidator",
     "StaticAnalyzer",
