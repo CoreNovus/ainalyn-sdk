@@ -1,0 +1,592 @@
+import { Callout } from 'nextra/components'
+
+# Agent Definition
+
+An **Agent Definition** is the formal description of what an Agent does and how it accomplishes its task. It's the contract between you (the developer) and Platform Core about how your agent should behave.
+
+## What Is an Agent Definition?
+
+<Callout type="info">
+An Agent Definition is a **declarative, structured description** of:
+
+- What task the agent accomplishes
+- What inputs it expects
+- What outputs it produces
+- How the task workflow is organized
+- What resources (prompts, tools, modules) it needs
+</Callout>
+
+Think of an Agent Definition as a **recipe**:
+- It describes ingredients (tools, prompts)
+- It defines steps (workflow nodes)
+- It specifies order (workflow edges)
+- But it doesn't cook anything—Platform Core does that
+
+## Agent vs Agent Definition
+
+This distinction is **constitutional** (from Platform Vision & System Boundary):
+
+| Agent | Agent Definition |
+|-------|------------------|
+| Marketplace contract entity | Internal description language |
+| What users invoke | What developers submit |
+| Platform's billing unit | Developer's build artifact |
+| Public-facing product | Implementation specification |
+| Lives in Platform Core | Lives in YAML files |
+
+```python
+# This creates an Agent DEFINITION
+agent_def = (
+    AgentBuilder("email-parser")
+    .version("1.0.0")
+    .description("Extract emails from text")
+    .build()
+)
+
+# After submission and approval, it becomes an AGENT
+# Users don't see the definition—they just invoke "email-parser"
+```
+
+<Callout type="warning">
+**Agent ≠ Agent Definition**
+
+An **Agent** is what users see in the marketplace and invoke.
+An **Agent Definition** is your implementation that describes how the agent works.
+
+Users care about the Agent (the product).
+Developers work with Agent Definitions (the spec).
+</Callout>
+
+## Structure of an Agent Definition
+
+Every Agent Definition has a hierarchical structure:
+
+```
+Agent Definition
+├── Metadata (name, version, description)
+├── Workflows (at least one)
+│   ├── Nodes (processing steps)
+│   ├── Edges (execution flow)
+│   └── Entry Node (where to start)
+├── Prompts (optional, LLM templates)
+├── Tools (optional, external services)
+└── Modules (optional, reusable components)
+```
+
+### Required Components
+
+1. **Metadata**
+   - `name`: Unique identifier (`[a-z][a-z0-9-]*`)
+   - `version`: Semantic version (e.g., "1.0.0")
+   - `description`: Human-readable summary
+
+2. **At least one Workflow**
+   - Defines the task execution logic
+   - Must form a valid DAG (Directed Acyclic Graph)
+   - All nodes must be reachable from entry node
+
+### Optional Components
+
+3. **Prompts**: LLM prompt templates
+4. **Tools**: External API/service declarations
+5. **Modules**: Reusable workflow components
+
+## Building an Agent Definition
+
+### Using the Builder API
+
+The SDK provides a fluent builder API:
+
+```python
+from ainalyn import (
+    AgentBuilder,
+    WorkflowBuilder,
+    NodeBuilder,
+    PromptBuilder,
+    ToolBuilder
+)
+
+# Define a prompt
+summarize_prompt = (
+    PromptBuilder("summarize")
+    .description("Summarize text concisely")
+    .template("Summarize the following text:\n{{input_text}}")
+    .variables("input_text")
+    .build()
+)
+
+# Define workflow nodes
+extract_node = (
+    NodeBuilder("extract", "prompt")
+    .reference("summarize")
+    .outputs("summary")
+    .build()
+)
+
+format_node = (
+    NodeBuilder("format", "module")
+    .reference("text-formatter")
+    .inputs("summary")
+    .outputs("formatted_output")
+    .build()
+)
+
+# Define workflow
+main_workflow = (
+    WorkflowBuilder("main")
+    .description("Summarization workflow")
+    .add_node(extract_node)
+    .add_node(format_node)
+    .add_edge("extract", "format")
+    .entry_node("extract")
+    .build()
+)
+
+# Build complete Agent Definition
+agent_definition = (
+    AgentBuilder("text-summarizer")
+    .version("1.0.0")
+    .description("Summarize long text into concise summaries")
+    .add_prompt(summarize_prompt)
+    .add_workflow(main_workflow)
+    .build()
+)
+```
+
+### Validation
+
+Before submitting, the SDK validates your definition:
+
+```python
+from ainalyn import validate
+
+result = validate(agent_definition)
+
+if result.is_valid:
+    print("✓ Ready to submit")
+else:
+    for error in result.errors:
+        print(f"✗ {error.code}: {error.message}")
+```
+
+The SDK checks:
+- ✓ Required fields present
+- ✓ Names match pattern `[a-z][a-z0-9-]*`
+- ✓ Versions follow semantic versioning
+- ✓ All references resolve (no undefined prompts/tools/modules)
+- ✓ Workflows form valid DAGs (no cycles)
+- ✓ All nodes reachable from entry node
+- ✓ No duplicate names within scope
+
+## Workflow Structure
+
+Workflows are the core of your Agent Definition. They describe **how** the task gets done.
+
+### Directed Acyclic Graph (DAG)
+
+Every workflow must be a valid DAG:
+
+```python
+# Valid DAG ✓
+workflow = (
+    WorkflowBuilder("process")
+    .add_node(NodeBuilder("A", "prompt").reference("prompt-a").build())
+    .add_node(NodeBuilder("B", "tool").reference("tool-b").build())
+    .add_node(NodeBuilder("C", "module").reference("module-c").build())
+    .add_edge("A", "B")  # A → B
+    .add_edge("B", "C")  # B → C
+    .add_edge("A", "C")  # A → C (branching is OK)
+    .entry_node("A")
+    .build()
+)
+
+# Invalid: Cycle ✗
+workflow = (
+    WorkflowBuilder("bad")
+    .add_node(NodeBuilder("X", "prompt").reference("p").build())
+    .add_node(NodeBuilder("Y", "prompt").reference("q").build())
+    .add_edge("X", "Y")  # X → Y
+    .add_edge("Y", "X")  # Y → X ← Creates cycle!
+    .entry_node("X")
+    .build()
+)
+# CyclicDependencyError: Workflow contains a cycle: X → Y → X
+```
+
+### Node Types
+
+Nodes specify **what** processing happens at each step:
+
+| Node Type | Reference | Purpose |
+|-----------|-----------|---------|
+| `prompt` | Prompt name | LLM-based processing |
+| `tool` | Tool name | External API/service call |
+| `module` | Module name | Reusable component invocation |
+
+```python
+# Prompt node - LLM processing
+llm_node = (
+    NodeBuilder("analyze", "prompt")
+    .reference("analysis-prompt")
+    .outputs("analysis_result")
+    .build()
+)
+
+# Tool node - External service
+api_node = (
+    NodeBuilder("fetch", "tool")
+    .reference("weather-api")
+    .outputs("weather_data")
+    .build()
+)
+
+# Module node - Reusable component
+module_node = (
+    NodeBuilder("transform", "module")
+    .reference("data-transformer")
+    .inputs("raw_data")
+    .outputs("processed_data")
+    .build()
+)
+```
+
+### Edges and Flow Control
+
+Edges define execution order:
+
+```python
+workflow = (
+    WorkflowBuilder("process")
+    .add_node(node1)
+    .add_node(node2)
+    .add_node(node3)
+    .add_edge("node1", "node2")  # Sequential: 1 → 2
+    .add_edge("node2", "node3")  # Sequential: 2 → 3
+    .entry_node("node1")         # Start at node1
+    .build()
+)
+```
+
+<Callout>
+**Parallel Execution**
+
+If a node has edges to multiple nodes, Platform Core may execute them in parallel:
+
+```python
+workflow = (
+    WorkflowBuilder("parallel-demo")
+    .add_node(node_start)
+    .add_node(node_branch_a)
+    .add_node(node_branch_b)
+    .add_node(node_merge)
+    .add_edge("start", "branch_a")   # start → branch_a
+    .add_edge("start", "branch_b")   # start → branch_b (parallel)
+    .add_edge("branch_a", "merge")   # branch_a → merge
+    .add_edge("branch_b", "merge")   # branch_b → merge
+    .entry_node("start")
+    .build()
+)
+```
+
+Parallelism is determined by Platform Core at runtime, not by the SDK.
+</Callout>
+
+## Resources: Prompts, Tools, Modules
+
+### Prompts
+
+Prompts define LLM interactions:
+
+```python
+prompt = (
+    PromptBuilder("classify")
+    .description("Classify text sentiment")
+    .template(
+        "Classify the sentiment of this text as positive, negative, or neutral:\n"
+        "{{text}}\n"
+        "Sentiment:"
+    )
+    .variables("text")
+    .build()
+)
+```
+
+### Tools
+
+Tools declare external service integrations:
+
+```python
+weather_tool = (
+    ToolBuilder("weather-api")
+    .description("Fetch current weather data")
+    .input_schema({
+        "type": "object",
+        "properties": {
+            "location": {"type": "string"}
+        },
+        "required": ["location"]
+    })
+    .output_schema({
+        "type": "object",
+        "properties": {
+            "temperature": {"type": "number"},
+            "conditions": {"type": "string"}
+        }
+    })
+    .build()
+)
+```
+
+<Callout type="warning">
+**Tool Declarations vs Tool Implementations**
+
+The Agent Definition declares **what** tools are needed.
+Platform Core manages **how** tools are implemented and called.
+
+The SDK doesn't implement tools—it just describes their interface.
+</Callout>
+
+### Modules
+
+Modules are reusable workflow components (see [Modules Guide](/v1/guides/modules/)).
+
+## YAML Output
+
+Agent Definitions compile to YAML for submission to Platform Core:
+
+```python
+from ainalyn import export_yaml
+
+yaml_content = export_yaml(agent_definition)
+```
+
+Output:
+
+```yaml
+# Ainalyn Agent Definition
+# This is a description submitted to Platform Core for review.
+
+name: text-summarizer
+version: 1.0.0
+description: Summarize long text into concise summaries
+
+workflows:
+- name: main
+  description: Summarization workflow
+  entry_node: extract
+  nodes:
+  - name: extract
+    description: Extract key information
+    type: prompt
+    reference: summarize
+    outputs:
+    - summary
+  - name: format
+    description: Format output
+    type: module
+    reference: text-formatter
+    inputs:
+    - summary
+    outputs:
+    - formatted_output
+  edges:
+  - from: extract
+    to: format
+
+prompts:
+- name: summarize
+  description: Summarize text concisely
+  template: "Summarize the following text:\n{{input_text}}"
+  variables:
+  - input_text
+```
+
+## Submission and Lifecycle
+
+Once you have a valid definition, submit it to Platform Core:
+
+```python
+from ainalyn import submit_agent
+
+result = submit_agent(
+    definition=agent_definition,
+    api_key="dev_sk_your_key"
+)
+
+print(f"Review ID: {result.review_id}")
+print(f"Status: {result.status.value}")
+```
+
+### Definition Lifecycle
+
+1. **Build**: Create definition using SDK
+2. **Validate**: SDK checks structural correctness
+3. **Submit**: Send to Platform Core for review
+4. **Review**: Platform applies governance policies
+5. **Approve/Reject**: Platform decides if definition meets standards
+6. **Marketplace**: Approved definitions become available Agents
+7. **Execution**: Users invoke the Agent; Platform executes the definition
+
+<Callout>
+**Agent Definition vs Execution**
+
+- **Agent Definition** is a static description (what you build)
+- **Execution** is a runtime instance (what Platform Core creates when a user invokes the agent)
+
+One Agent Definition → Many Executions (one per user invocation)
+</Callout>
+
+## Platform Core's Role
+
+Once submitted, Platform Core:
+
+✓ **Reviews** the definition for security, governance, and policy compliance
+✓ **Approves or rejects** based on platform standards
+✓ **Stores** approved definitions in the marketplace
+✓ **Executes** the definition when users invoke the agent
+✓ **Manages** all resources (LLMs, tools, modules) at runtime
+✓ **Bills** based on actual execution usage
+
+<Callout type="error">
+**Constitutional Boundary**
+
+The SDK can **submit** Agent Definitions but **cannot approve** them.
+
+Only Platform Core has the authority to:
+- Approve or reject definitions
+- Create Executions
+- Determine billing
+- Enforce governance
+
+This is not a technical limitation—it's a **governance rule** that ensures platform integrity.
+</Callout>
+
+## Best Practices
+
+### 1. Version Your Definitions
+
+Use semantic versioning:
+
+```python
+# Initial release
+agent_v1 = AgentBuilder("my-agent").version("1.0.0").build()
+
+# Bug fix (backward compatible)
+agent_v1_1 = AgentBuilder("my-agent").version("1.0.1").build()
+
+# New features (backward compatible)
+agent_v1_2 = AgentBuilder("my-agent").version("1.2.0").build()
+
+# Breaking changes (new major version)
+agent_v2 = AgentBuilder("my-agent").version("2.0.0").build()
+```
+
+### 2. Write Clear Descriptions
+
+```python
+# ✗ Vague
+.description("Does stuff")
+
+# ✓ Clear
+.description("Extract email addresses from PDF documents")
+```
+
+### 3. Keep Workflows Simple
+
+```python
+# ✓ Good: Linear, easy to understand
+workflow = (
+    WorkflowBuilder("simple")
+    .add_node(fetch)
+    .add_node(process)
+    .add_node(output)
+    .add_edge("fetch", "process")
+    .add_edge("process", "output")
+    .entry_node("fetch")
+    .build()
+)
+
+# ⚠ Complex: Hard to debug, maintain
+# (20 nodes, 50 edges, multiple branches)
+```
+
+### 4. Validate Before Submitting
+
+```python
+# Always validate locally first
+result = validate(agent_definition)
+
+if not result.is_valid:
+    for error in result.errors:
+        print(f"Fix: {error.message}")
+    exit(1)
+
+# Only submit if validation passes
+submit_agent(agent_definition, api_key=api_key)
+```
+
+## Common Patterns
+
+### Sequential Processing
+
+```python
+workflow = (
+    WorkflowBuilder("sequential")
+    .add_node(step1)
+    .add_node(step2)
+    .add_node(step3)
+    .add_edge("step1", "step2")
+    .add_edge("step2", "step3")
+    .entry_node("step1")
+    .build()
+)
+```
+
+### Branching
+
+```python
+workflow = (
+    WorkflowBuilder("branching")
+    .add_node(input_node)
+    .add_node(branch_a)
+    .add_node(branch_b)
+    .add_edge("input", "branch_a")  # input → branch_a
+    .add_edge("input", "branch_b")  # input → branch_b (parallel)
+    .entry_node("input")
+    .build()
+)
+```
+
+### Converging
+
+```python
+workflow = (
+    WorkflowBuilder("converging")
+    .add_node(source_a)
+    .add_node(source_b)
+    .add_node(merge)
+    .add_edge("source_a", "merge")
+    .add_edge("source_b", "merge")
+    .entry_node("source_a")  # Note: source_b must also be reachable
+    .build()
+)
+```
+
+## Summary
+
+An Agent Definition is:
+
+- ✓ A **declarative description** of what your agent does
+- ✓ Built using the SDK's **fluent builder API**
+- ✓ Validated for **structural correctness** by the SDK
+- ✓ Compiled to **YAML** for submission
+- ✓ Submitted to **Platform Core** for review and approval
+- ✗ **NOT an executable** (Platform Core executes it)
+- ✗ **NOT a runtime** (SDK is a compiler)
+
+## Next Steps
+
+- [Compiler, Not Runtime](/v1/concepts/compiler-not-runtime/) - Understand the SDK's role
+- [Building Your Agent](/v1/concepts/building-your-agent/) - Design patterns and best practices
+- [Workflows Guide](/v1/guides/workflows/) - Deep dive into workflow construction
+- [Validation Guide](/v1/guides/validation/) - What gets validated and why

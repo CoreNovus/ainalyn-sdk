@@ -99,6 +99,41 @@ prompts:
   - user_name
 ```
 
+### Submitting Agents to Platform
+
+After compiling your agent, submit it directly to the Ainalyn Platform for review:
+
+```python
+from ainalyn import AgentBuilder, submit_agent, track_submission
+
+# Build your agent
+agent = (
+    AgentBuilder("my-agent")
+    .version("1.0.0")
+    .description("My awesome agent")
+    # ... add workflows, prompts, tools ...
+    .build()
+)
+
+# Submit for review
+result = submit_agent(agent, api_key="your_api_key")
+print(f"Review ID: {result.review_id}")
+print(f"Track at: {result.tracking_url}")
+
+# Check submission status
+status = track_submission(result.review_id, api_key="your_api_key")
+if status.is_live:
+    print(f"Agent is live: {status.marketplace_url}")
+```
+
+**Important:**
+- SDK can submit but **NOT approve** - Platform Core has final authority
+- Submission does **NOT** create an Execution
+- Submission does **NOT** incur billing (unless platform policy states)
+- Get your API key at: `https://console.ainalyn.io/api-keys`
+
+See [examples/submit_agent_example.py](examples/submit_agent_example.py) for a complete walkthrough.
+
 ### CLI Usage
 
 ```bash
@@ -128,6 +163,8 @@ Check out the `examples/` directory:
 
 - [basic_agent.py](examples/basic_agent.py) - Simple greeting agent
 - [multi_workflow_agent.py](examples/multi_workflow_agent.py) - Complex data analysis agent
+- [submit_agent_example.py](examples/submit_agent_example.py) - Agent submission workflow
+- [price_monitor_agent.py](examples/price_monitor_agent.py) - Complete price monitoring agent
 
 ## Contributing
 
