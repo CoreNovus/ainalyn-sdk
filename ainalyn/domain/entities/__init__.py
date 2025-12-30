@@ -14,6 +14,13 @@ from ainalyn.domain.entities.agent_definition import AgentDefinition
 from ainalyn.domain.entities.module import Module
 from ainalyn.domain.entities.node import Node, NodeType
 from ainalyn.domain.entities.prompt import Prompt
+from ainalyn.domain.entities.review_feedback import (
+    FeedbackCategory,
+    FeedbackSeverity,
+    ReviewFeedback,
+)
+from ainalyn.domain.entities.submission_result import SubmissionResult
+from ainalyn.domain.entities.submission_status import SubmissionStatus
 from ainalyn.domain.entities.tool import Tool
 from ainalyn.domain.entities.workflow import Workflow
 
@@ -25,4 +32,10 @@ __all__ = [
     "Prompt",
     "Tool",
     "Workflow",
+    # Submission-related entities
+    "SubmissionResult",
+    "SubmissionStatus",
+    "ReviewFeedback",
+    "FeedbackCategory",
+    "FeedbackSeverity",
 ]

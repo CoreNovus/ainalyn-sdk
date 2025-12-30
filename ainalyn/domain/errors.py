@@ -298,6 +298,115 @@ class UnreachableNodeError(DefinitionError):
         super().__init__(message)
 
 
+class SubmissionError(DomainError):
+    """
+    Error during agent submission to Platform Core.
+
+    This error indicates issues that occur when attempting to submit
+    an Agent Definition to Platform Core for review.
+
+    ⚠️ PLATFORM BOUNDARY ⚠️
+    This error represents submission-time failures, not execution failures.
+    Submission does NOT create an Execution.
+
+    Common causes:
+    - Network connectivity issues
+    - Authentication failures (invalid API key)
+    - Platform validation failures (stricter than SDK validation)
+    - Rate limiting or quota violations
+    - Platform service unavailable
+
+    Attributes:
+        message: Human-readable error description.
+        validation_errors: Optional tuple of ValidationError items if
+            submission failed due to validation issues.
+        http_status: Optional HTTP status code if this was a network error.
+
+    Example:
+        >>> try:
+        ...     submit_agent(agent, api_key="invalid")
+        ... except SubmissionError as e:
+        ...     print(f"Submission failed: {e.message}")
+        ...     if e.validation_errors:
+        ...         for err in e.validation_errors:
+        ...             print(f"  - {err.message}")
+    """
+
+    def __init__(
+        self,
+        message: str,
+        validation_errors: tuple | None = None,
+        http_status: int | None = None,
+    ) -> None:
+        """
+        Initialize a submission error.
+
+        Args:
+            message: Human-readable error description.
+            validation_errors: Optional tuple of ValidationError items.
+            http_status: Optional HTTP status code.
+        """
+        self.validation_errors = validation_errors or ()
+        self.http_status = http_status
+        super().__init__(message)
+
+
+class AuthenticationError(SubmissionError):
+    """
+    Authentication failure during submission.
+
+    This error indicates that the API key provided for submission
+    is invalid, expired, or lacks necessary permissions.
+
+    Example:
+        >>> try:
+        ...     submit_agent(agent, api_key="invalid_key")
+        ... except AuthenticationError as e:
+        ...     print(f"Authentication failed: {e.message}")
+    """
+
+    def __init__(self, message: str = "Invalid or expired API key") -> None:
+        """
+        Initialize an authentication error.
+
+        Args:
+            message: Human-readable error description.
+        """
+        super().__init__(message, http_status=401)
+
+
+class NetworkError(SubmissionError):
+    """
+    Network connectivity error during submission.
+
+    This error indicates network-level failures when attempting to
+    communicate with Platform Core API.
+
+    Common causes:
+    - Connection timeout
+    - DNS resolution failure
+    - Platform service unavailable
+    - Network connectivity issues
+
+    Example:
+        >>> try:
+        ...     submit_agent(agent, api_key="key", timeout=1)
+        ... except NetworkError as e:
+        ...     print(f"Network error: {e.message}")
+    """
+
+    def __init__(self, message: str, original_error: Exception | None = None) -> None:
+        """
+        Initialize a network error.
+
+        Args:
+            message: Human-readable error description.
+            original_error: Optional original exception that caused this error.
+        """
+        self.original_error = original_error
+        super().__init__(message)
+
+
 # Legacy aliases for backward compatibility
 # These will be deprecated in future versions
 MissingRequiredFieldError = MissingFieldError
