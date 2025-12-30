@@ -5,9 +5,7 @@ import { PagefindSearch } from "./components/PagefindSearch";
 
 const config: DocsThemeConfig = {
   logo: (
-    <span style={{ fontWeight: 600 }}>
-      Ainalyn Docs
-    </span>
+    <img src="/logo.svg" alt="Ainalyn" style={{ height: 28 }} />
   ),
 
   project: {
@@ -41,6 +39,7 @@ const config: DocsThemeConfig = {
 
   head: (
     <>
+      <link rel="icon" href="/logo.svg" type="image/svg+xml" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <meta property="og:title" content="Ainalyn SDK Documentation" />
       <meta property="og:description" content="Build task-oriented agents with Python" />

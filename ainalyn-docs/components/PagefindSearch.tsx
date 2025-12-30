@@ -7,7 +7,7 @@ export function PagefindSearch() {
     // Pagefind assets 只在 build 後才存在
     // 需要考慮 basePath
     const script = document.createElement("script");
-    script.src = "/docs/pagefind/pagefind-ui.js";
+    script.src = "/pagefind/pagefind-ui.js";
     script.async = true;
     script.onload = () => setReady(true);
     script.onerror = () => setReady(false);
@@ -16,7 +16,7 @@ export function PagefindSearch() {
     // 載入 CSS
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "/docs/pagefind/pagefind-ui.css";
+    link.href = "/pagefind/pagefind-ui.css";
     document.head.appendChild(link);
   }, []);
 
