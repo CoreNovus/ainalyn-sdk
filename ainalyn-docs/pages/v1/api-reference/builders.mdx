@@ -1,6 +1,6 @@
 # Builders API
 
-Builders provide a fluent API for creating agent definitions.
+Builders provide a fluent API for creating agent definitions with immediate validation.
 
 ## AgentBuilder
 
@@ -10,7 +10,7 @@ Creates an agent definition.
 from ainalyn import AgentBuilder
 
 agent = (
-    AgentBuilder("MyAgent")
+    AgentBuilder("my-agent")
     .description("What the agent does")
     .version("1.0.0")
     .add_workflow(workflow)
@@ -18,30 +18,201 @@ agent = (
 )
 ```
 
-**Methods:**
+### Constructor
 
-- `.description(text)` - Set agent description (required)
-- `.version(version)` - Set semantic version like "1.0.0" (required)
-- `.add_workflow(workflow)` - Add a workflow (at least one required)
-- `.workflows(*workflows)` - Add multiple workflows at once
-- `.add_module(module)` - Add a reusable module (optional)
-- `.modules(*modules)` - Add multiple modules at once
-- `.add_prompt(prompt)` - Add a prompt template (optional)
-- `.prompts(*prompts)` - Add multiple prompts at once
-- `.add_tool(tool)` - Add a tool definition (optional)
-- `.tools(*tools)` - Add multiple tools at once
-- `.build()` - Create the immutable AgentDefinition
+```python
+AgentBuilder(name: str)
+```
 
-**Naming Convention:** Agent names must start with lowercase letter and contain only lowercase letters, numbers, and hyphens (e.g., "my-agent", "data-processor")
+**Parameters:**
+- `name` (required) - Agent identifier. Must match pattern `[a-z][a-z0-9-]*`
+
+**Raises:**
+- `InvalidFormatError` - If name doesn't match required pattern
+
+### Methods
+
+#### .description(text: str) -> Self
+
+Set agent description.
+
+**Parameters:**
+- `text` (required) - Human-readable description of what this agent does
+
+**Returns:** Self for method chaining
+
+**Required:** Yes
+
+---
+
+#### .version(version: str) -> Self
+
+Set agent version.
+
+**Parameters:**
+- `version` (required) - Semantic version string (e.g., "1.0.0")
+
+**Returns:** Self for method chaining
+
+**Required:** Yes
+
+**Raises:**
+- `InvalidFormatError` - If version doesn't follow semantic versioning
+
+---
+
+#### .add_workflow(workflow: Workflow) -> Self
+
+Add a workflow to this agent.
+
+**Parameters:**
+- `workflow` (required) - Workflow instance created with WorkflowBuilder
+
+**Returns:** Self for method chaining
+
+**Required:** At least one workflow required
+
+**Raises:**
+- `DuplicateError` - If workflow name already exists in this agent
+
+---
+
+#### .workflows(*workflows: Workflow) -> Self
+
+Set all workflows at once.
+
+**Parameters:**
+- `*workflows` (required) - Variable number of Workflow instances
+
+**Returns:** Self for method chaining
+
+**Raises:**
+- `DuplicateError` - If any workflow names are duplicated
+
+---
+
+#### .add_prompt(prompt: Prompt) -> Self
+
+Add a prompt template to this agent.
+
+**Parameters:**
+- `prompt` (required) - Prompt instance created with PromptBuilder
+
+**Returns:** Self for method chaining
+
+**Required:** No (optional)
+
+**Raises:**
+- `DuplicateError` - If prompt name already exists in this agent
+
+---
+
+#### .prompts(*prompts: Prompt) -> Self
+
+Set all prompts at once.
+
+**Parameters:**
+- `*prompts` (required) - Variable number of Prompt instances
+
+**Returns:** Self for method chaining
+
+**Raises:**
+- `DuplicateError` - If any prompt names are duplicated
+
+---
+
+#### .add_tool(tool: Tool) -> Self
+
+Add a tool definition to this agent.
+
+**Parameters:**
+- `tool` (required) - Tool instance created with ToolBuilder
+
+**Returns:** Self for method chaining
+
+**Required:** No (optional)
+
+**Raises:**
+- `DuplicateError` - If tool name already exists in this agent
+
+---
+
+#### .tools(*tools: Tool) -> Self
+
+Set all tools at once.
+
+**Parameters:**
+- `*tools` (required) - Variable number of Tool instances
+
+**Returns:** Self for method chaining
+
+**Raises:**
+- `DuplicateError` - If any tool names are duplicated
+
+---
+
+#### .add_module(module: Module) -> Self
+
+Add a reusable module to this agent.
+
+**Parameters:**
+- `module` (required) - Module instance created with ModuleBuilder
+
+**Returns:** Self for method chaining
+
+**Required:** No (optional)
+
+**Raises:**
+- `DuplicateError` - If module name already exists in this agent
+
+---
+
+#### .modules(*modules: Module) -> Self
+
+Set all modules at once.
+
+**Parameters:**
+- `*modules` (required) - Variable number of Module instances
+
+**Returns:** Self for method chaining
+
+**Raises:**
+- `DuplicateError` - If any module names are duplicated
+
+---
+
+#### .build() -> AgentDefinition
+
+Build and return immutable AgentDefinition.
+
+**Returns:** AgentDefinition instance
+
+**Raises:**
+- `MissingFieldError` - If required fields (version, description) not set
+- `EmptyCollectionError` - If no workflows added
+- `ReferenceError` - If nodes reference undefined resources
+
+### Naming Convention
+
+Agent names must match pattern: `[a-z][a-z0-9-]*`
+
+Valid names:
+- `my-agent`
+- `data-processor`
+- `email-extractor-v2`
+
+Invalid names:
+- `MyAgent` (uppercase)
+- `my_agent` (underscore)
+- `123agent` (starts with number)
+- `my agent` (space)
 
 ## WorkflowBuilder
 
-Creates a workflow.
+Creates a workflow definition.
 
 ```python
-from ainalyn import WorkflowBuilder, NodeBuilder, PromptBuilder
-
-prompt = PromptBuilder("task-prompt").description("Task prompt").template("Do task").build()
+from ainalyn import WorkflowBuilder, NodeBuilder
 
 workflow = (
     WorkflowBuilder("main-flow")
@@ -57,19 +228,96 @@ workflow = (
 )
 ```
 
-**Methods:**
+### Constructor
 
-- `.description(text)` - Set workflow description (required)
-- `.add_node(node)` - Add a node to this workflow
-- `.nodes(*nodes)` - Add multiple nodes at once
-- `.entry_node(name)` - Set which node starts the workflow (required)
-- `.build()` - Create the immutable Workflow
+```python
+WorkflowBuilder(name: str)
+```
 
-**Naming Convention:** Workflow names must start with lowercase letter and contain only lowercase letters, numbers, and hyphens
+**Parameters:**
+- `name` (required) - Workflow identifier. Must match pattern `[a-z][a-z0-9-]*`
+
+**Raises:**
+- `InvalidFormatError` - If name doesn't match required pattern
+
+### Methods
+
+#### .description(text: str) -> Self
+
+Set workflow description.
+
+**Parameters:**
+- `text` (required) - Human-readable description of workflow purpose
+
+**Returns:** Self for method chaining
+
+**Required:** Yes
+
+---
+
+#### .add_node(node: Node) -> Self
+
+Add a node to this workflow.
+
+**Parameters:**
+- `node` (required) - Node instance created with NodeBuilder
+
+**Returns:** Self for method chaining
+
+**Required:** At least one node required
+
+**Raises:**
+- `DuplicateError` - If node name already exists in this workflow
+
+---
+
+#### .nodes(*nodes: Node) -> Self
+
+Set all nodes at once.
+
+**Parameters:**
+- `*nodes` (required) - Variable number of Node instances
+
+**Returns:** Self for method chaining
+
+**Raises:**
+- `DuplicateError` - If any node names are duplicated
+
+---
+
+#### .entry_node(name: str) -> Self
+
+Set the starting node for this workflow.
+
+**Parameters:**
+- `name` (required) - Name of the node that serves as workflow entry point
+
+**Returns:** Self for method chaining
+
+**Required:** Yes
+
+**Raises:**
+- `ReferenceError` - If named node doesn't exist in workflow
+
+---
+
+#### .build() -> Workflow
+
+Build and return immutable Workflow.
+
+**Returns:** Workflow instance
+
+**Raises:**
+- `MissingFieldError` - If required fields (description, entry_node) not set
+- `EmptyCollectionError` - If no nodes added
+
+### Naming Convention
+
+Workflow names must match pattern: `[a-z][a-z0-9-]*`
 
 ## NodeBuilder
 
-Creates a node (workflow processing step).
+Creates a node (individual workflow step).
 
 ```python
 from ainalyn import NodeBuilder
@@ -77,7 +325,7 @@ from ainalyn import NodeBuilder
 node = (
     NodeBuilder("my-task")
     .description("What this task accomplishes")
-    .uses_prompt("my-prompt")  # or uses_module() or uses_tool()
+    .uses_prompt("my-prompt")
     .inputs("input_data")
     .outputs("result_data")
     .next_nodes("next-task")
@@ -85,24 +333,145 @@ node = (
 )
 ```
 
-**Methods:**
+### Constructor
 
-- `.description(text)` - Set the node description (required)
-- `.uses_module(name)` - Set this node to use a module (choose one of uses_*)
-- `.uses_prompt(name)` - Set this node to use a prompt (choose one of uses_*)
-- `.uses_tool(name)` - Set this node to use a tool (choose one of uses_*)
-- `.inputs(*names)` - Define input parameter names (optional)
-- `.outputs(*names)` - Define output parameter names (optional)
-- `.next_nodes(*names)` - Specify which nodes follow this one (optional)
-- `.build()` - Create the immutable Node
+```python
+NodeBuilder(name: str)
+```
 
-**Node Types:** Nodes must reference either a module, prompt, or tool. The type is automatically set based on which `.uses_*()` method you call.
+**Parameters:**
+- `name` (required) - Node identifier. Must match pattern `[a-z][a-z0-9-]*`
 
-**Naming Convention:** Node names must start with lowercase letter and contain only lowercase letters, numbers, and hyphens
+**Raises:**
+- `InvalidFormatError` - If name doesn't match required pattern
+
+### Methods
+
+#### .description(text: str) -> Self
+
+Set node description.
+
+**Parameters:**
+- `text` (required) - Human-readable description of what this node does
+
+**Returns:** Self for method chaining
+
+**Required:** Yes
+
+---
+
+#### .uses_module(name: str) -> Self
+
+Set this node to use a module.
+
+**Parameters:**
+- `name` (required) - Name of module defined in agent
+
+**Returns:** Self for method chaining
+
+**Required:** Exactly one of uses_module, uses_prompt, or uses_tool required
+
+**Note:** Sets node type to "module". Cannot be used with uses_prompt() or uses_tool().
+
+---
+
+#### .uses_prompt(name: str) -> Self
+
+Set this node to use a prompt.
+
+**Parameters:**
+- `name` (required) - Name of prompt defined in agent
+
+**Returns:** Self for method chaining
+
+**Required:** Exactly one of uses_module, uses_prompt, or uses_tool required
+
+**Note:** Sets node type to "prompt". Cannot be used with uses_module() or uses_tool().
+
+---
+
+#### .uses_tool(name: str) -> Self
+
+Set this node to use a tool.
+
+**Parameters:**
+- `name` (required) - Name of tool defined in agent
+
+**Returns:** Self for method chaining
+
+**Required:** Exactly one of uses_module, uses_prompt, or uses_tool required
+
+**Note:** Sets node type to "tool". Cannot be used with uses_module() or uses_prompt().
+
+---
+
+#### .inputs(*names: str) -> Self
+
+Define input parameter names.
+
+**Parameters:**
+- `*names` (optional) - Variable number of input parameter names
+
+**Returns:** Self for method chaining
+
+**Required:** No
+
+---
+
+#### .outputs(*names: str) -> Self
+
+Define output parameter names.
+
+**Parameters:**
+- `*names` (optional) - Variable number of output parameter names
+
+**Returns:** Self for method chaining
+
+**Required:** No
+
+---
+
+#### .next_nodes(*names: str) -> Self
+
+Specify which nodes follow this one.
+
+**Parameters:**
+- `*names` (optional) - Variable number of node names that can follow this node
+
+**Returns:** Self for method chaining
+
+**Required:** No
+
+**Note:** Creates directed edges in the workflow DAG.
+
+---
+
+#### .build() -> Node
+
+Build and return immutable Node.
+
+**Returns:** Node instance
+
+**Raises:**
+- `MissingFieldError` - If required fields (description, type) not set
+- `InvalidStateError` - If no uses_* method was called
+
+### Node Types
+
+Node type is determined by resource reference:
+- `uses_module()` → type: "module"
+- `uses_prompt()` → type: "prompt"
+- `uses_tool()` → type: "tool"
+
+Each node must reference exactly one resource type.
+
+### Naming Convention
+
+Node names must match pattern: `[a-z][a-z0-9-]*`
 
 ## ModuleBuilder
 
-Creates a reusable module.
+Creates a reusable module definition.
 
 ```python
 from ainalyn import ModuleBuilder
@@ -110,18 +479,100 @@ from ainalyn import ModuleBuilder
 module = (
     ModuleBuilder("http-client")
     .description("HTTP request module")
-    .input_schema({"type": "object", "properties": {...}})
-    .output_schema({"type": "object", "properties": {...}})
+    .input_schema({"type": "object", "properties": {"url": {"type": "string"}}})
+    .output_schema({"type": "object", "properties": {"response": {"type": "string"}}})
     .build()
 )
 ```
 
-**Methods:**
+### Constructor
 
-- `.description(text)` - Set module description
-- `.input_schema(schema)` - Define input JSON Schema
-- `.output_schema(schema)` - Define output JSON Schema
-- `.build()` - Create the Module
+```python
+ModuleBuilder(name: str)
+```
+
+**Parameters:**
+- `name` (required) - Module identifier. Must match pattern `[a-z][a-z0-9-]*`
+
+**Raises:**
+- `InvalidFormatError` - If name doesn't match required pattern
+
+### Methods
+
+#### .description(text: str) -> Self
+
+Set module description.
+
+**Parameters:**
+- `text` (required) - Human-readable description of module functionality
+
+**Returns:** Self for method chaining
+
+**Required:** Yes
+
+---
+
+#### .input_schema(schema: dict) -> Self
+
+Define input JSON Schema.
+
+**Parameters:**
+- `schema` (optional) - JSON Schema dict defining expected input structure
+
+**Returns:** Self for method chaining
+
+**Required:** No
+
+**Example:**
+```python
+.input_schema({
+    "type": "object",
+    "properties": {
+        "url": {"type": "string"},
+        "method": {"type": "string", "enum": ["GET", "POST"]}
+    },
+    "required": ["url"]
+})
+```
+
+---
+
+#### .output_schema(schema: dict) -> Self
+
+Define output JSON Schema.
+
+**Parameters:**
+- `schema` (optional) - JSON Schema dict defining output structure
+
+**Returns:** Self for method chaining
+
+**Required:** No
+
+**Example:**
+```python
+.output_schema({
+    "type": "object",
+    "properties": {
+        "status": {"type": "integer"},
+        "body": {"type": "string"}
+    }
+})
+```
+
+---
+
+#### .build() -> Module
+
+Build and return immutable Module.
+
+**Returns:** Module instance
+
+**Raises:**
+- `MissingFieldError` - If required field (description) not set
+
+### Naming Convention
+
+Module names must match pattern: `[a-z][a-z0-9-]*`
 
 ## PromptBuilder
 
@@ -139,20 +590,105 @@ prompt = (
 )
 ```
 
-**Methods:**
+### Constructor
 
-- `.description(text)` - Set prompt description (required)
-- `.template(text)` - Set prompt template with `{{variable}}` placeholders (required)
-- `.variables(*names)` - List variable names used in template (optional)
-- `.build()` - Create the immutable Prompt
+```python
+PromptBuilder(name: str)
+```
 
-**Template Syntax:** Use double curly braces `{{variable}}` for placeholders in the template.
+**Parameters:**
+- `name` (required) - Prompt identifier. Must match pattern `[a-z][a-z0-9-]*`
 
-**Naming Convention:** Prompt names must start with lowercase letter and contain only lowercase letters, numbers, and hyphens
+**Raises:**
+- `InvalidFormatError` - If name doesn't match required pattern
+
+### Methods
+
+#### .description(text: str) -> Self
+
+Set prompt description.
+
+**Parameters:**
+- `text` (required) - Human-readable description of prompt purpose
+
+**Returns:** Self for method chaining
+
+**Required:** Yes
+
+---
+
+#### .template(text: str) -> Self
+
+Set prompt template with variable placeholders.
+
+**Parameters:**
+- `text` (required) - Template string with `{{variable}}` placeholders
+
+**Returns:** Self for method chaining
+
+**Required:** Yes
+
+**Template Syntax:** Use double curly braces `{{variable_name}}` for placeholders.
+
+**Example:**
+```python
+.template("""
+Analyze the sentiment of the following text:
+
+{{text}}
+
+Provide a score from -1 (negative) to 1 (positive).
+""")
+```
+
+---
+
+#### .variables(*names: str) -> Self
+
+List variable names used in template.
+
+**Parameters:**
+- `*names` (optional) - Variable number of variable names matching template placeholders
+
+**Returns:** Self for method chaining
+
+**Required:** No (but recommended for documentation)
+
+**Example:**
+```python
+.variables("text", "language", "format")
+```
+
+---
+
+#### .build() -> Prompt
+
+Build and return immutable Prompt.
+
+**Returns:** Prompt instance
+
+**Raises:**
+- `MissingFieldError` - If required fields (description, template) not set
+
+### Template Variables
+
+Variables in templates use Jinja2-style syntax: `{{variable_name}}`
+
+**Valid variable names:** `[a-zA-Z_][a-zA-Z0-9_]*`
+
+**Example:**
+```python
+template = "Process {{input_data}} using {{model_name}} model"
+variables = ("input_data", "model_name")
+```
+
+### Naming Convention
+
+Prompt names must match pattern: `[a-z][a-z0-9-]*`
 
 ## ToolBuilder
 
-Creates a tool definition.
+Creates a tool definition (external service).
 
 ```python
 from ainalyn import ToolBuilder
@@ -177,14 +713,97 @@ tool = (
 )
 ```
 
-**Methods:**
+### Constructor
 
-- `.description(text)` - Set tool description (required)
-- `.input_schema(schema)` - Define input JSON Schema (optional)
-- `.output_schema(schema)` - Define output JSON Schema (optional)
-- `.build()` - Create the immutable Tool
+```python
+ToolBuilder(name: str)
+```
 
-**Naming Convention:** Tool names must start with lowercase letter and contain only lowercase letters, numbers, and hyphens
+**Parameters:**
+- `name` (required) - Tool identifier. Must match pattern `[a-z][a-z0-9-]*`
+
+**Raises:**
+- `InvalidFormatError` - If name doesn't match required pattern
+
+### Methods
+
+#### .description(text: str) -> Self
+
+Set tool description.
+
+**Parameters:**
+- `text` (required) - Human-readable description of tool functionality
+
+**Returns:** Self for method chaining
+
+**Required:** Yes
+
+---
+
+#### .input_schema(schema: dict) -> Self
+
+Define input JSON Schema.
+
+**Parameters:**
+- `schema` (optional) - JSON Schema dict defining expected input structure
+
+**Returns:** Self for method chaining
+
+**Required:** No
+
+**Example:**
+```python
+.input_schema({
+    "type": "object",
+    "properties": {
+        "query": {"type": "string"},
+        "max_results": {"type": "integer", "minimum": 1, "maximum": 100}
+    },
+    "required": ["query"]
+})
+```
+
+---
+
+#### .output_schema(schema: dict) -> Self
+
+Define output JSON Schema.
+
+**Parameters:**
+- `schema` (optional) - JSON Schema dict defining output structure
+
+**Returns:** Self for method chaining
+
+**Required:** No
+
+**Example:**
+```python
+.output_schema({
+    "type": "object",
+    "properties": {
+        "results": {
+            "type": "array",
+            "items": {"type": "string"}
+        },
+        "count": {"type": "integer"}
+    }
+})
+```
+
+---
+
+#### .build() -> Tool
+
+Build and return immutable Tool.
+
+**Returns:** Tool instance
+
+**Raises:**
+- `MissingFieldError` - If required field (description) not set
+
+### Naming Convention
+
+Tool names must match pattern: `[a-z][a-z0-9-]*`
 
 ## Common Patterns
 

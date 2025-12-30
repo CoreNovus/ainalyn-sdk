@@ -1,10 +1,10 @@
 # API Reference
 
-The main API functions for validating and exporting agents.
+Main API functions for validating and exporting agent definitions.
 
 ## validate()
 
-Validates an agent definition.
+Validates an agent definition structure and logic.
 
 ```python
 from ainalyn.api import validate
@@ -12,52 +12,137 @@ from ainalyn.api import validate
 result = validate(agent)
 ```
 
-**Parameters:**
-- `definition` (AgentDefinition) - The agent to validate
+### Signature
 
-**Returns:**
-- `ValidationResult` - Contains validation errors and warnings
-  - `result.is_valid` (bool) - True if no errors found
-  - `result.has_warnings` (bool) - True if warnings found
-  - `result.errors` (tuple[ValidationError, ...]) - All errors and warnings
+```python
+def validate(definition: AgentDefinition) -> ValidationResult
+```
 
-**Validation Steps:**
-1. Schema validation (structural correctness)
-2. Static analysis (logical consistency, circular dependencies, unreachable nodes)
+### Parameters
 
-**Example:**
+- `definition` (required) - AgentDefinition instance to validate
+
+### Returns
+
+`ValidationResult` object with the following properties:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `is_valid` | bool | True if no errors found |
+| `has_warnings` | bool | True if warnings present |
+| `errors` | tuple[ValidationError, ...] | All errors and warnings |
+
+### ValidationError Structure
+
+Each error in `result.errors` contains:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `code` | str | Error code (see Error Codes below) |
+| `message` | str | Human-readable error message |
+| `severity` | Severity | ERROR or WARNING |
+| `location` | str \| None | Optional location where error occurred |
+
+### Validation Process
+
+The function performs two validation phases:
+
+**1. Schema Validation**
+- Checks structural correctness
+- Verifies all required fields present
+- Validates field types and formats
+
+**2. Static Analysis**
+- Detects cycles in workflows (DAG requirement)
+- Identifies unreachable nodes
+- Verifies all references resolve
+
+### Error Codes
+
+#### Schema Validation Errors
+
+| Code | Severity | Description |
+|------|----------|-------------|
+| `MISSING_FIELD` | ERROR | Required field not provided |
+| `INVALID_FORMAT` | ERROR | Value doesn't match required format |
+| `DUPLICATE_NAME` | ERROR | Name used multiple times in scope |
+| `EMPTY_COLLECTION` | ERROR | Required collection is empty |
+
+#### Static Analysis Errors
+
+| Code | Severity | Description |
+|------|----------|-------------|
+| `CYCLIC_DEPENDENCY` | ERROR | Workflow contains cycle (not a DAG) |
+| `UNREACHABLE_NODE` | ERROR | Node cannot be reached from entry |
+| `REFERENCE_ERROR` | ERROR | Resource reference not found |
+| `ORPHANED_RESOURCE` | WARNING | Resource defined but never used |
+
+### Example
+
 ```python
 from ainalyn import AgentBuilder, WorkflowBuilder, NodeBuilder, PromptBuilder
 from ainalyn.api import validate
 
-prompt = PromptBuilder("my-prompt").description("Test prompt").template("Hello").build()
+# Build agent
+prompt = PromptBuilder("task-prompt").description("Task").template("Do task").build()
 workflow = (
-    WorkflowBuilder("my-workflow")
-    .description("Test workflow")
-    .add_node(NodeBuilder("node1").description("Node 1").uses_prompt("my-prompt").build())
-    .entry_node("node1")
+    WorkflowBuilder("main")
+    .description("Main workflow")
+    .add_node(
+        NodeBuilder("task")
+        .description("Execute task")
+        .uses_prompt("task-prompt")
+        .build()
+    )
+    .entry_node("task")
     .build()
 )
 agent = (
     AgentBuilder("my-agent")
     .version("1.0.0")
-    .description("Test agent")
+    .description("My agent")
     .add_prompt(prompt)
     .add_workflow(workflow)
     .build()
 )
 
+# Validate
 result = validate(agent)
 if result.is_valid:
-    print("Valid!")
+    print("Validation passed")
 else:
+    print("Validation failed:")
     for error in result.errors:
-        print(f"{error.severity.value}: {error.code} - {error.message}")
+        print(f"  [{error.severity}] {error.code}: {error.message}")
+        if error.location:
+            print(f"    Location: {error.location}")
 ```
+
+### Error Handling
+
+```python
+result = validate(agent)
+
+# Check overall validity
+if not result.is_valid:
+    # Has errors - cannot proceed
+    for error in result.errors:
+        if error.severity == Severity.ERROR:
+            print(f"ERROR: {error.message}")
+
+# Check warnings
+if result.has_warnings:
+    # Has warnings - can proceed but should review
+    for error in result.errors:
+        if error.severity == Severity.WARNING:
+            print(f"WARNING: {error.message}")
+```
+
+---
 
 ## export_yaml()
 
-Exports an agent definition to YAML.
+Exports an agent definition to YAML string.
 
 ```python
 from ainalyn.api import export_yaml
@@ -65,41 +150,76 @@ from ainalyn.api import export_yaml
 yaml_output = export_yaml(agent)
 ```
 
-**Parameters:**
-- `definition` (AgentDefinition) - The agent to export
+### Signature
 
-**Returns:**
-- `str` - YAML-formatted string with header comments
-
-**Important:**
-- This function does NOT validate before exporting
-- For a complete workflow with validation, use `compile_agent()` instead
-
-**Example:**
 ```python
-from ainalyn import AgentBuilder, WorkflowBuilder, NodeBuilder, PromptBuilder
+def export_yaml(definition: AgentDefinition) -> str
+```
+
+### Parameters
+
+- `definition` (required) - AgentDefinition instance to export
+
+### Returns
+
+YAML-formatted string with header comments
+
+### Important Notes
+
+- Does NOT validate before export
+- For validation + export, use `compile_agent()` instead
+- Output includes header comments explaining SDK boundary
+
+### Output Format
+
+```yaml
+# Ainalyn Agent Definition
+# This file is a description submitted to Platform Core for review.
+# It does NOT execute by itself. Execution is handled by Platform Core.
+#
+# Local compilation does NOT equal platform execution.
+
+name: my-agent
+version: 1.0.0
+description: Agent description
+workflows:
+  - name: main
+    description: Main workflow
+    entry_node: task
+    nodes:
+      - name: task
+        description: Task node
+        type: prompt
+        reference: task-prompt
+prompts:
+  - name: task-prompt
+    description: Task prompt
+    template: Do the task
+```
+
+### Example
+
+```python
+from ainalyn import AgentBuilder
 from ainalyn.api import export_yaml
 
-prompt = PromptBuilder("my-prompt").description("Test").template("Hello").build()
-workflow = (
-    WorkflowBuilder("my-workflow")
-    .description("Test")
-    .add_node(NodeBuilder("node1").description("Node").uses_prompt("my-prompt").build())
-    .entry_node("node1")
-    .build()
-)
 agent = (
     AgentBuilder("my-agent")
     .version("1.0.0")
     .description("Test agent")
-    .add_prompt(prompt)
     .add_workflow(workflow)
     .build()
 )
 
 yaml_str = export_yaml(agent)
 print(yaml_str)
+
+# Write to file
+with open("agent.yaml", "w") as f:
+    f.write(yaml_str)
 ```
+
+---
 
 ## compile_agent()
 
@@ -112,55 +232,388 @@ from pathlib import Path
 result = compile_agent(agent, Path("agent.yaml"))
 ```
 
-**Parameters:**
-- `definition` (AgentDefinition) - The agent to compile
-- `output_path` (Path | None) - Optional file path to save YAML. If None, returns YAML without writing.
+### Signature
 
-**Returns:**
-- `CompilationResult` - Contains:
-  - `validation_result` (ValidationResult) - Validation results
-  - `yaml_content` (str | None) - YAML string if successful
-  - `output_path` (Path | None) - File path if written
-  - `is_successful` (bool) - True if validation passed
-
-**Workflow:**
-1. Validates the definition (schema + static analysis)
-2. Exports to YAML (only if validation passes)
-3. Writes to file (if output_path provided)
-
-**Important:** Local compilation does NOT equal platform execution. This creates a description for platform submission.
-
-**Example:**
 ```python
-from ainalyn import AgentBuilder, WorkflowBuilder, NodeBuilder, PromptBuilder
-from ainalyn.api import compile_agent
-from pathlib import Path
+def compile_agent(
+    definition: AgentDefinition,
+    output_path: Path | None = None
+) -> CompilationResult
+```
 
-# Build agent
-prompt = PromptBuilder("my-prompt").description("Test").template("Hello").build()
-workflow = (
-    WorkflowBuilder("my-workflow")
-    .description("Test")
-    .add_node(NodeBuilder("node1").description("Node").uses_prompt("my-prompt").build())
-    .entry_node("node1")
-    .build()
-)
+### Parameters
+
+- `definition` (required) - AgentDefinition instance to compile
+- `output_path` (optional) - Path to write YAML file. If None, only returns YAML without writing.
+
+### Returns
+
+`CompilationResult` object with the following properties:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `validation_result` | ValidationResult | Validation results |
+| `yaml_content` | str \| None | YAML string if successful, None if validation failed |
+| `output_path` | Path \| None | File path if written, None otherwise |
+| `is_successful` | bool | True if validation passed |
+
+### Compilation Workflow
+
+1. Validate definition (schema + static analysis)
+2. Export to YAML (only if validation passes)
+3. Write to file (if output_path provided)
+
+### Important Note
+
+Local compilation does NOT equal platform execution. This creates a description for platform submission. Platform Core applies additional validation and governance policies.
+
+### Example: Compile to String
+
+```python
+from ainalyn import AgentBuilder
+from ainalyn.api import compile_agent
+
 agent = (
     AgentBuilder("my-agent")
     .version("1.0.0")
     .description("Test agent")
-    .add_prompt(prompt)
     .add_workflow(workflow)
     .build()
 )
 
-# Compile to file
-result = compile_agent(agent, Path("output.yaml"))
+# Compile without writing file
+result = compile_agent(agent)
 
 if result.is_successful:
-    print(f"Compiled to {result.output_path}")
+    print("Compilation successful!")
+    print(result.yaml_content)
 else:
-    print("Validation failed:")
+    print("Compilation failed:")
     for error in result.validation_result.errors:
         print(f"  {error.code}: {error.message}")
 ```
+
+### Example: Compile to File
+
+```python
+from ainalyn.api import compile_agent
+from pathlib import Path
+
+# Compile and write to file
+result = compile_agent(agent, Path("output/agent.yaml"))
+
+if result.is_successful:
+    print(f"Compiled successfully to {result.output_path}")
+else:
+    print("Compilation failed:")
+    for error in result.validation_result.errors:
+        print(f"  {error.code}: {error.message}")
+```
+
+### Error Handling
+
+```python
+from ainalyn.api import compile_agent
+from pathlib import Path
+
+result = compile_agent(agent, Path("agent.yaml"))
+
+# Check success
+if result.is_successful:
+    # Validation passed, YAML generated and written
+    print(f"Success! File: {result.output_path}")
+    print(f"YAML content:\n{result.yaml_content}")
+else:
+    # Validation failed, no YAML generated
+    print("Compilation failed with errors:")
+
+    for error in result.validation_result.errors:
+        print(f"\n[{error.severity}] {error.code}")
+        print(f"  Message: {error.message}")
+        if error.location:
+            print(f"  Location: {error.location}")
+```
+
+---
+
+## Complete Error Reference
+
+### Build-Time Errors
+
+These errors occur when calling `.build()` on builders:
+
+#### MissingFieldError
+
+**Cause:** Required field not provided
+
+**Example:**
+```python
+agent = AgentBuilder("test").build()  # Missing version and description
+```
+
+**Error Message:**
+```
+MissingFieldError: Required field 'version' is missing or empty in AgentBuilder
+```
+
+**Fix:**
+```python
+agent = (
+    AgentBuilder("test")
+    .version("1.0.0")
+    .description("Test agent")
+    .build()
+)
+```
+
+---
+
+#### InvalidFormatError
+
+**Cause:** Value doesn't match required format
+
+**Example:**
+```python
+agent = AgentBuilder("Invalid Name")  # Uppercase and space
+```
+
+**Error Message:**
+```
+InvalidFormatError: Invalid value for 'name': 'Invalid Name'.
+Agent name must start with lowercase letter and contain only lowercase letters, numbers, and hyphens
+```
+
+**Fix:**
+```python
+agent = AgentBuilder("invalid-name")  # Lowercase with hyphens
+```
+
+---
+
+#### DuplicateError
+
+**Cause:** Name used multiple times in same scope
+
+**Example:**
+```python
+workflow = (
+    WorkflowBuilder("main")
+    .add_node(NodeBuilder("task").description("Task 1").uses_prompt("p1").build())
+    .add_node(NodeBuilder("task").description("Task 2").uses_prompt("p2").build())
+    .build()
+)
+```
+
+**Error Message:**
+```
+DuplicateError: Duplicate node name 'task' in workflow 'main'.
+Each node must have a unique name within its scope.
+```
+
+**Fix:**
+```python
+workflow = (
+    WorkflowBuilder("main")
+    .add_node(NodeBuilder("task-1").description("Task 1").uses_prompt("p1").build())
+    .add_node(NodeBuilder("task-2").description("Task 2").uses_prompt("p2").build())
+    .build()
+)
+```
+
+---
+
+#### ReferenceError
+
+**Cause:** Node references undefined resource
+
+**Example:**
+```python
+agent = (
+    AgentBuilder("test")
+    .version("1.0.0")
+    .description("Test")
+    .add_workflow(
+        WorkflowBuilder("main")
+        .add_node(
+            NodeBuilder("task")
+            .description("Task")
+            .uses_prompt("undefined-prompt")  # Prompt not defined
+            .build()
+        )
+        .entry_node("task")
+        .build()
+    )
+    .build()
+)
+```
+
+**Error Message:**
+```
+ReferenceError: 'task' references undefined prompt 'undefined-prompt'.
+The prompt must be defined in the agent.
+```
+
+**Fix:**
+```python
+prompt = PromptBuilder("my-prompt").description("Prompt").template("Text").build()
+agent = (
+    AgentBuilder("test")
+    .add_prompt(prompt)  # Define the prompt
+    .add_workflow(...)
+    .build()
+)
+```
+
+---
+
+#### EmptyCollectionError
+
+**Cause:** Required collection is empty
+
+**Example:**
+```python
+agent = (
+    AgentBuilder("test")
+    .version("1.0.0")
+    .description("Test")
+    .build()  # No workflows added
+)
+```
+
+**Error Message:**
+```
+EmptyCollectionError: 'Agent 'test'' has no workflows.
+At least one workflow is required.
+```
+
+**Fix:**
+```python
+agent = (
+    AgentBuilder("test")
+    .version("1.0.0")
+    .description("Test")
+    .add_workflow(workflow)  # Add at least one workflow
+    .build()
+)
+```
+
+---
+
+### Validation Errors
+
+These errors occur during `validate()`:
+
+#### CyclicDependencyError
+
+**Cause:** Workflow contains cycle
+
+**Detection:** Static analysis finds cycle in node graph
+
+**Example:**
+```python
+# node-a → node-b → node-c → node-a (cycle!)
+```
+
+**Error Message:**
+```
+CyclicDependencyError: Workflow contains a cycle: node-a → node-b → node-c → node-a
+```
+
+**Fix:** Remove cycle by restructuring workflow to form a DAG
+
+---
+
+#### UnreachableNodeError
+
+**Cause:** Node cannot be reached from entry node
+
+**Detection:** Static analysis finds node with no path from entry
+
+**Example:**
+```python
+# entry-node → task-a
+# orphan-node (unreachable)
+```
+
+**Error Message:**
+```
+UnreachableNodeError: Node 'orphan-node' is unreachable from entry node 'entry-node'.
+All nodes must be reachable via edges.
+```
+
+**Fix:** Connect node to workflow or remove it
+
+---
+
+## Best Practices
+
+### 1. Use compile_agent() for Production
+
+Recommended approach combines validation and export:
+
+```python
+from ainalyn.api import compile_agent
+from pathlib import Path
+
+result = compile_agent(agent, Path("agent.yaml"))
+if result.is_successful:
+    # Safe to submit to platform
+    submit_to_platform(result.output_path)
+else:
+    # Fix errors before submission
+    handle_errors(result.validation_result.errors)
+```
+
+### 2. Validate During Development
+
+Validate after each major change:
+
+```python
+# After adding workflow
+agent = agent.add_workflow(workflow)
+result = validate(agent.build())
+assert result.is_valid
+
+# After adding resources
+agent = agent.add_prompt(prompt)
+result = validate(agent.build())
+assert result.is_valid
+```
+
+### 3. Handle Errors Specifically
+
+```python
+from ainalyn.domain.errors import (
+    MissingFieldError,
+    InvalidFormatError,
+    ReferenceError,
+)
+
+try:
+    agent = builder.build()
+except MissingFieldError as e:
+    print(f"Missing required field: {e.field_name}")
+except InvalidFormatError as e:
+    print(f"Invalid {e.field_name}: {e.value}")
+    print(f"Constraint: {e.constraint}")
+except ReferenceError as e:
+    print(f"Undefined {e.resource_type}: {e.reference}")
+```
+
+### 4. Review Generated YAML
+
+Always inspect output before submission:
+
+```python
+yaml = export_yaml(agent)
+print(yaml)  # Verify structure matches intent
+```
+
+---
+
+## Related Documentation
+
+- [Builders API](/v1/api-reference/builders/) - Builder methods and parameters
+- [Error Handling](/v1/guides/errors/) - Comprehensive error guide
+- [Validation Guide](/v1/guides/validation/) - Detailed validation rules
+- [How the SDK Works](/v1/concepts/how-the-sdk-works/) - Compilation process

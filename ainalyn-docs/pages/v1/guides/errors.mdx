@@ -1,305 +1,640 @@
 # Error Handling
 
-Common errors when building agents and how to fix them.
+Complete reference for SDK errors and how to resolve them.
 
-## Builder Errors
+## Error Categories
 
-### MissingRequiredFieldError
+SDK errors occur at two stages:
 
-**What it means:** You forgot to set a required field before calling `.build()`.
+1. **Build-Time Errors** - When calling `.build()` on builders
+2. **Validation Errors** - When calling `validate()` on agent definitions
 
+## Build-Time Errors
+
+These errors are raised immediately when using builders incorrectly.
+
+### MissingFieldError
+
+Required field not provided before calling `.build()`.
+
+**Example:**
 ```python
-# Error
-agent = AgentBuilder("MyAgent").build()
-# MissingRequiredFieldError: Required field 'version' is not set
-
-# Fix
-agent = AgentBuilder("MyAgent").version("1.0.0").build()
+# Error: Missing version and description
+agent = AgentBuilder("my-agent").build()
 ```
 
-**Required fields:**
-- **AgentBuilder**: `name`, `version`
-- **WorkflowBuilder**: `name`
-- **NodeBuilder**: `name`, `goal`
+**Error Message:**
+```
+MissingFieldError: Required field 'version' is missing or empty in AgentBuilder
+```
 
-### InvalidValueError
+**Fix:**
+```python
+agent = (
+    AgentBuilder("my-agent")
+    .version("1.0.0")        # Required
+    .description("Agent")     # Required
+    .add_workflow(workflow)   # Required
+    .build()
+)
+```
 
-**What it means:** The value doesn't meet the requirements.
+**Required Fields by Builder:**
+
+| Builder | Required Fields |
+|---------|----------------|
+| AgentBuilder | name, version, description, workflows (at least one) |
+| WorkflowBuilder | name, description, nodes (at least one), entry_node |
+| NodeBuilder | name, description, resource reference (uses_*) |
+| PromptBuilder | name, description, template |
+| ToolBuilder | name, description |
+| ModuleBuilder | name, description |
+
+---
+
+### InvalidFormatError
+
+Value doesn't match required format.
+
+**Common Cases:**
+
+#### Invalid Name Format
 
 ```python
-# Error - invalid name format
+# Error: Name contains uppercase and space
 agent = AgentBuilder("My Agent").build()
-# InvalidValueError: Invalid value for 'name': 'My Agent'
-
-# Fix - use valid format
-agent = AgentBuilder("MyAgent").build()
 ```
 
-**Naming rules:**
-- Start with lowercase letter or uppercase letter
-- Use letters, numbers, underscores, or hyphens
-- No spaces, no special characters
-
-**Valid names:**
-```python
-"MyAgent"        # CamelCase
-"my_agent"       # snake_case
-"agent-v2"       # With hyphens
-"agent123"       # With numbers
+**Error Message:**
+```
+InvalidFormatError: Invalid value for 'name': 'My Agent'.
+Agent name must start with lowercase letter and contain only lowercase letters, numbers, and hyphens
 ```
 
-**Invalid names:**
+**Name Format Rules:**
+- Pattern: `[a-z][a-z0-9-]*`
+- Must start with lowercase letter
+- Can contain: lowercase letters, numbers, hyphens
+- Cannot contain: uppercase, spaces, underscores, special characters
+
+**Valid Names:**
 ```python
-"my agent"       # Space
-"my@agent"       # Special char
-"123agent"       # Starts with number
+"my-agent"           # Valid
+"data-processor"     # Valid
+"agent-v2"           # Valid
+"task123"            # Valid
 ```
 
-### InvalidReferenceError
+**Invalid Names:**
+```python
+"MyAgent"            # Uppercase (invalid)
+"my_agent"           # Underscore (invalid)
+"123agent"           # Starts with number (invalid)
+"my agent"           # Space (invalid)
+"my@agent"           # Special character (invalid)
+```
 
-**What it means:** A node references a module/prompt/tool that doesn't exist.
+**Fix:**
+```python
+agent = AgentBuilder("my-agent").version("1.0.0")...build()
+```
+
+#### Invalid Version Format
 
 ```python
-# Error
+# Error: Not semantic versioning
+agent = AgentBuilder("my-agent").version("v1").build()
+```
+
+**Error Message:**
+```
+InvalidFormatError: Invalid value for 'version': 'v1'.
+Version must follow semantic versioning format (e.g., '1.0.0')
+```
+
+**Version Format Rules:**
+- Pattern: `MAJOR.MINOR.PATCH`
+- Example: `1.0.0`, `2.3.1`, `0.1.0`
+
+**Fix:**
+```python
+agent = AgentBuilder("my-agent").version("1.0.0")...build()
+```
+
+---
+
+### DuplicateError
+
+Name used multiple times in same scope.
+
+**Example:**
+```python
+# Error: Two nodes named "task"
 workflow = (
     WorkflowBuilder("main")
-    .description("Main workflow")
-    .add_node(
-        NodeBuilder("task1")
-        .description("Task 1")
-        .uses_module("http-client")  # Module doesn't exist!
+    .add_node(NodeBuilder("task").description("Task 1").uses_prompt("p1").build())
+    .add_node(NodeBuilder("task").description("Task 2").uses_prompt("p2").build())
+    .build()
+)
+```
+
+**Error Message:**
+```
+DuplicateError: Duplicate node name 'task' in workflow 'main'.
+Each node must have a unique name within its scope.
+```
+
+**Scoping Rules:**
+
+| Scope | Must Be Unique Within |
+|-------|----------------------|
+| Nodes | Same workflow |
+| Workflows | Same agent |
+| Prompts | Same agent |
+| Tools | Same agent |
+| Modules | Same agent |
+
+**Fix:**
+```python
+workflow = (
+    WorkflowBuilder("main")
+    .add_node(NodeBuilder("task-1").description("Task 1").uses_prompt("p1").build())
+    .add_node(NodeBuilder("task-2").description("Task 2").uses_prompt("p2").build())
+    .build()
+)
+```
+
+---
+
+### ReferenceError
+
+Node references undefined resource.
+
+**Example:**
+```python
+# Error: Prompt "my-prompt" not defined in agent
+agent = (
+    AgentBuilder("test")
+    .version("1.0.0")
+    .description("Test")
+    .add_workflow(
+        WorkflowBuilder("main")
+        .add_node(
+            NodeBuilder("task")
+            .description("Task")
+            .uses_prompt("my-prompt")  # Not defined!
+            .build()
+        )
+        .entry_node("task")
         .build()
     )
+    .build()
+)
+```
+
+**Error Message:**
+```
+ReferenceError: 'task' references undefined prompt 'my-prompt'.
+The prompt must be defined in the agent.
+```
+
+**Fix:**
+```python
+# Define the prompt first
+prompt = (
+    PromptBuilder("my-prompt")
+    .description("My prompt")
+    .template("Do task")
+    .build()
+)
+
+agent = (
+    AgentBuilder("test")
+    .version("1.0.0")
+    .description("Test")
+    .add_prompt(prompt)  # Add the prompt
+    .add_workflow(...)
+    .build()
+)
+```
+
+**Resource Types:**
+- `uses_module(name)` → must match a module in agent.modules
+- `uses_prompt(name)` → must match a prompt in agent.prompts
+- `uses_tool(name)` → must match a tool in agent.tools
+
+---
+
+### EmptyCollectionError
+
+Required collection is empty.
+
+**Example:**
+```python
+# Error: No workflows added
+agent = (
+    AgentBuilder("test")
+    .version("1.0.0")
+    .description("Test")
+    .build()
+)
+```
+
+**Error Message:**
+```
+EmptyCollectionError: 'Agent 'test'' has no workflows.
+At least one workflow is required.
+```
+
+**Fix:**
+```python
+agent = (
+    AgentBuilder("test")
+    .version("1.0.0")
+    .description("Test")
+    .add_workflow(workflow)  # Add at least one
+    .build()
+)
+```
+
+**Minimum Requirements:**
+
+| Collection | Minimum Count |
+|-----------|---------------|
+| Agent workflows | 1 |
+| Workflow nodes | 1 |
+
+---
+
+## Validation Errors
+
+These errors occur during `validate()` call.
+
+### CyclicDependencyError
+
+Workflow contains cycle (not a DAG).
+
+**Example:**
+```python
+# Error: node-a → node-b → node-c → node-a (cycle!)
+workflow = (
+    WorkflowBuilder("main")
+    .add_node(
+        NodeBuilder("node-a")
+        .description("Node A")
+        .uses_prompt("p")
+        .next_nodes("node-b")
+        .build()
+    )
+    .add_node(
+        NodeBuilder("node-b")
+        .description("Node B")
+        .uses_prompt("p")
+        .next_nodes("node-c")
+        .build()
+    )
+    .add_node(
+        NodeBuilder("node-c")
+        .description("Node C")
+        .uses_prompt("p")
+        .next_nodes("node-a")  # Creates cycle!
+        .build()
+    )
+    .entry_node("node-a")
+    .build()
+)
+
+result = validate(agent)
+# CyclicDependencyError in result.errors
+```
+
+**Error Message:**
+```
+CyclicDependencyError: Workflow contains a cycle: node-a → node-b → node-c → node-a
+```
+
+**Fix:** Remove the cycle by restructuring workflow as a DAG:
+
+```python
+workflow = (
+    WorkflowBuilder("main")
+    .add_node(
+        NodeBuilder("node-a")
+        .description("Node A")
+        .uses_prompt("p")
+        .next_nodes("node-b")
+        .build()
+    )
+    .add_node(
+        NodeBuilder("node-b")
+        .description("Node B")
+        .uses_prompt("p")
+        .next_nodes("node-c")
+        .build()
+    )
+    .add_node(
+        NodeBuilder("node-c")
+        .description("Node C")
+        .uses_prompt("p")
+        .build()  # No cycle
+    )
+    .entry_node("node-a")
+    .build()
+)
+```
+
+---
+
+### UnreachableNodeError
+
+Node cannot be reached from entry node.
+
+**Example:**
+```python
+# Error: orphan-node has no incoming edges
+workflow = (
+    WorkflowBuilder("main")
+    .add_node(
+        NodeBuilder("entry")
+        .description("Entry")
+        .uses_prompt("p")
+        .next_nodes("task-a")
+        .build()
+    )
+    .add_node(
+        NodeBuilder("task-a")
+        .description("Task A")
+        .uses_prompt("p")
+        .build()
+    )
+    .add_node(
+        NodeBuilder("orphan-node")  # Not connected!
+        .description("Orphan")
+        .uses_prompt("p")
+        .build()
+    )
+    .entry_node("entry")
+    .build()
+)
+
+result = validate(agent)
+# UnreachableNodeError in result.errors
+```
+
+**Error Message:**
+```
+UnreachableNodeError: Node 'orphan-node' is unreachable from entry node 'entry'.
+All nodes must be reachable via edges.
+```
+
+**Fix Option 1:** Connect the node to workflow:
+
+```python
+.add_node(
+    NodeBuilder("entry")
+    .next_nodes("task-a", "orphan-node")  # Add connection
+    .build()
+)
+```
+
+**Fix Option 2:** Remove unused node:
+
+```python
+# Simply don't add orphan-node
+```
+
+---
+
+## Error Handling Patterns
+
+### Basic Try-Catch
+
+```python
+from ainalyn.domain.errors import DomainError
+
+try:
+    agent = (
+        AgentBuilder("my-agent")
+        .version("1.0.0")
+        .description("Agent")
+        .add_workflow(workflow)
+        .build()
+    )
+except DomainError as e:
+    print(f"Build error: {e.message}")
+```
+
+### Specific Error Handling
+
+```python
+from ainalyn.domain.errors import (
+    MissingFieldError,
+    InvalidFormatError,
+    ReferenceError,
+    DuplicateError,
+    EmptyCollectionError,
+)
+
+try:
+    agent = AgentBuilder("test").build()
+
+except MissingFieldError as e:
+    print(f"Missing required field: {e.field_name}")
+    print(f"In: {e.entity_type}")
+
+except InvalidFormatError as e:
+    print(f"Invalid {e.field_name}: {e.value}")
+    print(f"Constraint: {e.constraint}")
+
+except ReferenceError as e:
+    print(f"'{e.source}' references undefined {e.resource_type}: {e.reference}")
+
+except DuplicateError as e:
+    print(f"Duplicate {e.entity_type} name: {e.name}")
+    if e.scope:
+        print(f"In: {e.scope}")
+
+except EmptyCollectionError as e:
+    print(f"{e.parent_name} has no {e.collection_name}")
+```
+
+### Validation Result Handling
+
+```python
+from ainalyn.api import validate
+
+result = validate(agent)
+
+# Check if valid
+if not result.is_valid:
+    print("Validation failed:")
+    for error in result.errors:
+        print(f"  [{error.severity}] {error.code}")
+        print(f"    {error.message}")
+        if error.location:
+            print(f"    Location: {error.location}")
+
+# Check for warnings
+if result.has_warnings:
+    print("\nWarnings:")
+    for error in result.errors:
+        if error.severity == Severity.WARNING:
+            print(f"  {error.code}: {error.message}")
+```
+
+### Compilation Error Handling
+
+```python
+from ainalyn.api import compile_agent
+from pathlib import Path
+
+result = compile_agent(agent, Path("agent.yaml"))
+
+if result.is_successful:
+    print(f"Success! Compiled to {result.output_path}")
+else:
+    print("Compilation failed:")
+    for error in result.validation_result.errors:
+        print(f"\n{error.code}")
+        print(f"  {error.message}")
+```
+
+---
+
+## Error Code Reference
+
+### Build-Time Error Codes
+
+| Code | Exception | Severity | Description |
+|------|-----------|----------|-------------|
+| MISSING_FIELD | MissingFieldError | ERROR | Required field not provided |
+| INVALID_FORMAT | InvalidFormatError | ERROR | Value doesn't match format |
+| DUPLICATE_NAME | DuplicateError | ERROR | Name collision in scope |
+| REFERENCE_ERROR | ReferenceError | ERROR | Undefined resource reference |
+| EMPTY_COLLECTION | EmptyCollectionError | ERROR | Required collection empty |
+
+### Validation Error Codes
+
+| Code | Exception | Severity | Description |
+|------|-----------|----------|-------------|
+| CYCLIC_DEPENDENCY | CyclicDependencyError | ERROR | Workflow contains cycle |
+| UNREACHABLE_NODE | UnreachableNodeError | ERROR | Node unreachable from entry |
+| ORPHANED_RESOURCE | N/A | WARNING | Resource defined but unused |
+
+---
+
+## Best Practices
+
+### 1. Build Incrementally
+
+Catch errors early by validating after each step:
+
+```python
+# Build nodes
+node1 = NodeBuilder("task1").description("Task 1").uses_prompt("p1").build()
+node2 = NodeBuilder("task2").description("Task 2").uses_prompt("p2").build()
+
+# Build workflow
+workflow = (
+    WorkflowBuilder("main")
+    .description("Main")
+    .add_node(node1)
+    .add_node(node2)
     .entry_node("task1")
     .build()
 )
 
-# Fix - define the module first
-module = ModuleBuilder("http-client").build()
-
+# Build agent
 agent = (
-    AgentBuilder("MyAgent")
+    AgentBuilder("my-agent")
     .version("1.0.0")
-    .add_module(module)  # Add module to agent
-    .add_workflow(workflow)
-    .build()
-)
-```
-
-### DuplicateNameError
-
-**What it means:** Two items have the same name in the same scope.
-
-```python
-# Error - duplicate node names
-workflow = (
-    WorkflowBuilder("main")
-    .add_node(NodeBuilder("task").goal("First").build())
-    .add_node(NodeBuilder("task").goal("Second").build())  # Duplicate!
-    .build()
-)
-
-# Fix - use unique names
-workflow = (
-    WorkflowBuilder("main")
-    .add_node(NodeBuilder("task1").goal("First").build())
-    .add_node(NodeBuilder("task2").goal("Second").build())
-    .build()
-)
-```
-
-### EmptyCollectionError
-
-**What it means:** A required collection is empty.
-
-```python
-# Error - workflow has no nodes
-workflow = WorkflowBuilder("main").build()
-# EmptyCollectionError: Workflow 'main' has no nodes
-
-# Fix - add at least one node
-workflow = (
-    WorkflowBuilder("main")
-    .add_node(NodeBuilder("task1").goal("Do something").build())
-    .build()
-)
-```
-
-## Validation Errors
-
-### CircularDependencyError
-
-**What it means:** Nodes depend on each other in a loop.
-
-```python
-# Error - A depends on B, B depends on A
-workflow = (
-    WorkflowBuilder("main")
-    .add_node(NodeBuilder("A").goal("Task A").depends_on("B").build())
-    .add_node(NodeBuilder("B").goal("Task B").depends_on("A").build())
-    .build()
-)
-# ValidationError: Circular dependency detected: A → B → A
-
-# Fix - remove the circular dependency
-workflow = (
-    WorkflowBuilder("main")
-    .add_node(NodeBuilder("A").goal("Task A").build())
-    .add_node(NodeBuilder("B").goal("Task B").depends_on("A").build())
-    .build()
-)
-```
-
-### InvalidDependencyError
-
-**What it means:** A node depends on a non-existent node.
-
-```python
-# Error
-workflow = (
-    WorkflowBuilder("main")
-    .add_node(
-        NodeBuilder("task1")
-        .goal("Do something")
-        .depends_on("task0")  # task0 doesn't exist!
-        .build()
-    )
-    .build()
-)
-
-# Fix - ensure dependency exists
-workflow = (
-    WorkflowBuilder("main")
-    .add_node(NodeBuilder("task0").goal("First task").build())
-    .add_node(
-        NodeBuilder("task1")
-        .goal("Do something")
-        .depends_on("task0")  # Now it exists
-        .build()
-    )
-    .build()
-)
-```
-
-## Catching Errors
-
-### Try-Catch Pattern
-
-```python
-from ainalyn import AgentBuilder, BuilderError
-from ainalyn.api import validate
-
-try:
-    agent = (
-        AgentBuilder("MyAgent")
-        .version("1.0.0")
-        .build()
-    )
-    validate(agent)
-    print("Success!")
-
-except BuilderError as e:
-    print(f"Build error: {e.message}")
-
-except Exception as e:
-    print(f"Error: {e}")
-```
-
-### Specific Error Types
-
-```python
-from ainalyn import (
-    MissingRequiredFieldError,
-    InvalidValueError,
-    DuplicateNameError
-)
-
-try:
-    agent = AgentBuilder("MyAgent").build()
-
-except MissingRequiredFieldError as e:
-    print(f"Missing: {e.field_name}")
-    print(f"In: {e.builder_type}")
-
-except InvalidValueError as e:
-    print(f"Invalid {e.field_name}: {e.value}")
-    print(f"Rule: {e.constraint}")
-
-except DuplicateNameError as e:
-    print(f"Duplicate {e.entity_type}: {e.name}")
-```
-
-## Common Patterns
-
-### Progressive Building
-
-Build complex agents step-by-step to catch errors early:
-
-```python
-# Create nodes first
-node1 = NodeBuilder("task1").goal("First task").build()
-node2 = NodeBuilder("task2").goal("Second task").depends_on("task1").build()
-
-# Create workflow
-workflow = (
-    WorkflowBuilder("main")
-    .add_node(node1)
-    .add_node(node2)
-    .build()
-)
-
-# Create agent
-agent = (
-    AgentBuilder("MyAgent")
-    .version("1.0.0")
+    .description("Agent")
+    .add_prompt(prompt1)
+    .add_prompt(prompt2)
     .add_workflow(workflow)
     .build()
 )
 
 # Validate
-validate(agent)
+result = validate(agent)
+assert result.is_valid
 ```
 
-### Validation Before Export
+### 2. Use compile_agent()
 
-Always validate before exporting:
+Combines validation and export:
 
 ```python
-from ainalyn.api import validate, export_yaml
+from ainalyn.api import compile_agent
+from pathlib import Path
 
-try:
-    # Validate first
-    validate(agent)
+result = compile_agent(agent, Path("agent.yaml"))
 
-    # Then export
-    yaml_output = export_yaml(agent)
-
-    # Save to file
-    with open("agent.yaml", "w") as f:
-        f.write(yaml_output)
-
-    print("Exported successfully!")
-
-except Exception as e:
-    print(f"Failed: {e}")
+if result.is_successful:
+    # Safe to submit
+    print("Ready for submission")
+else:
+    # Fix errors first
+    for error in result.validation_result.errors:
+        print(error.message)
 ```
 
-## Quick Reference
+### 3. Handle Errors Specifically
 
-| Error | Cause | Fix |
-|-------|-------|-----|
-| MissingRequiredFieldError | Forgot to set field | Call `.field(value)` |
-| InvalidValueError | Wrong value format | Use valid format |
-| InvalidReferenceError | Reference doesn't exist | Define the resource first |
-| DuplicateNameError | Same name used twice | Use unique names |
-| EmptyCollectionError | Empty nodes/workflows | Add at least one item |
-| CircularDependencyError | Circular dependencies | Remove the loop |
+Catch specific error types for targeted fixes:
+
+```python
+try:
+    agent = builder.build()
+except MissingFieldError as e:
+    # Add missing field
+    pass
+except InvalidFormatError as e:
+    # Fix format
+    pass
+except ReferenceError as e:
+    # Define resource
+    pass
+```
+
+### 4. Review Error Messages
+
+Error messages include helpful information:
+- Field name that caused error
+- Invalid value
+- Constraint that was violated
+- Location in definition
+
+```python
+except InvalidFormatError as e:
+    print(f"Field: {e.field_name}")
+    print(f"Value: {e.value}")
+    print(f"Rule: {e.constraint}")
+```
+
+---
+
+## Quick Reference Table
+
+| Error | Common Cause | Quick Fix |
+|-------|--------------|-----------|
+| MissingFieldError | Forgot `.version()` or `.description()` | Add required method call |
+| InvalidFormatError (name) | Used uppercase or spaces in name | Use lowercase with hyphens |
+| InvalidFormatError (version) | Version not "X.Y.Z" format | Use semantic versioning |
+| DuplicateError | Two nodes with same name | Rename one node |
+| ReferenceError | Node uses undefined prompt | Add prompt to agent |
+| EmptyCollectionError | No workflows in agent | Add at least one workflow |
+| CyclicDependencyError | Circular workflow | Remove cycle |
+| UnreachableNodeError | Disconnected node | Connect or remove node |
+
+---
 
 ## Getting Help
 
-If you encounter an error not listed here:
+If you encounter an error not covered here:
 
-1. Read the error message carefully
-2. Check the [API reference](/v1/api-reference/builders/)
-3. Review the [validation guide](/v1/guides/validation/)
-4. [Report an issue](https://github.com/CoreNovus/ainalyn-sdk/issues)
+1. Read the full error message carefully
+2. Check [API Reference](/v1/api-reference/api/) for detailed error information
+3. Review [Validation Guide](/v1/guides/validation/) for validation rules
+4. Consult [How the SDK Works](/v1/concepts/how-the-sdk-works/) for compilation process
+5. [Report issues](https://github.com/CoreNovus/ainalyn-sdk/issues) on GitHub

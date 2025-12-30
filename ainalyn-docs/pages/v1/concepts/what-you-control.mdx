@@ -1,570 +1,536 @@
 import { Callout } from 'nextra/components'
 
-# What You Control (And What You Don't Have To)
+# What You Control
 
-Building traditional software means managing everything. Building Agents means focusing on what matters.
+The SDK defines what developers control versus what Platform Core manages.
 
-This document clarifies what you're responsible for—and celebrates everything you're **not** responsible for.
+## SDK Responsibilities
 
-## The Great News First
+When using the SDK, you control:
 
-<Callout type="success">
-**You DON'T Have To:**
+### 1. Agent Definition Structure
 
-- Build authentication systems
-- Manage user accounts
-- Handle payment processing
-- Scale infrastructure
-- Monitor servers
-- Deal with security patches
-- Write billing logic
-- Handle execution retries
-- Manage databases
-- Build admin dashboards
-- Worry about uptime
-- Handle user support infrastructure
+Define task logic, workflows, and resource dependencies:
+
+```python
+agent = (
+    AgentBuilder("invoice-processor")
+    .version("1.0.0")
+    .description("Extract line items from invoices")
+    .add_workflow(workflow)
+    .add_prompt(prompt)
+    .build()
+)
+```
+
+**Developer Controls:**
+- Workflow structure (nodes and edges)
+- Resource definitions (prompts, tools, modules)
+- Input/output schemas
+- Node dependencies and execution order
+- Version numbers
+
+**Developer Does NOT Control:**
+- When execution occurs (user-initiated)
+- Resource allocation (platform-managed)
+- Retry logic (platform-managed)
+- Billing calculation (usage-based)
+
+---
+
+### 2. Input/Output Contracts
+
+Define what your agent accepts and returns:
+
+```python
+# Input schema (optional, for documentation)
+tool = (
+    ToolBuilder("data-validator")
+    .description("Validates input data")
+    .input_schema({
+        "type": "object",
+        "properties": {
+            "data": {"type": "string"},
+            "format": {"type": "string", "enum": ["json", "csv"]}
+        },
+        "required": ["data"]
+    })
+    .output_schema({
+        "type": "object",
+        "properties": {
+            "is_valid": {"type": "boolean"},
+            "errors": {"type": "array", "items": {"type": "string"}}
+        }
+    })
+    .build()
+)
+```
+
+**Developer Controls:**
+- Expected input structure
+- Output data format
+- Validation rules
+- Error message content
+
+**Developer Does NOT Control:**
+- Authentication (platform handles)
+- Rate limiting (platform enforces)
+- Request routing (platform manages)
+
+---
+
+### 3. Workflow Logic
+
+Define processing steps and dependencies:
+
+```python
+workflow = (
+    WorkflowBuilder("process")
+    .description("Process invoice data")
+    .add_node(
+        NodeBuilder("extract")
+        .description("Extract text from PDF")
+        .uses_tool("ocr-service")
+        .outputs("raw_text")
+        .next_nodes("parse")
+        .build()
+    )
+    .add_node(
+        NodeBuilder("parse")
+        .description("Parse invoice data")
+        .uses_prompt("invoice-parser")
+        .outputs("structured_data")
+        .build()
+    )
+    .entry_node("extract")
+    .build()
+)
+```
+
+**Developer Controls:**
+- Node execution order
+- Data flow between nodes
+- Conditional branching logic
+- Error handling strategy
+
+**Developer Does NOT Control:**
+- Node execution infrastructure
+- Parallel execution scheduling
+- Resource cleanup
+- State persistence
+
+---
+
+### 4. Versioning
+
+Manage agent versions using semantic versioning:
+
+```python
+# Version 1.0.0 - Initial release
+agent_v1 = (
+    AgentBuilder("processor")
+    .version("1.0.0")
+    .description("Basic processing")
+    .add_workflow(basic_workflow)
+    .build()
+)
+
+# Version 1.1.0 - Add new feature (backward compatible)
+agent_v1_1 = (
+    AgentBuilder("processor")
+    .version("1.1.0")
+    .description("Enhanced processing")
+    .add_workflow(enhanced_workflow)
+    .build()
+)
+
+# Version 2.0.0 - Breaking change
+agent_v2 = (
+    AgentBuilder("processor")
+    .version("2.0.0")
+    .description("Redesigned processing")
+    .add_workflow(new_workflow)
+    .build()
+)
+```
+
+**Developer Controls:**
+- When to release new versions
+- Version number assignment
+- Feature additions
+- Deprecation timeline
+
+**Platform Controls:**
+- Version migration for users
+- Backward compatibility enforcement
+- Default version selection
+- Version availability
+
+---
+
+## Platform Responsibilities
+
+Platform Core handles execution and infrastructure:
+
+| Platform Responsibility | Description |
+|------------------------|-------------|
+| User Authentication | OAuth, API keys, session management |
+| Execution Orchestration | Scheduling, queuing, resource allocation |
+| Retry Logic | Automatic retries on transient failures |
+| Billing Calculation | Usage tracking, cost calculation |
+| State Management | Execution state, persistence |
+| Monitoring | Logs, metrics, alerts |
+| Security | Sandboxing, isolation, data encryption |
+| Scaling | Auto-scaling based on demand |
+
+---
+
+## Responsibility Matrix
+
+| Aspect | SDK/Developer | Platform Core |
+|--------|---------------|---------------|
+| Define workflow structure | Yes | No |
+| Validate definition locally | Yes | No |
+| Execute workflows | No | Yes |
+| Handle authentication | No | Yes |
+| Calculate costs | No | Yes |
+| Retry failed operations | No | Yes |
+| Manage infrastructure | No | Yes |
+| Store execution results | No | Yes |
+| Version agent definitions | Yes | No |
+| Enforce version compatibility | No | Yes |
+
+---
+
+## Code Comparison
+
+### What You Write (SDK)
+
+```python
+from ainalyn import AgentBuilder, WorkflowBuilder, NodeBuilder, PromptBuilder
+from ainalyn.api import compile_agent
+from pathlib import Path
+
+# Define resources
+prompt = (
+    PromptBuilder("extract-data")
+    .description("Extract structured data")
+    .template("Extract data from: {{input}}")
+    .variables("input")
+    .build()
+)
+
+# Define workflow
+workflow = (
+    WorkflowBuilder("main")
+    .description("Main processing workflow")
+    .add_node(
+        NodeBuilder("process")
+        .description("Process input")
+        .uses_prompt("extract-data")
+        .outputs("result")
+        .build()
+    )
+    .entry_node("process")
+    .build()
+)
+
+# Define agent
+agent = (
+    AgentBuilder("data-processor")
+    .version("1.0.0")
+    .description("Process and extract data")
+    .add_prompt(prompt)
+    .add_workflow(workflow)
+    .build()
+)
+
+# Compile and export
+result = compile_agent(agent, Path("agent.yaml"))
+```
+
+Total: ~40 lines focused on task logic.
+
+### What You Don't Write (Platform)
+
+The platform handles (not your responsibility):
+
+- User authentication flows
+- Payment processing
+- Execution scheduling
+- Resource allocation
+- Retry mechanisms
+- State persistence
+- Monitoring and logging
+- Infrastructure scaling
+- Security sandboxing
+- Billing calculation
+
+Estimated: 1000+ lines you don't need to write or maintain.
+
+---
+
+## Boundary Clarification
+
+### Why These Boundaries Exist
+
+<Callout type="info">
+Platform boundaries ensure:
+- Consistent execution behavior across all agents
+- Fair resource allocation
+- Accurate billing
+- Security isolation
+- Operational reliability
 </Callout>
 
-**The platform handles all of that.**
+### Example: Retry Logic
 
-Your job is simpler and more valuable: **solve the actual problem your Agent addresses.**
-
-## What You Control
-
-### 1. The Task Logic
-
-This is your domain—the actual problem-solving:
+**If developers controlled retries:**
 
 ```python
-# You define WHAT your Agent does
+# Developer A
+retries = 3
+
+# Developer B
+retries = 1000
+
+# Developer C
+while True:  # Infinite retries
+    retry()
+```
+
+**Problem:** Platform overload, unfair resource usage, billing chaos.
+
+**Solution:** Platform enforces consistent retry policy.
+
+---
+
+### Example: Billing
+
+**If developers controlled billing:**
+
+```python
+# Developer A
+cost = 0.01  # Underpriced
+
+# Developer B
+cost = calculate_llm_tokens()  # Forgot tool costs
+
+# Developer C
+cost = 100.00  # Overpriced
+```
+
+**Problem:** Inconsistent pricing, user confusion, revenue issues.
+
+**Solution:** Platform calculates actual resource usage.
+
+---
+
+## Practical Implications
+
+### Agent Definition Lifecycle
+
+**1. Development (SDK)**
+
+```python
+# You build the definition
+agent = AgentBuilder("test").version("1.0.0")...build()
+
+# You validate locally
+result = validate(agent)
+
+# You export to YAML
+yaml = export_yaml(agent)
+```
+
+**2. Submission (Platform)**
+
+- Upload YAML to platform
+- Platform reviews definition
+- Platform applies governance policies
+- Platform approves or rejects
+
+**3. Execution (Platform)**
+
+- User requests execution
+- Platform authenticates user
+- Platform allocates resources
+- Platform executes workflow
+- Platform tracks usage
+- Platform calculates cost
+- Platform stores results
+
+---
+
+### State Management
+
+Agents are stateless by design:
+
+```python
+# Each execution is independent
+execution_1 = platform.execute(agent, input_1)
+execution_2 = platform.execute(agent, input_2)
+
+# No shared state between executions
+```
+
+**Developer Perspective:**
+- Process inputs
+- Return outputs
+- No state management code
+
+**Platform Perspective:**
+- Manages execution state
+- Persists results
+- Provides execution history
+
+---
+
+### Resource Requirements
+
+Declare resource needs, platform provisions:
+
+```python
+# You declare requirements
 agent = (
-    AgentBuilder("InvoiceProcessor")
-    .description("Extract line items from invoices")
-    .add_workflow(processing_logic)  # ← This is yours
-    .build()
-)
-```
-
-**You decide:**
-- What inputs are needed
-- What processing happens
-- What outputs are produced
-- How to handle edge cases
-- What quality standards to maintain
-
-**You don't decide:**
-- When executions happen (users do)
-- How execution is scheduled (platform does)
-- How much to charge (market dynamics + your pricing)
-- How to scale (platform does)
-
-### 2. The User Experience of Your Task
-
-You design how users interact with **your specific task**:
-
-```python
-# Clear, minimal inputs
-input_schema = {
-    "document": "PDF file to process",
-    "extract_tables": "boolean (optional)"
-}
-
-# Useful, structured outputs
-output_schema = {
-    "line_items": "array of extracted items",
-    "confidence_scores": "reliability metrics"
-}
-```
-
-**You control:**
-- What users need to provide
-- How results are structured
-- What information is returned
-- Error messages for your task
-
-**You don't control:**
-- The overall Client interface (platform does)
-- Authentication flows (platform does)
-- Payment screens (platform does)
-- Marketplace presentation (platform does, with your metadata)
-
-### 3. Your Agent's Quality
-
-You're responsible for making your Agent work well:
-
-**You ensure:**
-- ✅ Correct outputs for valid inputs
-- ✅ Clear error messages for invalid inputs
-- ✅ Reasonable handling of edge cases
-- ✅ Consistent behavior across invocations
-- ✅ Appropriate use of resources
-
-**You don't ensure:**
-- ❌ Platform uptime (platform's job)
-- ❌ Network reliability (platform's job)
-- ❌ User quota limits (platform's job)
-- ❌ Payment processing (platform's job)
-
-### 4. Your Agent's Evolution
-
-You decide how your Agent improves over time:
-
-```python
-# Version 1.0.0: Basic extraction
-agent_v1 = (
-    AgentBuilder("InvoiceProcessor")
-    .version("1.0.0")
-    .add_workflow(basic_extraction)
-    .build()
-)
-
-# Version 1.1.0: Add table extraction
-agent_v1_1 = (
-    AgentBuilder("InvoiceProcessor")
-    .version("1.1.0")  # You control versioning
-    .add_workflow(enhanced_extraction)
-    .build()
-)
-```
-
-**You control:**
-- When to release updates
-- What features to add
-- How to version changes
-- Whether to deprecate old versions
-
-**Platform controls:**
-- How users migrate between versions
-- Backward compatibility enforcement
-- Which version users see by default
-
-## What You're Free From
-
-Let's celebrate what you DON'T have to manage:
-
-### Infrastructure Management
-
-**You don't:**
-```python
-# ❌ Configure servers
-# ❌ Set up load balancers
-# ❌ Manage databases
-# ❌ Handle deployments
-# ❌ Monitor logs
-# ❌ Debug networking issues
-# ❌ Optimize resource allocation
-```
-
-**The platform handles:**
-- Automatic scaling
-- Resource allocation
-- Load balancing
-- Monitoring and alerting
-- Infrastructure security
-
-**You just define your Agent.** The platform runs it.
-
-### User Management
-
-**You don't:**
-```python
-# ❌ Build signup flows
-# ❌ Verify emails
-# ❌ Reset passwords
-# ❌ Manage sessions
-# ❌ Handle 2FA
-# ❌ Store user data
-# ❌ Comply with GDPR for user accounts
-```
-
-**The platform handles:**
-- User authentication
-- User authorization
-- Account management
-- Privacy compliance
-- Security measures
-
-**Users are already authenticated.** Your Agent just works.
-
-### Payment Processing
-
-**You don't:**
-```python
-# ❌ Integrate payment gateways
-# ❌ Handle credit cards
-# ❌ Manage subscriptions
-# ❌ Calculate taxes
-# ❌ Process refunds
-# ❌ Handle chargebacks
-# ❌ Generate invoices
-```
-
-**The platform handles:**
-- Payment collection
-- Billing calculations
-- Revenue distribution
-- Tax compliance
-- Financial reporting
-
-**You just get paid.** The platform handles the complexity.
-
-### Execution Management
-
-**You don't:**
-```python
-# ❌ Decide when to retry
-# ❌ Implement timeout logic
-# ❌ Handle execution failures
-# ❌ Track execution state
-# ❌ Manage execution queues
-# ❌ Balance execution load
-```
-
-**The platform handles:**
-- Execution scheduling
-- Retry strategies
-- Failure recovery
-- State management
-- Resource fairness
-
-**You define the logic.** The platform executes it reliably.
-
-## The Freedom This Gives You
-
-### Focus on Value Creation
-
-Traditional software development:
-```
-1 week: Actual feature
-3 weeks: Infrastructure, auth, billing, UI, deployment
-```
-
-Agent development:
-```
-1 week: Actual feature
-1 day: SDK integration and validation
-```
-
-**4x more time on what matters.**
-
-### Rapid Experimentation
-
-Want to try a new Agent idea?
-
-**Traditional approach:**
-- Set up infrastructure
-- Build authentication
-- Create UI
-- Handle payments
-- Deploy
-- Market to get users
-- **Weeks of work before you know if it's useful**
-
-**Agent approach:**
-```python
-# Define your Agent
-agent = AgentBuilder("NewIdea").add_workflow(...).build()
-
-# Validate it
-validate(agent)
-
-# Deploy to marketplace
-export_yaml(agent)
-```
-
-**Ship in hours. Learn immediately.**
-
-### Sustainable Maintenance
-
-Traditional software gets harder to maintain over time:
-- Security patches
-- Dependency updates
-- Infrastructure changes
-- Scaling challenges
-
-**Agents stay simple:**
-- Update task logic when needed
-- SDK handles validation
-- Platform handles execution
-- No infrastructure to maintain
-
-**Your Agent from 2024 still works in 2025.** No maintenance burden.
-
-## Understanding the Boundaries
-
-These boundaries exist to **protect you**, not limit you:
-
-### Why You Can't Control Execution
-
-**Scenario:** What if every developer implemented their own retry logic?
-
-```python
-# Developer A: Retry 3 times
-# Developer B: Retry 100 times
-# Developer C: Retry forever
-```
-
-**Result:** Platform overload, unfair resource usage, unreliable billing.
-
-**Solution:** Platform handles retry logic consistently.
-
-**Benefit to you:** You don't have to think about it. Just define the task.
-
-### Why You Can't Control Billing
-
-**Scenario:** What if every developer calculated their own costs?
-
-```python
-# Developer A: Charges $0.01 per execution
-# Developer B: Forgot to count LLM tokens
-# Developer C: Charges $100 for a simple task
-```
-
-**Result:** Confused users, unfair pricing, marketplace chaos.
-
-**Solution:** Platform calculates costs based on actual resource usage.
-
-**Benefit to you:** Fair, transparent pricing without your effort.
-
-### Why You Can't Control Authentication
-
-**Scenario:** What if every Agent required separate login?
-
-```
-User workflow:
-1. Login to Platform
-2. Login to Agent A
-3. Login to Agent B
-4. Login to Agent C
-```
-
-**Result:** Terrible user experience, security vulnerabilities, low adoption.
-
-**Solution:** Platform handles authentication once.
-
-**Benefit to you:** Users can use your Agent immediately, no friction.
-
-## What This Means Practically
-
-### You Write This
-
-```python
-from ainalyn import AgentBuilder, WorkflowBuilder
-
-# Just describe the task
-agent = (
-    AgentBuilder("DataProcessor")
-    .description("Process user data efficiently")
-    .version("1.0.0")
-    .add_workflow(
-        WorkflowBuilder("process")
-        .add_node(processing_node)
+    AgentBuilder("processor")
+    .add_tool(
+        ToolBuilder("external-api")
+        .description("Requires external API access")
         .build()
     )
     .build()
 )
 
-# Validate and export
-validate(agent)
-yaml = export_yaml(agent)
+# Platform provisions:
+# - API credentials
+# - Network access
+# - Request limits
+# - Monitoring
 ```
-
-**That's it.** ~20 lines of focused code.
-
-### You DON'T Write This
-
-```python
-# ❌ You don't write any of this:
-
-class UserAuth:
-    def signup(self, email, password): ...
-    def login(self, credentials): ...
-    def verify_email(self, token): ...
-
-class PaymentProcessor:
-    def charge_card(self, amount): ...
-    def handle_webhook(self, event): ...
-
-class ExecutionManager:
-    def schedule(self, agent, input): ...
-    def retry(self, execution): ...
-    def monitor(self, execution): ...
-
-class InfrastructureManager:
-    def scale_up(self, load): ...
-    def handle_failure(self, instance): ...
-
-class BillingCalculator:
-    def calculate_cost(self, usage): ...
-    def distribute_revenue(self, payment): ...
-```
-
-**Hundreds of lines you never have to write.**
-
-## The Developer's Perspective
-
-### What You Focus On
-
-```
-90% - Task logic (the interesting part)
-5%  - Input/output design
-5%  - SDK integration
-```
-
-**The work you actually want to do.**
-
-### What You Don't Worry About
-
-```
-0% - Infrastructure
-0% - Authentication
-0% - Payment processing
-0% - User management
-0% - Scaling
-0% - Monitoring
-0% - Security patches
-0% - Compliance
-```
-
-**The work that drains energy without adding value.**
-
-## Real-World Example
-
-Let's compare building a PDF text extractor:
-
-### Traditional Approach
-
-**What you build:**
-1. Web application with login
-2. File upload handling
-3. PDF processing logic ← The actual value
-4. Result display UI
-5. Payment integration
-6. Database for user data
-7. API for third-party access
-8. Admin dashboard
-9. User support system
-
-**Effort distribution:**
-- 10% - PDF extraction logic (the valuable part)
-- 90% - Everything else
-
-**Time to market:** 2-3 months
-
-### Agent Approach
-
-**What you build:**
-```python
-agent = (
-    AgentBuilder("PDFTextExtractor")
-    .description("Extract text from PDF documents")
-    .version("1.0.0")
-    .add_workflow(extraction_workflow)
-    .build()
-)
-```
-
-**Effort distribution:**
-- 95% - PDF extraction logic (the valuable part)
-- 5% - SDK integration
-
-**Time to market:** 1-2 weeks
-
-**The difference is massive.**
-
-## Embracing the Boundaries
-
-These boundaries aren't limitations—they're **liberation**.
-
-### You're Not Limited
-
-You can still build:
-- ✅ Complex processing logic
-- ✅ Multi-step workflows
-- ✅ LLM-powered features
-- ✅ External API integrations
-- ✅ Sophisticated algorithms
-- ✅ Any task-oriented solution
-
-### You're Just Freed
-
-From:
-- ❌ Infrastructure concerns
-- ❌ User management
-- ❌ Payment processing
-- ❌ Execution orchestration
-- ❌ Scaling challenges
-
-**All your energy goes into the problem you're solving.**
-
-## The Mental Shift
-
-### Old Way of Thinking
-
-"I need to build a complete product with login, hosting, payments, UI, and the actual feature."
-
-**Result:** Overwhelmed, slow progress, maintenance burden.
-
-### New Way of Thinking
-
-"I need to solve this specific problem really well and let the platform handle the rest."
-
-**Result:** Focused, rapid progress, sustainable maintenance.
-
-## Common Questions
-
-### "What if I need custom authentication for my Agent?"
-
-Users are already authenticated with the platform. Your Agent receives authorized requests.
-
-**You don't need custom auth.** The platform handles it.
-
-### "What if I want to charge custom pricing?"
-
-You set pricing guidance, but actual charges depend on real resource usage.
-
-**You influence pricing.** The platform ensures fairness.
-
-### "What if I need to store user data between requests?"
-
-Agents are stateless—each execution is independent.
-
-**You process inputs and return outputs.** The platform manages state if needed.
-
-### "What if my Agent needs special infrastructure?"
-
-Declare your requirements in the Agent definition:
-
-```python
-agent = (
-    AgentBuilder("MyAgent")
-    .add_tool(special_tool_definition)
-    .build()
-)
-```
-
-**You declare needs.** The platform provisions resources.
-
-## Next Steps
-
-Now that you understand what you control:
-
-<Callout type="success">
-**Ready to Focus on What Matters?**
-
-1. [Agent Definition](/v1/concepts/agent-definition/) - Learn how to describe your Agent
-2. [Your First Agent](/v1/getting-started/your-first-agent/) - Build something real
-3. [Workflow Guide](/v1/guides/workflows/) - Design complex task logic
-
-**You control the task. The platform handles everything else.**
-</Callout>
 
 ---
 
-**Remember:** The best software is focused software.
+## Common Questions
 
-You focus on **solving one problem brilliantly**.
+### Q: Can I test execution locally?
 
-The platform focuses on **running it reliably for everyone**.
+**A:** No. The SDK validates structure only. Execution requires platform infrastructure.
 
-That's how great products get built.
+```python
+# SDK can do this
+result = validate(agent)  # Structure validation
+
+# SDK cannot do this
+# execute(agent, input)  # No local execution
+```
+
+For testing, use platform's test/sandbox environment.
+
+---
+
+### Q: Can I customize retry behavior?
+
+**A:** No. Platform enforces consistent retry policies for all agents.
+
+**Reason:** Ensures fair resource usage and reliable billing.
+
+---
+
+### Q: Can I store data between executions?
+
+**A:** No. Agents are stateless. Each execution is independent.
+
+**Alternative:** Use platform-provided state management services (if available).
+
+---
+
+### Q: Can I control execution timing?
+
+**A:** No. Users initiate execution. Platform schedules and orchestrates.
+
+**Developer Role:** Define what happens, not when it happens.
+
+---
+
+## Best Practices
+
+### 1. Focus on Definition Quality
+
+```python
+# Good: Clear, well-documented definition
+agent = (
+    AgentBuilder("processor")
+    .version("1.0.0")
+    .description("Processes invoices and extracts line items")
+    .add_workflow(
+        WorkflowBuilder("process")
+        .description("Main processing workflow")
+        .add_node(...)
+        .build()
+    )
+    .build()
+)
+```
+
+### 2. Design for Statelessness
+
+```python
+# Good: Each execution is self-contained
+node = (
+    NodeBuilder("process")
+    .description("Process input and return result")
+    .uses_prompt("process-prompt")
+    .outputs("result")
+    .build()
+)
+
+# Avoid: Assuming state persists
+# (Platform handles state if needed)
+```
+
+### 3. Validate Thoroughly
+
+```python
+# Always validate before submission
+result = validate(agent)
+if not result.is_valid:
+    for error in result.errors:
+        print(f"{error.code}: {error.message}")
+```
+
+### 4. Version Appropriately
+
+```python
+# Follow semantic versioning
+# MAJOR.MINOR.PATCH
+
+# 1.0.0 → 1.0.1 (bug fix)
+# 1.0.0 → 1.1.0 (new feature, backward compatible)
+# 1.0.0 → 2.0.0 (breaking change)
+```
+
+---
+
+## Summary
+
+| You Control | Platform Controls |
+|-------------|-------------------|
+| Agent definition structure | Execution infrastructure |
+| Workflow logic | Resource allocation |
+| Input/output contracts | Authentication |
+| Version numbers | Retry logic |
+| Resource declarations | Billing calculation |
+| Local validation | Execution orchestration |
+
+**Your Focus:** Define task logic clearly and correctly.
+
+**Platform Focus:** Execute reliably and fairly.
+
+---
+
+## Next Steps
+
+- [Building Your Agent](/v1/concepts/building-your-agent/) - Design patterns
+- [How the SDK Works](/v1/concepts/how-the-sdk-works/) - Compilation process
+- [API Reference](/v1/api-reference/api/) - SDK functions
