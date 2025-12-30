@@ -78,10 +78,22 @@ export const pageMap = [{
     children: [{
       data: v1_concepts_meta
     }, {
+      name: "agent-definition",
+      route: "/v1/concepts/agent-definition",
+      frontMatter: {
+        "sidebarTitle": "Agent Definition"
+      }
+    }, {
       name: "building-your-agent",
       route: "/v1/concepts/building-your-agent",
       frontMatter: {
         "sidebarTitle": "Building Your Agent"
+      }
+    }, {
+      name: "compiler-not-runtime",
+      route: "/v1/concepts/compiler-not-runtime",
+      frontMatter: {
+        "sidebarTitle": "Compiler Not Runtime"
       }
     }, {
       name: "how-the-sdk-works",
