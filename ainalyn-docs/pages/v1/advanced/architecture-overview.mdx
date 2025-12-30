@@ -1,532 +1,229 @@
-# Architecture Overview
+# Architecture & Code Guide
 
-The Ainalyn SDK is built on **Hexagonal Architecture** principles, ensuring clean separation of concerns, testability, and maintainability.
+The Ainalyn SDK is built on **Hexagonal Architecture** (Ports & Adapters), ensuring clean separation of concerns, testability, and maintainability.
 
-> **Note**: This document is for contributors who want to understand or modify the SDK's internal architecture. If you're using the SDK to build Agents, see the [Concepts](/v1/concepts/what-is-an-agent/) section instead.
+> **Note**: This section is for contributors who want to understand or modify the SDK's internal architecture. If you're using the SDK to build Agents, see the [Concepts](/v1/concepts/what-is-an-agent/) section instead.
 
-## Architectural Principles
+## Core Principles
 
-The SDK architecture enforces these core principles:
-
-1. **Compiler, Not Runtime** - The SDK creates Agent Descriptions; execution belongs to the platform
+1. **Compiler, Not Runtime** - The SDK creates Agent Definitions; execution belongs to the platform
 2. **Dependency Inversion** - Core business logic depends on abstractions, not implementations
-3. **Clean Boundaries** - Each layer has a single, well-defined responsibility
+3. **Clean Boundaries** - Each component has a single, well-defined responsibility
 4. **Immutability** - Domain entities are immutable by design
 
-## Layer Architecture
+---
+
+## Architecture Diagram
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     Ainalyn SDK                             │
-│                                                             │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │      Public API & CLI                                │  │
-│  │  api.py, cli.py, __init__.py                         │  │
-│  └──────────────────┬───────────────────────────────────┘  │
-│                     │                                       │
-│  ┌──────────────────▼───────────────────────────────────┐  │
-│  │      Infrastructure                                  │  │
-│  │  service_factory.py, dependency wiring               │  │
-│  └──────────────────┬───────────────────────────────────┘  │
-│                     │                                       │
-│  ┌──────────────────▼───────────────────────────────────┐  │
-│  │      Application                                     │  │
-│  │  services.py, use_cases/, ports/                     │  │
-│  └──────────────────┬───────────────────────────────────┘  │
-│                     │                                       │
-│  ┌──────────────────▼───────────────────────────────────┐  │
-│  │      Adapters                                        │  │
-│  │  inbound/builders, outbound/validators               │  │
-│  └──────────────────┬───────────────────────────────────┘  │
-│                     │                                       │
-│  ┌──────────────────▼───────────────────────────────────┐  │
-│  │      Domain                                          │  │
-│  │  entities/, rules/, errors.py                        │  │
-│  └──────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
+                              ┌─────────────────────┐
+                              │    CLI (cli.py)     │
+                              │   Inbound Adapter   │
+                              └──────────┬──────────┘
+                                         │
+    ┌──────────────────┐                 │                 ┌──────────────────┐
+    │  Python API      │                 │                 │  YAML Serializer │
+    │  (api.py)        │                 │                 │  Outbound Adapter│
+    │  Inbound Adapter │                 │                 └────────┬─────────┘
+    └────────┬─────────┘                 │                          │
+             │                           │                          │
+             │         ╔═════════════════╧══════════════════╗       │
+             │         ║                                    ║       │
+             └────────▶║       APPLICATION CORE             ║◀──────┘
+                       ║  ┌──────────────────────────────┐  ║
+    ┌──────────────┐   ║  │         Application          │  ║   ┌──────────────┐
+    │   Builders   │   ║  │  ┌────────────────────────┐  │  ║   │   Schema     │
+    │   (inbound/  │──▶║  │  │  Services & Use Cases  │  │  ║◀──│   Validator  │
+    │   builders/) │   ║  │  │  (Orchestration)       │  │  ║   │   (outbound/)│
+    └──────────────┘   ║  │  └───────────┬────────────┘  │  ║   └──────────────┘
+                       ║  │              │               │  ║
+                       ║  │    Ports     │    Ports      │  ║
+                       ║  │   (inbound)  │   (outbound)  │  ║
+                       ║  │              │               │  ║
+                       ║  │  ┌───────────▼────────────┐  │  ║   ┌──────────────┐
+                       ║  │  │        Domain          │  │  ║   │   Static     │
+                       ║  │  │  ┌──────────────────┐  │  │  ║◀──│   Analyzer   │
+                       ║  │  │  │ Entities, Rules  │  │  │  ║   │   (outbound/)│
+                       ║  │  │  │ (Business Logic) │  │  │  ║   └──────────────┘
+                       ║  │  │  └──────────────────┘  │  │  ║
+                       ║  │  └────────────────────────┘  │  ║
+                       ║  └──────────────────────────────┘  ║
+                       ║                                    ║
+                       ╚════════════════════════════════════╝
+                                         │
+                              ┌──────────┴──────────┐
+                              │    Infrastructure   │
+                              │  (service_factory)  │
+                              │    Wiring/DI        │
+                              └─────────────────────┘
 ```
 
-## Domain Layer
+Unlike layered/onion architecture where layers wrap around each other, hexagonal architecture places the **Application Core** at the center with **Ports** defining boundaries and **Adapters** connecting to the outside world.
+
+---
+
+## Key Concepts
+
+| Concept | Description | Location |
+|---------|-------------|----------|
+| **Application Core** | Business logic that never depends on external systems | `domain/` + `application/` |
+| **Inbound Ports** | Interfaces for use cases (what the core offers) | `application/ports/inbound/` |
+| **Outbound Ports** | Interfaces for external capabilities the core needs | `application/ports/outbound/` |
+| **Inbound Adapters** | Entry points that drive the application (CLI, API, Builders) | `adapters/inbound/`, `api.py`, `cli.py` |
+| **Outbound Adapters** | Implementations of external capabilities (validators, serializers) | `adapters/outbound/` |
+| **Infrastructure** | Dependency injection and wiring | `infrastructure/` |
+
+---
+
+## Dependency Rules
+
+Dependencies always point **inward** toward the Application Core:
+
+```
+                         Inbound Adapters
+                    (api.py, cli.py, builders/)
+                                │
+                                │ calls
+                                ▼
+                    ┌───────────────────────┐
+                    │   Application Layer   │
+                    │   (services, use_cases)│
+                    │           │           │
+                    │     defines ports     │
+                    │           │           │
+                    └───────────┼───────────┘
+                                │
+        ┌───────────────────────┼───────────────────────┐
+        │                       │                       │
+        ▼                       ▼                       ▼
+   Outbound Ports          Domain Layer           Infrastructure
+   (interfaces)         (entities, rules)         (wiring/DI)
+        ▲                                              │
+        │                                              │
+        └──────────────────────────────────────────────┘
+                    implements ports with
+                     Outbound Adapters
+               (schema_validator, yaml_serializer)
+```
+
+| Component | Can Depend On | Cannot Depend On |
+|-----------|---------------|------------------|
+| Domain | Nothing (pure Python) | Any outer layer |
+| Application (ports) | Domain | Adapters, Infrastructure |
+| Application (services) | Domain, Ports (interfaces) | Concrete Adapters |
+| Inbound Adapters | Application (via services), Domain | Outbound Adapters |
+| Outbound Adapters | Domain, implements Outbound Ports | Application internals |
+| Infrastructure | Everything (for wiring) | - |
+
+---
+
+## Layer Details
+
+### Domain Layer
 
 **Location**: `ainalyn/domain/`
 
-The domain layer contains pure business logic with zero external dependencies.
+Pure business logic with zero external dependencies.
 
-**Structure**:
-```
-domain/
-├── entities/          # Immutable domain entities
-│   ├── agent_definition.py
-│   ├── workflow.py
-│   ├── node.py
-│   └── ...
-├── rules/             # Business rules and validation
-│   └── definition_rules.py
-└── errors.py          # Domain-specific errors
-```
-
-**Example**:
 ```python
 @dataclass(frozen=True)
 class AgentDefinition:
-    """
-    Agent Definition entity.
-
-    This is a description entity, not an executable implementation.
-    """
+    """Immutable domain entity."""
     name: str
     version: str
-    description: str
     workflows: tuple[Workflow, ...]
 
     def __post_init__(self) -> None:
-        """Validate domain invariants."""
         if not DefinitionRules.is_valid_name(self.name):
             raise InvalidFormatError(f"Invalid name: {self.name}")
 ```
 
-**Characteristics**:
-- Frozen dataclasses (immutable)
-- Self-validating via `__post_init__`
-- No imports from outer layers
-- Pure Python types only
-
 **Domain Errors**:
 ```python
 class DefinitionError(Exception):
-    """Base error for Agent Definition compilation issues."""
+    """Base error for Agent Definition issues."""
 
 class InvalidFormatError(DefinitionError):
     """Field format validation error."""
-
-class ReferenceError(DefinitionError):
-    """Invalid reference within definition."""
 
 class CyclicDependencyError(DefinitionError):
     """Workflow contains cycles."""
 ```
 
-## Adapters Layer
-
-**Location**: `ainalyn/adapters/`
-
-Adapters implement port interfaces and handle external interactions.
-
-**Structure**:
-```
-adapters/
-├── inbound/           # Entry points
-│   └── builders/
-│       ├── agent_builder.py
-│       ├── workflow_builder.py
-│       └── ...
-└── outbound/          # External integrations
-    ├── schema_validator.py
-    ├── static_analyzer.py
-    ├── yaml_serializer.py
-    └── file_writer.py
-```
-
-### Inbound Adapters
-
-Provide developer-facing DSL for constructing domain entities:
-
-```python
-class AgentBuilder:
-    """Fluent builder for Agent Definitions."""
-
-    def __init__(self, name: str) -> None:
-        self._name = name
-        self._version: str | None = None
-        self._workflows: list[Workflow] = []
-
-    def version(self, version: str) -> AgentBuilder:
-        """Set agent version."""
-        self._version = version
-        return self
-
-    def add_workflow(self, workflow: Workflow) -> AgentBuilder:
-        """Add a workflow."""
-        self._workflows.append(workflow)
-        return self
-
-    def build(self) -> AgentDefinition:
-        """Build immutable AgentDefinition."""
-        if self._version is None:
-            raise MissingFieldError("version required")
-
-        return AgentDefinition(
-            name=self._name,
-            version=self._version,
-            workflows=tuple(self._workflows),
-        )
-```
-
-### Outbound Adapters
-
-Implement technical concerns like serialization and validation:
-
-```python
-class YamlSerializer:
-    """YAML serialization adapter."""
-
-    def serialize(self, definition: AgentDefinition) -> str:
-        """Serialize Agent Definition to YAML."""
-        data = self._to_dict(definition)
-        return yaml.dump(data, sort_keys=False)
-```
-
-## Application Layer
+### Application Layer
 
 **Location**: `ainalyn/application/`
 
 Orchestrates domain logic via port interfaces.
 
-**Structure**:
-```
-application/
-├── ports/
-│   ├── inbound/
-│   │   ├── compile_agent_definition.py
-│   │   ├── validate_agent_definition.py
-│   │   └── export_agent_definition.py
-│   └── outbound/
-│       ├── definition_schema_validation.py
-│       ├── definition_static_analysis.py
-│       ├── definition_serialization.py
-│       └── definition_persistence.py
-├── use_cases/
-│   ├── compile_definition.py
-│   ├── validate_definition.py
-│   └── export_definition.py
-└── services.py
-```
-
-### Ports
-
-Define contracts between application and adapters:
-
+**Ports** - Define contracts:
 ```python
 class IDefinitionSchemaValidator(Protocol):
     """Port for schema validation capability."""
-
-    def validate_schema(
-        self,
-        definition: AgentDefinition
-    ) -> tuple[ValidationError, ...]:
-        """Validate Agent Definition structure."""
-        ...
+    def validate_schema(self, definition: AgentDefinition) -> tuple[ValidationError, ...]: ...
 ```
 
-### Services
-
-Orchestrate use cases via dependency injection:
-
+**Services** - Orchestrate via dependency injection:
 ```python
 class DefinitionService:
-    """Core service for Agent Definition operations."""
-
     def __init__(
         self,
-        schema_validator: IDefinitionSchemaValidator,
+        schema_validator: IDefinitionSchemaValidator,  # Port, not concrete
         static_analyzer: IDefinitionAnalyzer,
         serializer: IDefinitionSerializer,
-        writer: IDefinitionWriter | None = None,
     ):
         self._schema_validator = schema_validator
-        self._static_analyzer = static_analyzer
-        self._serializer = serializer
-        self._writer = writer
-
-    def compile(self, definition: AgentDefinition) -> CompilationResult:
-        """Compile and validate Agent Definition."""
-        schema_errors = self._schema_validator.validate_schema(definition)
-        analysis_issues = self._static_analyzer.analyze(definition)
-
-        return CompilationResult(
-            definition=definition,
-            errors=schema_errors + analysis_issues,
-        )
+        # ...
 ```
 
-**Key Principle**: Services depend only on port interfaces (abstractions), never on concrete adapter implementations.
+### Adapters Layer
 
-## Infrastructure Layer
+**Location**: `ainalyn/adapters/`
+
+**Inbound** - Entry points (Builders):
+```python
+class AgentBuilder:
+    """Fluent builder for Agent Definitions."""
+    def version(self, version: str) -> AgentBuilder:
+        self._version = version
+        return self
+
+    def build(self) -> AgentDefinition:
+        return AgentDefinition(name=self._name, ...)
+```
+
+**Outbound** - External capabilities:
+```python
+class YamlSerializer:
+    """Implements IDefinitionSerializer port."""
+    def serialize(self, definition: AgentDefinition) -> str:
+        return yaml.dump(self._to_dict(definition))
+```
+
+### Infrastructure Layer
 
 **Location**: `ainalyn/infrastructure/`
 
-Handles dependency wiring and configuration.
-
+Wires concrete adapters to ports:
 ```python
 def create_default_service() -> DefinitionService:
-    """
-    Create DefinitionService with default adapter implementations.
-
-    This factory centralizes dependency wiring, keeping the
-    application layer clean and testable.
-    """
     return DefinitionService(
-        schema_validator=SchemaValidator(),
-        static_analyzer=StaticAnalyzer(),
-        serializer=YamlSerializer(),
-        writer=FileWriter(),
-    )
-```
-
-## Public API Layer
-
-**Location**: `ainalyn/api.py`, `ainalyn/cli.py`, `ainalyn/__init__.py`
-
-Provides user-facing interfaces.
-
-```python
-# api.py
-from ainalyn.infrastructure.service_factory import create_default_service
-
-_service: DefinitionService | None = None
-
-def _get_service() -> DefinitionService:
-    """Get or create service instance."""
-    global _service
-    if _service is None:
-        _service = create_default_service()
-    return _service
-
-def validate(definition: AgentDefinition) -> ValidationResult:
-    """Validate an Agent Definition."""
-    service = _get_service()
-    return service.validate(definition)
-
-def export_yaml(definition: AgentDefinition) -> str:
-    """Export Agent Definition to YAML."""
-    service = _get_service()
-    return service.export_yaml(definition)
-```
-
-**Public Exports** (`__init__.py`):
-```python
-__all__ = [
-    # High-level API
-    "validate",
-    "export_yaml",
-    "compile_agent",
-
-    # Builders
-    "AgentBuilder",
-    "WorkflowBuilder",
-    "NodeBuilder",
-
-    # Domain entities
-    "AgentDefinition",
-    "Workflow",
-    "Node",
-
-    # Results
-    "ValidationResult",
-
-    # Errors
-    "DefinitionError",
-]
-```
-
-## Dependency Flow
-
-Dependencies always point inward toward the domain:
-
-```
-Public API
-    ↓
-Infrastructure
-    ↓
-Application (depends on: domain + ports)
-    ↓
-Adapters (depends on: domain, implements: ports)
-    ↓
-Domain (depends on: nothing)
-```
-
-**Benefits**:
-- Domain is stable and isolated
-- Business rules in one place
-- Adapters are swappable
-- Easy to test each layer
-
-## Complete Directory Structure
-
-```
-ainalyn/
-├── domain/
-│   ├── entities/
-│   │   ├── agent_definition.py
-│   │   ├── workflow.py
-│   │   ├── node.py
-│   │   ├── module.py
-│   │   ├── prompt.py
-│   │   └── tool.py
-│   ├── rules/
-│   │   └── definition_rules.py
-│   └── errors.py
-│
-├── adapters/
-│   ├── inbound/
-│   │   └── builders/
-│   │       ├── agent_builder.py
-│   │       ├── workflow_builder.py
-│   │       ├── node_builder.py
-│   │       ├── module_builder.py
-│   │       ├── prompt_builder.py
-│   │       └── tool_builder.py
-│   └── outbound/
-│       ├── schema_validator.py
-│       ├── static_analyzer.py
-│       ├── yaml_serializer.py
-│       └── file_writer.py
-│
-├── application/
-│   ├── ports/
-│   │   ├── inbound/
-│   │   │   ├── compile_agent_definition.py
-│   │   │   ├── validate_agent_definition.py
-│   │   │   └── export_agent_definition.py
-│   │   └── outbound/
-│   │       ├── definition_schema_validation.py
-│   │       ├── definition_static_analysis.py
-│   │       ├── definition_serialization.py
-│   │       └── definition_persistence.py
-│   ├── use_cases/
-│   │   ├── compile_definition.py
-│   │   ├── validate_definition.py
-│   │   └── export_definition.py
-│   └── services.py
-│
-├── infrastructure/
-│   ├── service_factory.py
-│   └── default_config.py
-│
-├── api.py
-├── cli.py
-└── __init__.py
-```
-
-## Design Patterns
-
-### Dependency Inversion
-
-```python
-# ✅ Good: Depends on abstraction
-class DefinitionService:
-    def __init__(self, validator: IDefinitionSchemaValidator):
-        self._validator = validator
-
-# ❌ Bad: Depends on concrete implementation
-class DefinitionService:
-    def __init__(self):
-        self._validator = SchemaValidator()
-```
-
-### Interface Segregation
-
-```python
-# ✅ Good: Focused interface
-class IDefinitionSerializer(Protocol):
-    def serialize(self, definition: AgentDefinition) -> str: ...
-
-# ❌ Bad: Too many responsibilities
-class IDefinitionHandler(Protocol):
-    def validate(self, definition: AgentDefinition) -> bool: ...
-    def serialize(self, definition: AgentDefinition) -> str: ...
-    def write(self, path: str, content: str) -> None: ...
-```
-
-### Immutability
-
-```python
-@dataclass(frozen=True)
-class AgentDefinition:
-    name: str
-    version: str
-    # Immutable after construction
-```
-
-### Factory Pattern
-
-```python
-def create_default_service() -> DefinitionService:
-    """Factory for default service configuration."""
-    return DefinitionService(
-        schema_validator=SchemaValidator(),
+        schema_validator=SchemaValidator(),  # Concrete adapter
         static_analyzer=StaticAnalyzer(),
         serializer=YamlSerializer(),
     )
 ```
-
-## Testing Strategy
-
-### Unit Tests
-
-Test each layer independently:
-
-```python
-# Domain tests (no mocks)
-def test_agent_validates_name():
-    with pytest.raises(InvalidFormatError):
-        AgentDefinition(name="invalid name!", ...)
-
-# Application tests (mock ports)
-def test_service_orchestrates(mock_validator, mock_analyzer):
-    service = DefinitionService(
-        schema_validator=mock_validator,
-        static_analyzer=mock_analyzer,
-    )
-    service.validate(agent)
-    assert mock_validator.validate_schema.called
-
-# Adapter tests (test implementations)
-def test_yaml_serializer():
-    serializer = YamlSerializer()
-    yaml = serializer.serialize(agent)
-    assert "name: TestAgent" in yaml
-```
-
-### Integration Tests
-
-Test full stack with real implementations:
-
-```python
-def test_full_compilation():
-    service = create_default_service()
-    agent = AgentBuilder("test").version("1.0.0").build()
-    result = service.compile(agent)
-    assert result.is_valid
-```
-
-## Benefits
-
-1. **Testability** - Each layer can be tested in isolation
-2. **Maintainability** - Changes in one layer don't cascade
-3. **Flexibility** - Easy to swap implementations
-4. **Clarity** - Obvious where code belongs
-5. **Stability** - Domain logic is protected from external changes
-
-## For Contributors
-
-When contributing:
-
-1. **Domain changes**: Only pure business logic, no external dependencies
-2. **Port changes**: Define capabilities the core needs
-3. **Adapter changes**: Implement port interfaces
-4. **Application changes**: Orchestrate via ports, use dependency injection
-5. **Infrastructure changes**: Update dependency wiring
-6. **Public API changes**: Minimize exports, maintain backward compatibility
-
-Always ensure changes maintain the dependency inversion principle: dependencies point inward toward the domain.
-
-## Further Reading
-
-- [CONTRIBUTING.md](../../../CONTRIBUTING.md) - Contribution guidelines
-- [Domain-Driven Design](https://martinfowler.com/bliki/DomainDrivenDesign.html)
-- [Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/)
 
 ---
 
-This architecture ensures the SDK remains maintainable, testable, and aligned with clean architecture principles.
+## Related Pages
+
+- [System Context](/v1/advanced/system-context) - SDK's role in the overall system
+- [Compilation Flow](/v1/advanced/compilation-flow) - How data flows through the SDK
+
+---
+
+## Further Reading
+
+- [Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/) - Original concept by Alistair Cockburn
+- [CONTRIBUTING.md](../../../CONTRIBUTING.md) - Contribution guidelines

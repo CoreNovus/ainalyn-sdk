@@ -1,0 +1,346 @@
+# Compilation Flow
+
+This page explains how data flows through the SDK when compiling an Agent Definition.
+
+---
+
+## Overview
+
+The compilation process follows a clear pipeline:
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                           SDK User (Developer)                                │
+└──────────────────────────────────┬───────────────────────────────────────────┘
+                                   │
+                                   ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 1. BUILD                                                                      │
+│    ┌────────────────┐                                                        │
+│    │  AgentBuilder  │  (Inbound Adapter)                                     │
+│    │  .version()    │                                                        │
+│    │  .add_workflow()                                                        │
+│    │  .build()      │────────────────────────────────────────────────────┐   │
+│    └────────────────┘                                                    │   │
+└──────────────────────────────────────────────────────────────────────────┼───┘
+                                                                           │
+                                   ▼                                       │
+┌──────────────────────────────────────────────────────────────────────────┼───┐
+│ 2. CREATE DOMAIN ENTITY                                                  │   │
+│    ┌────────────────────────────────────────────────────────────────┐    │   │
+│    │  AgentDefinition (Domain Entity)                               │◀───┘   │
+│    │  - Immutable (frozen dataclass)                                │        │
+│    │  - Self-validating via __post_init__                           │        │
+│    │  - Contains: workflows, prompts, tools, modules                │        │
+│    └────────────────────────────────────────────────────────────────┘        │
+└──────────────────────────────────┬───────────────────────────────────────────┘
+                                   │
+                                   ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 3. COMPILE via API                                                            │
+│    ┌────────────────┐      ┌───────────────────────────────────────────┐     │
+│    │ compile_agent()│─────▶│  DefinitionService (Application Service)  │     │
+│    │ (api.py)       │      │                                           │     │
+│    └────────────────┘      │  Orchestrates via Outbound Ports:         │     │
+│                            │  - IDefinitionSchemaValidator             │     │
+│                            │  - IDefinitionAnalyzer                    │     │
+│                            │  - IDefinitionSerializer                  │     │
+│                            └───────────────────┬───────────────────────┘     │
+└────────────────────────────────────────────────┼─────────────────────────────┘
+                                                 │
+            ┌────────────────────────────────────┼────────────────────────────┐
+            │                                    │                            │
+            ▼                                    ▼                            ▼
+┌───────────────────────┐         ┌───────────────────────┐    ┌─────────────────────┐
+│ 4a. VALIDATE          │         │ 4b. ANALYZE           │    │ 4c. SERIALIZE       │
+│ ┌───────────────────┐ │         │ ┌───────────────────┐ │    │ ┌─────────────────┐ │
+│ │ SchemaValidator   │ │         │ │ StaticAnalyzer    │ │    │ │ YamlExporter    │ │
+│ │ (Outbound Adapter)│ │         │ │ (Outbound Adapter)│ │    │ │ (Outbound       │ │
+│ └───────────────────┘ │         │ └───────────────────┘ │    │ │  Adapter)       │ │
+│ - Structure checks    │         │ - DAG validation      │    │ └─────────────────┘ │
+│ - Required fields     │         │ - Reference integrity │    │ - Domain → YAML     │
+│ - Type validation     │         │ - Unused detection    │    │ - Platform format   │
+└───────────────────────┘         └───────────────────────┘    └─────────────────────┘
+            │                                    │                            │
+            └────────────────────────────────────┼────────────────────────────┘
+                                                 │
+                                                 ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 5. OUTPUT                                                                     │
+│    ┌────────────────────────────────────────────────────────────────────┐    │
+│    │  CompilationResult                                                 │    │
+│    │  - validation_result: ValidationResult (errors, warnings)          │    │
+│    │  - yaml_content: str | None (only if valid)                        │    │
+│    │  - is_successful: bool                                             │    │
+│    └────────────────────────────────────────────────────────────────────┘    │
+│                                         │                                     │
+│                                         ▼                                     │
+│                              ┌─────────────────────┐                          │
+│                              │  agent.yaml file    │  ──▶  Submit to Platform │
+│                              └─────────────────────┘                          │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Step-by-Step Breakdown
+
+### Step 1: Build
+
+Developers use fluent builders to construct their agent:
+
+```python
+from ainalyn import AgentBuilder, WorkflowBuilder, NodeBuilder
+
+agent = (
+    AgentBuilder("my-agent")
+    .version("1.0.0")
+    .description("My first agent")
+    .add_workflow(
+        WorkflowBuilder("main")
+        .add_node(NodeBuilder("start").type("llm").build())
+        .build()
+    )
+    .build()  # ← Returns AgentDefinition
+)
+```
+
+**What happens**:
+- `AgentBuilder` is an **Inbound Adapter**
+- Collects configuration via fluent methods
+- `.build()` creates an immutable `AgentDefinition`
+
+### Step 2: Create Domain Entity
+
+The builder creates an `AgentDefinition` domain entity:
+
+```python
+@dataclass(frozen=True)
+class AgentDefinition:
+    name: str
+    version: str
+    description: str
+    workflows: tuple[Workflow, ...]
+
+    def __post_init__(self) -> None:
+        # Domain validation runs immediately
+        if not DefinitionRules.is_valid_name(self.name):
+            raise InvalidFormatError(...)
+```
+
+**What happens**:
+- Entity is created as **frozen** (immutable)
+- `__post_init__` runs domain validation
+- Invalid entities cannot exist
+
+### Step 3: Compile via API
+
+Developer calls the high-level API:
+
+```python
+from ainalyn import compile_agent
+from pathlib import Path
+
+result = compile_agent(agent, Path("agent.yaml"))
+```
+
+**What happens**:
+- `compile_agent()` is an **Inbound Adapter** (public API)
+- Gets `DefinitionService` from infrastructure
+- Delegates to service for orchestration
+
+**Internal flow**:
+```python
+# api.py
+def compile_agent(definition, output_path=None):
+    service = _get_service()  # From infrastructure
+    if output_path:
+        return service.compile_to_file(definition, output_path)
+    return service.compile(definition)
+```
+
+### Step 4a: Schema Validation
+
+`SchemaValidator` checks structural correctness:
+
+```python
+class SchemaValidator:
+    """Outbound Adapter implementing IDefinitionSchemaValidator"""
+
+    def validate_schema(self, definition: AgentDefinition) -> tuple[ValidationError, ...]:
+        errors = []
+
+        # Required fields
+        if not definition.workflows:
+            errors.append(ValidationError("E001", "At least one workflow required"))
+
+        # Type validation
+        for workflow in definition.workflows:
+            if not workflow.nodes:
+                errors.append(ValidationError("E002", f"Workflow '{workflow.name}' has no nodes"))
+
+        return tuple(errors)
+```
+
+**Checks performed**:
+- Required fields present
+- Type correctness
+- Value constraints
+- Structural integrity
+
+### Step 4b: Static Analysis
+
+`StaticAnalyzer` checks logical correctness:
+
+```python
+class StaticAnalyzer:
+    """Outbound Adapter implementing IDefinitionAnalyzer"""
+
+    def analyze(self, definition: AgentDefinition) -> tuple[AnalysisIssue, ...]:
+        issues = []
+
+        for workflow in definition.workflows:
+            # DAG validation
+            if self._has_cycles(workflow):
+                issues.append(AnalysisIssue("W001", f"Workflow '{workflow.name}' has cycles"))
+
+            # Reference integrity
+            for edge in workflow.edges:
+                if not self._node_exists(workflow, edge.to):
+                    issues.append(AnalysisIssue("E010", f"Edge references unknown node '{edge.to}'"))
+
+        return tuple(issues)
+```
+
+**Checks performed**:
+- Workflow is a DAG (no cycles)
+- All references resolve
+- No orphan nodes
+- No unused definitions
+
+### Step 4c: Serialization
+
+`YamlExporter` converts domain to YAML:
+
+```python
+class YamlExporter:
+    """Outbound Adapter implementing IDefinitionSerializer"""
+
+    def serialize(self, definition: AgentDefinition) -> str:
+        data = {
+            "name": definition.name,
+            "version": definition.version,
+            "description": definition.description,
+            "workflows": [
+                self._serialize_workflow(w) for w in definition.workflows
+            ],
+        }
+        return yaml.dump(data, sort_keys=False)
+```
+
+**What happens**:
+- Domain entities → Python dicts
+- Dicts → YAML string
+- Platform-compatible format
+
+### Step 5: Output
+
+`CompilationResult` contains the outcome:
+
+```python
+@dataclass
+class CompilationResult:
+    validation_result: ValidationResult
+    yaml_content: str | None  # None if validation failed
+    output_path: Path | None  # Set if written to file
+
+    @property
+    def is_successful(self) -> bool:
+        return self.validation_result.is_valid
+```
+
+**Usage**:
+```python
+result = compile_agent(agent)
+
+if result.is_successful:
+    print(result.yaml_content)
+    # Submit to platform
+else:
+    for error in result.validation_result.errors:
+        print(f"{error.code}: {error.message}")
+```
+
+---
+
+## Validation Layers
+
+The SDK has multiple validation layers, each with a specific responsibility:
+
+| Layer | Location | When | Purpose |
+|-------|----------|------|---------|
+| **Domain** | `domain/entities/` | Entity creation | Invariants that must always hold |
+| **Schema** | `adapters/outbound/schema_validator.py` | Compilation | Structural correctness |
+| **Static Analysis** | `adapters/outbound/static_analyzer.py` | Compilation | Logical correctness |
+
+### Domain Validation Example
+```python
+# Cannot create invalid entity
+AgentDefinition(name="invalid name!")  # Raises InvalidFormatError
+```
+
+### Schema Validation Example
+```python
+# Valid entity, but missing required fields for platform
+agent = AgentBuilder("test").build()  # Missing version
+result = compile_agent(agent)
+# result.validation_result.errors contains "version required"
+```
+
+### Static Analysis Example
+```python
+# Valid structure, but logical error
+workflow = (
+    WorkflowBuilder("main")
+    .add_node(NodeBuilder("a").build())
+    .add_node(NodeBuilder("b").build())
+    .add_edge("a", "b")
+    .add_edge("b", "a")  # Creates cycle!
+    .build()
+)
+result = compile_agent(agent)
+# result.validation_result.errors contains "cycle detected"
+```
+
+---
+
+## Error Handling
+
+### Error Categories
+
+| Category | Code Range | Example |
+|----------|------------|---------|
+| Domain Errors | Exceptions | `InvalidFormatError`, `CyclicDependencyError` |
+| Schema Errors | E001-E099 | Missing required field |
+| Analysis Errors | E100-E199 | Invalid reference |
+| Analysis Warnings | W001-W099 | Unused definition |
+
+### Error Response
+
+```python
+result = compile_agent(agent)
+
+if not result.is_successful:
+    for error in result.validation_result.errors:
+        print(f"[{error.code}] {error.message}")
+        print(f"  Location: {error.location}")
+        print(f"  Suggestion: {error.suggestion}")
+```
+
+---
+
+## Related Pages
+
+- [Hexagonal Architecture](/v1/advanced/architecture-overview) - How components are organized
+- [System Context](/v1/advanced/system-context) - SDK's role in the system
+- [Validation Guide](/v1/guides/validation) - User-facing validation docs
