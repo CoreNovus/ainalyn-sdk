@@ -132,7 +132,7 @@ if status.is_live:
 - Submission does **NOT** incur billing (unless platform policy states)
 - Get your API key at: `https://console.ainalyn.io/api-keys`
 
-See [examples/submit_agent_example.py](examples/submit_agent_example.py) for a complete walkthrough.
+See [example/submit_agent_example.py](https://github.com/CoreNovus/ainalyn-sdk/blob/master/examples/submit_agent_example.py) for a complete walkthrough.
 
 ### CLI Usage
 
@@ -146,29 +146,27 @@ ainalyn compile my_agent.py --output agent.yaml
 
 ## Documentation
 
-**[Full Documentation](https://corenovus.github.io/ainalyn-sdk/)** - Complete guides, API reference, and examples
+**[Full Documentation](http://docs.ainalyn.corenovus.com/)** - Complete guides, API reference, and examples
 
 **Quick Links:**
 
-- [What is an Agent?](https://corenovus.github.io/ainalyn-sdk/concepts/what-is-an-agent/) - Understand the vision
-- [Installation Guide](https://corenovus.github.io/ainalyn-sdk/getting-started/installation/)
-- [5-Minute Quickstart](https://corenovus.github.io/ainalyn-sdk/getting-started/quickstart/)
-- [Your First Agent Tutorial](https://corenovus.github.io/ainalyn-sdk/getting-started/your-first-agent/)
-- [Platform Boundaries](https://corenovus.github.io/ainalyn-sdk/concepts/platform-boundaries/)
-- [Troubleshooting](https://corenovus.github.io/ainalyn-sdk/troubleshooting/)
+- [What is an Agent?](http://docs.ainalyn.corenovus.com/v1/concepts/what-is-an-agent/) - Understand the vision
+- [Installation Guide](http://docs.ainalyn.corenovus.com/v1/getting-started/installation/)
+- [5-Minute Quickstart](http://docs.ainalyn.corenovus.com/v1/getting-started/quickstart/)
+- [Your First Agent Tutorial](http://docs.ainalyn.corenovus.com/v1/getting-started/your-first-agent/)
 
 ## Examples
 
 Check out the `examples/` directory:
 
-- [basic_agent.py](examples/basic_agent.py) - Simple greeting agent
-- [multi_workflow_agent.py](examples/multi_workflow_agent.py) - Complex data analysis agent
-- [submit_agent_example.py](examples/submit_agent_example.py) - Agent submission workflow
-- [price_monitor_agent.py](examples/price_monitor_agent.py) - Complete price monitoring agent
+- [basic_agent.py](https://github.com/CoreNovus/ainalyn-sdk/blob/master/examples/basic_agent.py) - Simple greeting agent
+- [multi_workflow_agent.py](https://github.com/CoreNovus/ainalyn-sdk/blob/master/examples/multi_workflow_agent.py) - Complex data analysis agent
+- [submit_agent_example.py](https://github.com/CoreNovus/ainalyn-sdk/blob/master/examples/submit_agent_example.py) - Agent submission workflow
+- [price_monitor_agent.py](https://github.com/CoreNovus/ainalyn-sdk/blob/master/examples/price_monitor_agent.py) - Complete price monitoring agent
 
 ## Contributing
 
-We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+We welcome contributions! See [CONTRIBUTING.md](https://github.com/CoreNovus/ainalyn-sdk/blob/master/CONTRIBUTING.md) for guidelines.
 
 **For newcomers**, look for issues labeled [`good first issue`](https://github.com/CoreNovus/ainalyn-sdk/labels/good%20first%20issue).
 
@@ -179,13 +177,13 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
-[MIT License](LICENSE) - see LICENSE file for details.
+[MIT License](https://github.com/CoreNovus/ainalyn-sdk/blob/master/LICENSE) - see LICENSE file for details.
 
 ## Support
 
-- [Documentation](https://corenovus.github.io/ainalyn-sdk/)
+- [Documentation](http://docs.ainalyn.corenovus.com/)
 - [Report Issues](https://github.com/CoreNovus/ainalyn-sdk/issues)
-- [Discussions](https://github.com/CoreNovus/ainalyn-sdk/discussions)
+- [Discussions](https://github.com/CoreNovus/ainalyn-sdk/issues)
 
 ---
 
