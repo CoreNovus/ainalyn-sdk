@@ -196,6 +196,18 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 ]
 # Scripts can use print
 "scripts/**/*.py" = ["T201"]
+# Examples can use print, have simpler code style, and use Chinese characters
+"examples/**/*.py" = [
+    "T201",    # print (needed for demo output)
+    "INP001",  # implicit namespace package
+    "RET504",  # unnecessary variable assignment (clearer for examples)
+    "PTH123",  # open() vs Path.open() (simpler for examples)
+    "PLR1722", # exit vs sys.exit (simpler for examples)
+    "PLR0912", # too many branches (demo code)
+    "PLR0915", # too many statements (demo code)
+    "RUF001",  # ambiguous unicode (Chinese text is expected)
+    "F541",    # f-string without placeholders (stylistic)
+]
 # __init__.py can have unused imports (re-exports)
 "**/__init__.py" = ["F401"]
 # CLI can use print, exec, and simple error handling
@@ -210,9 +222,33 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 "ainalyn/adapters/secondary/exporters.py" = [
     "S101",    # assert (used for type narrowing)
 ]
-# API module can use global state
+# YAML serializer uses assert for type narrowing
+"ainalyn/adapters/outbound/yaml_serializer.py" = [
+    "S101",    # assert (used for type narrowing after yaml.dump)
+]
+# API module can use global state and have unused args for interface consistency
 "ainalyn/api.py" = [
     "PLW0603", # global statement (intentional singleton pattern)
+    "ARG001",  # unused argument (interface consistency)
+]
+# Errors module defines ReferenceError (intentional shadowing for domain clarity)
+"ainalyn/domain/errors.py" = [
+    "A001",    # shadowing builtin (intentional: domain-specific ReferenceError)
+]
+# Files that import ReferenceError from domain
+"ainalyn/domain/__init__.py" = ["A004"]
+"ainalyn/adapters/inbound/errors.py" = ["A004", "E402"]
+"ainalyn/adapters/inbound/builders/agent_builder.py" = ["A004"]
+# Mock client has intentional boolean args and unused args
+"ainalyn/adapters/outbound/mock_platform_client.py" = [
+    "FBT001",  # boolean positional arg (simple API)
+    "FBT002",  # boolean default arg (simple API)
+    "ARG002",  # unused method arg (interface consistency)
+]
+# Service factory has intentional boolean args
+"ainalyn/infrastructure/service_factory.py" = [
+    "FBT001",  # boolean positional arg (simple API)
+    "FBT002",  # boolean default arg (simple API)
 ]
 
 [tool.ruff.lint.isort]

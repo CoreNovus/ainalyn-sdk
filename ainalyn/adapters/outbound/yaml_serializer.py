@@ -152,6 +152,22 @@ class YamlExporter:
             "description": definition.description,
         }
 
+        # Add task_goal if present (Review Gate 1 requirement)
+        if definition.task_goal:
+            result["task_goal"] = definition.task_goal
+
+        # Add completion_criteria if present (Review Gate 1 requirement)
+        if definition.completion_criteria:
+            result["completion_criteria"] = self._completion_criteria_to_dict(
+                definition.completion_criteria
+            )
+
+        # Add EIP dependencies if present (Review Gate 5 requirement)
+        if definition.eip_dependencies:
+            result["eip_dependencies"] = [
+                self._eip_dependency_to_dict(dep) for dep in definition.eip_dependencies
+            ]
+
         # Add workflows
         if definition.workflows:
             result["workflows"] = [
@@ -257,6 +273,10 @@ class YamlExporter:
             "description": module.description,
         }
 
+        # Add EIP binding if present
+        if module.eip_binding:
+            result["eip_binding"] = self._eip_binding_to_dict(module.eip_binding)
+
         # Add schemas if present
         if module.input_schema:
             result["input_schema"] = module.input_schema
@@ -313,6 +333,10 @@ class YamlExporter:
             "description": tool.description,
         }
 
+        # Add EIP binding if present
+        if tool.eip_binding:
+            result["eip_binding"] = self._eip_binding_to_dict(tool.eip_binding)
+
         # Add schemas if present
         if tool.input_schema:
             result["input_schema"] = tool.input_schema
@@ -321,3 +345,71 @@ class YamlExporter:
             result["output_schema"] = tool.output_schema
 
         return result
+
+    def _eip_binding_to_dict(self, binding: object) -> dict[str, Any]:
+        """
+        Convert EIPBinding to dictionary representation.
+
+        Args:
+            binding: The EIPBinding to convert.
+
+        Returns:
+            dict[str, Any]: The dictionary representation.
+        """
+        from ainalyn.domain.entities import EIPBinding
+
+        if not isinstance(binding, EIPBinding):
+            return {}
+
+        return {
+            "provider": binding.provider,
+            "service": binding.service,
+        }
+
+    def _eip_dependency_to_dict(self, dependency: object) -> dict[str, Any]:
+        """
+        Convert EIPDependency to dictionary representation.
+
+        Args:
+            dependency: The EIPDependency to convert.
+
+        Returns:
+            dict[str, Any]: The dictionary representation.
+        """
+        from ainalyn.domain.entities import EIPDependency
+
+        if not isinstance(dependency, EIPDependency):
+            return {}
+
+        result: dict[str, Any] = {
+            "provider": dependency.provider,
+            "service": dependency.service,
+        }
+
+        if dependency.version != "*":
+            result["version"] = dependency.version
+
+        if dependency.config_hints:
+            result["config_hints"] = dependency.config_hints
+
+        return result
+
+    def _completion_criteria_to_dict(self, criteria: object) -> dict[str, Any]:
+        """
+        Convert CompletionCriteria to dictionary representation.
+
+        Args:
+            criteria: The CompletionCriteria to convert.
+
+        Returns:
+            dict[str, Any]: The dictionary representation.
+        """
+        from ainalyn.domain.entities import CompletionCriteria
+
+        if not isinstance(criteria, CompletionCriteria):
+            return {}
+
+        return {
+            "success": criteria.success,
+            "failure": criteria.failure,
+        }

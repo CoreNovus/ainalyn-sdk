@@ -611,9 +611,190 @@ print(yaml)  # Verify structure matches intent
 
 ---
 
+## submit_agent()
+
+Submits an agent definition to Platform Core for review.
+
+```python
+from ainalyn.api import submit_agent
+
+result = submit_agent(agent, api_key="dev_sk_xxx")
+```
+
+### Signature
+
+```python
+def submit_agent(
+    definition: AgentDefinition,
+    api_key: str,
+    *,
+    base_url: str | None = None,
+    auto_deploy: bool = False
+) -> SubmissionResult
+```
+
+### Parameters
+
+- `definition` (required) - AgentDefinition instance to submit
+- `api_key` (required) - Developer API key for authentication
+- `base_url` (optional) - Platform Core API base URL (defaults to production)
+- `auto_deploy` (optional) - Auto-deploy after approval (default: False)
+
+### Returns
+
+`SubmissionResult` object with the following properties:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `review_id` | str | Unique identifier for tracking |
+| `status` | SubmissionStatus | Current review status |
+| `agent_id` | str \| None | Assigned agent ID after approval |
+| `tracking_url` | str \| None | URL to track progress |
+| `marketplace_url` | str \| None | URL if agent is live |
+| `feedback` | tuple | Feedback items from Platform Core |
+| `is_accepted` | bool | True if accepted for review |
+| `is_live` | bool | True if published to marketplace |
+| `is_rejected` | bool | True if rejected |
+
+### Submission Workflow
+
+1. Validates the definition (SDK-level validation)
+2. Exports to YAML format
+3. Submits to Platform Core API
+
+### Important - Platform Constitution
+
+- SDK can submit but NOT approve (Platform Core has final authority)
+- Submission does NOT create an Execution
+- Submission does NOT incur billing (unless platform policy states)
+
+### Example
+
+```python
+from ainalyn import AgentBuilder
+from ainalyn.api import submit_agent
+from ainalyn.domain.entities import EIPDependency, CompletionCriteria
+
+# Build agent with Platform submission requirements
+agent = (
+    AgentBuilder("my-agent")
+    .version("1.0.0")
+    .description("My agent")
+    .task_goal("Process and analyze user input")
+    .completion_criteria(CompletionCriteria(
+        success="Output generated successfully",
+        failure="Processing failed"
+    ))
+    .add_eip_dependency(EIPDependency(
+        provider="openai",
+        service="gpt-4",
+        version=">=1.0.0"
+    ))
+    .add_workflow(workflow)
+    .build()
+)
+
+# Submit to Platform Core
+result = submit_agent(agent, api_key="dev_sk_xxx")
+
+if result.is_accepted:
+    print(f"Submitted for review!")
+    print(f"Review ID: {result.review_id}")
+    print(f"Track at: {result.tracking_url}")
+else:
+    print("Submission rejected")
+    for feedback in result.feedback:
+        print(f"  - {feedback.message}")
+```
+
+### Error Handling
+
+```python
+from ainalyn.domain.errors import (
+    SubmissionError,
+    AuthenticationError,
+    NetworkError,
+)
+
+try:
+    result = submit_agent(agent, api_key="dev_sk_xxx")
+except AuthenticationError as e:
+    print(f"Invalid API key: {e.message}")
+except NetworkError as e:
+    print(f"Network error: {e.message}")
+except SubmissionError as e:
+    print(f"Submission failed: {e.message}")
+    if e.validation_errors:
+        for err in e.validation_errors:
+            print(f"  - {err.message}")
+```
+
+---
+
+## track_submission()
+
+Tracks the status of a submitted agent definition.
+
+```python
+from ainalyn.api import track_submission
+
+result = track_submission(review_id="review_abc123", api_key="dev_sk_xxx")
+```
+
+### Signature
+
+```python
+def track_submission(
+    review_id: str,
+    api_key: str,
+    *,
+    base_url: str | None = None
+) -> SubmissionResult
+```
+
+### Parameters
+
+- `review_id` (required) - Review ID returned from `submit_agent()`
+- `api_key` (required) - Developer API key for authentication
+- `base_url` (optional) - Platform Core API base URL
+
+### Returns
+
+`SubmissionResult` object with current status and feedback.
+
+### Example
+
+```python
+from ainalyn.api import track_submission
+from ainalyn.domain.entities import SubmissionStatus
+
+# Check submission status
+result = track_submission(review_id="review_abc123", api_key="dev_sk_xxx")
+
+print(f"Status: {result.status.value}")
+
+if result.status == SubmissionStatus.ACCEPTED:
+    print(f"Agent approved! ID: {result.agent_id}")
+elif result.status == SubmissionStatus.DEPLOYED:
+    print(f"Agent is live: {result.marketplace_url}")
+elif result.status == SubmissionStatus.REJECTED:
+    print("Rejected. Feedback:")
+    for issue in result.get_blocking_issues():
+        print(f"  [{issue.severity.value}] {issue.message}")
+elif result.status == SubmissionStatus.PENDING_REVIEW:
+    print("Still under review...")
+```
+
+### Note
+
+Currently uses MockPlatformClient for testing until Platform Core API is available. Real HTTP communication will be enabled in future versions.
+
+---
+
 ## Related Documentation
 
 - [Builders API](/v1/api-reference/builders/) - Builder methods and parameters
+- [Entities Reference](/v1/api-reference/entities/) - Domain entities including EIP types
 - [Error Handling](/v1/guides/errors/) - Comprehensive error guide
 - [Validation Guide](/v1/guides/validation/) - Detailed validation rules
 - [How the SDK Works](/v1/concepts/how-the-sdk-works/) - Compilation process

@@ -97,13 +97,15 @@ class ValidationResult:
             both errors and warnings.
 
     Example:
-        >>> result = ValidationResult(errors=(
-        ...     ValidationError(
-        ...         code="MISSING_ENTRY_NODE",
-        ...         path="workflows[0]",
-        ...         message="Workflow 'main' has no entry_node specified",
-        ...     ),
-        ... ))
+        >>> result = ValidationResult(
+        ...     errors=(
+        ...         ValidationError(
+        ...             code="MISSING_ENTRY_NODE",
+        ...             path="workflows[0]",
+        ...             message="Workflow 'main' has no entry_node specified",
+        ...         ),
+        ...     )
+        ... )
         >>> result.is_valid
         False
     """

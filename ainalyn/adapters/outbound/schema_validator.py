@@ -337,9 +337,7 @@ class SchemaValidator:
             for wf_idx, workflow in enumerate(definition.workflows):
                 for node_idx, node in enumerate(workflow.nodes):
                     if node.name == node_name:
-                        path = (
-                            f"agent.workflows[{wf_idx}].nodes[{node_idx}].reference"
-                        )
+                        path = f"agent.workflows[{wf_idx}].nodes[{node_idx}].reference"
                         errors.append(
                             ValidationError(
                                 code="UNDEFINED_RESOURCE_REFERENCE",

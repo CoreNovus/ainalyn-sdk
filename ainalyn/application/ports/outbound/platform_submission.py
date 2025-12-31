@@ -40,7 +40,7 @@ class SubmissionOptions:
         ...     auto_deploy=True,
         ...     environment="staging",
         ...     tags=["finance", "monitoring"],
-        ...     private=False
+        ...     private=False,
         ... )
     """
 
@@ -121,7 +121,7 @@ class IPlatformClient(Protocol):
             >>> result = client.submit_agent(
             ...     definition=my_agent,
             ...     api_key="dev_sk_abc123",
-            ...     options=SubmissionOptions(auto_deploy=False)
+            ...     options=SubmissionOptions(auto_deploy=False),
             ... )
             >>> print(result.review_id)
             review_abc123
@@ -155,8 +155,7 @@ class IPlatformClient(Protocol):
         Example:
             >>> client = HttpPlatformClient()
             >>> result = client.get_submission_status(
-            ...     review_id="review_abc123",
-            ...     api_key="dev_sk_abc123"
+            ...     review_id="review_abc123", api_key="dev_sk_abc123"
             ... )
             >>> if result.status == SubmissionStatus.ACCEPTED:
             ...     print(f"Agent is live: {result.marketplace_url}")

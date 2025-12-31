@@ -169,7 +169,9 @@ def _compile_command(file_path: Path, output_path: Path) -> int:
 
     if result.is_successful:
         print(f"✓ Successfully compiled to {output_path}")
-        print("  Note: This file describes an Agent Definition for platform submission.")
+        print(
+            "  Note: This file describes an Agent Definition for platform submission."
+        )
         print("        Local compilation does NOT equal platform execution.")
         if result.validation_result.has_warnings:
             print("\nWarnings:")

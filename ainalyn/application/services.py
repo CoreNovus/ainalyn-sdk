@@ -71,10 +71,7 @@ class DefinitionService:
         >>> if compilation.is_successful:
         ...     print(compilation.yaml_content)
         >>> # Compile to file
-        >>> compilation = service.compile_to_file(
-        ...     agent_definition,
-        ...     Path("agent.yaml")
-        ... )
+        >>> compilation = service.compile_to_file(agent_definition, Path("agent.yaml"))
     """
 
     def __init__(
@@ -274,10 +271,7 @@ class DefinitionService:
 
         Example:
             >>> service = DefinitionService()
-            >>> result = service.compile_to_file(
-            ...     agent_definition,
-            ...     Path("agent.yaml")
-            ... )
+            >>> result = service.compile_to_file(agent_definition, Path("agent.yaml"))
             >>> if result.is_successful:
             ...     print(f"Compiled to {result.output_path}")
             ... else:
@@ -322,14 +316,11 @@ class DefinitionService:
             NetworkError: If network communication with Platform Core fails.
 
         Example:
-            >>> service = DefinitionService(
-            ...     ...,
-            ...     platform_client=HttpPlatformClient()
-            ... )
+            >>> service = DefinitionService(..., platform_client=HttpPlatformClient())
             >>> result = service.submit(
             ...     definition=agent,
             ...     api_key="dev_sk_abc123",
-            ...     options=SubmissionOptions(auto_deploy=True)
+            ...     options=SubmissionOptions(auto_deploy=True),
             ... )
             >>> print(f"Review ID: {result.review_id}")
             >>> print(f"Track at: {result.tracking_url}")
@@ -371,8 +362,7 @@ class DefinitionService:
         Example:
             >>> service = DefinitionService(..., platform_client=HttpPlatformClient())
             >>> result = service.track_submission(
-            ...     review_id="review_abc123",
-            ...     api_key="dev_sk_abc123"
+            ...     review_id="review_abc123", api_key="dev_sk_abc123"
             ... )
             >>> if result.is_live:
             ...     print(f"Agent is live: {result.marketplace_url}")

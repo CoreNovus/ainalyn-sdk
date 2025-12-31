@@ -17,15 +17,12 @@ from ainalyn.infrastructure.service_factory import create_default_service
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from ainalyn.application.services import DefinitionService
-    from ainalyn.application.use_cases.compile_definition import CompilationResult
-    from ainalyn.application.ports.outbound.platform_submission import (
-        SubmissionOptions,
-    )
-    from ainalyn.domain.entities import AgentDefinition, SubmissionResult
     from ainalyn.application.ports.inbound.validate_agent_definition import (
         ValidationResult,
     )
+    from ainalyn.application.services import DefinitionService
+    from ainalyn.application.use_cases.compile_definition import CompilationResult
+    from ainalyn.domain.entities import AgentDefinition, SubmissionResult
 
 
 # Module-level service instance (singleton pattern)
@@ -216,10 +213,11 @@ def submit_agent(
     )
 
     service = _get_service()
+    # Note: base_url is reserved for future use when Platform Core API is available
+    # Currently uses MockPlatformClient which ignores base_url
     options = SubmissionOptions(
         auto_deploy=auto_deploy,
         environment="production" if base_url is None else "custom",
-        base_url=base_url,
     )
     return service.submit(definition, api_key, options)
 
@@ -256,10 +254,7 @@ def track_submission(
 
     Example:
         >>> from ainalyn import track_submission, SubmissionStatus
-        >>> result = track_submission(
-        ...     review_id="review_abc123",
-        ...     api_key="dev_sk_abc123"
-        ... )
+        >>> result = track_submission(review_id="review_abc123", api_key="dev_sk_abc123")
         >>> print(f"Status: {result.status.value}")
         >>> if result.is_live:
         ...     print(f"Agent is live: {result.marketplace_url}")

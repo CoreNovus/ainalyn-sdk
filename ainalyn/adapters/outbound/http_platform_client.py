@@ -8,8 +8,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ainalyn.domain.errors import AuthenticationError, NetworkError, SubmissionError
-
 if TYPE_CHECKING:
     from ainalyn.application.ports.outbound.platform_submission import (
         SubmissionOptions,
@@ -35,14 +33,8 @@ class HttpPlatformClient:
         timeout: Request timeout in seconds. Defaults to 30.
 
     Example:
-        >>> client = HttpPlatformClient(
-        ...     base_url="https://api.ainalyn.io",
-        ...     timeout=30
-        ... )
-        >>> result = client.submit_agent(
-        ...     definition=my_agent,
-        ...     api_key="dev_sk_abc123"
-        ... )
+        >>> client = HttpPlatformClient(base_url="https://api.ainalyn.io", timeout=30)
+        >>> result = client.submit_agent(definition=my_agent, api_key="dev_sk_abc123")
 
     Note:
         This is a PLACEHOLDER implementation. Real HTTP functionality
@@ -93,10 +85,7 @@ class HttpPlatformClient:
 
         Example:
             >>> client = HttpPlatformClient()
-            >>> result = client.submit_agent(
-            ...     definition=agent,
-            ...     api_key="dev_sk_abc123"
-            ... )
+            >>> result = client.submit_agent(definition=agent, api_key="dev_sk_abc123")
         """
         raise NotImplementedError(
             "HTTP Platform Client is not yet implemented. "
@@ -142,8 +131,7 @@ class HttpPlatformClient:
         Example:
             >>> client = HttpPlatformClient()
             >>> result = client.get_submission_status(
-            ...     review_id="review_abc123",
-            ...     api_key="dev_sk_abc123"
+            ...     review_id="review_abc123", api_key="dev_sk_abc123"
             ... )
         """
         raise NotImplementedError(

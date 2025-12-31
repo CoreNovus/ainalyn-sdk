@@ -62,7 +62,7 @@ class SubmissionResult:
         ...     tracking_url="https://console.ainalyn.io/reviews/review_abc123",
         ...     marketplace_url=None,
         ...     feedback=(),
-        ...     estimated_review_time="24h"
+        ...     estimated_review_time="24h",
         ... )
         >>> print(f"Review ID: {result.review_id}")
         Review ID: review_abc123
@@ -102,7 +102,7 @@ class SubmissionResult:
             ...     submitted_at="2025-12-30T10:00:00Z",
             ...     agent_id=None,
             ...     agent_version_id=None,
-            ...     tracking_url="https://..."
+            ...     tracking_url="https://...",
             ... )
             >>> pending.is_accepted
             True
@@ -130,7 +130,7 @@ class SubmissionResult:
             ...     agent_id="agent_xyz",
             ...     agent_version_id="av_123",
             ...     tracking_url="https://...",
-            ...     marketplace_url="https://marketplace.ainalyn.io/agents/agent_xyz"
+            ...     marketplace_url="https://marketplace.ainalyn.io/agents/agent_xyz",
             ... )
             >>> live.is_live
             True
@@ -159,9 +159,9 @@ class SubmissionResult:
             ...         ReviewFeedback(
             ...             category=FeedbackCategory.SECURITY,
             ...             severity=FeedbackSeverity.ERROR,
-            ...             message="Security issue found"
+            ...             message="Security issue found",
             ...         ),
-            ...     )
+            ...     ),
             ... )
             >>> rejected.is_rejected
             True
@@ -194,14 +194,14 @@ class SubmissionResult:
             ...         ReviewFeedback(
             ...             category=FeedbackCategory.SECURITY,
             ...             severity=FeedbackSeverity.ERROR,
-            ...             message="Critical issue"
+            ...             message="Critical issue",
             ...         ),
             ...         ReviewFeedback(
             ...             category=FeedbackCategory.QUALITY,
             ...             severity=FeedbackSeverity.WARNING,
-            ...             message="Minor issue"
+            ...             message="Minor issue",
             ...         ),
-            ...     )
+            ...     ),
             ... )
             >>> result.has_blocking_issues
             True
@@ -238,7 +238,9 @@ class SubmissionResult:
         """
         from ainalyn.domain.entities.review_feedback import FeedbackSeverity
 
-        return tuple(fb for fb in self.feedback if fb.severity == FeedbackSeverity.WARNING)
+        return tuple(
+            fb for fb in self.feedback if fb.severity == FeedbackSeverity.WARNING
+        )
 
     def __str__(self) -> str:
         """
@@ -254,9 +256,11 @@ class SubmissionResult:
             ...     submitted_at="2025-12-30T10:00:00Z",
             ...     agent_id=None,
             ...     agent_version_id=None,
-            ...     tracking_url="https://..."
+            ...     tracking_url="https://...",
             ... )
             >>> print(result)
             SubmissionResult(review_id=review_abc123, status=pending_review)
         """
-        return f"SubmissionResult(review_id={self.review_id}, status={self.status.value})"
+        return (
+            f"SubmissionResult(review_id={self.review_id}, status={self.status.value})"
+        )

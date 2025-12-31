@@ -10,23 +10,34 @@ The complete agent specification.
 - `name` (str) - Unique agent identifier (lowercase, hyphens only)
 - `version` (str) - Version string (e.g., "1.0.0")
 - `description` (str) - What the agent does
+- `task_goal` (str | None) - High-level task goal for Platform Review Gate 1 (optional)
+- `completion_criteria` (CompletionCriteria | None) - Success/failure conditions (optional)
 - `workflows` (tuple) - List of workflows (required, at least one)
 - `modules` (tuple) - Reusable modules (optional)
 - `prompts` (tuple) - LLM prompt templates (optional)
 - `tools` (tuple) - External tool definitions (optional)
+- `eip_dependencies` (tuple) - EIP dependencies for Platform Review Gate 5 (optional)
 
 **Example:**
 ```python
-from ainalyn.domain.entities import AgentDefinition
+from ainalyn.domain.entities import AgentDefinition, CompletionCriteria, EIPDependency
 
 agent = AgentDefinition(
     name="my-agent",
     version="1.0.0",
     description="Does something useful",
+    task_goal="Process and analyze user input",
+    completion_criteria=CompletionCriteria(
+        success="Output generated successfully",
+        failure="Input format invalid or processing failed"
+    ),
     workflows=(workflow,),
     modules=(),
     prompts=(),
-    tools=()
+    tools=(),
+    eip_dependencies=(
+        EIPDependency(provider="openai", service="gpt-4", version=">=1.0.0"),
+    )
 )
 ```
 
@@ -108,16 +119,18 @@ A reusable capability unit.
 - `description` (str) - What this module does
 - `input_schema` (dict) - JSON Schema for inputs (optional)
 - `output_schema` (dict) - JSON Schema for outputs (optional)
+- `eip_binding` (EIPBinding | None) - Links module to EIP provider/service (optional)
 
 **Example:**
 ```python
-from ainalyn.domain.entities import Module
+from ainalyn.domain.entities import Module, EIPBinding
 
 module = Module(
     name="http-client",
     description="Makes HTTP requests",
     input_schema={"type": "object", "properties": {"url": {"type": "string"}}},
-    output_schema={"type": "object", "properties": {"body": {"type": "string"}}}
+    output_schema={"type": "object", "properties": {"body": {"type": "string"}}},
+    eip_binding=EIPBinding(provider="platform", service="http-client")
 )
 ```
 
@@ -146,15 +159,158 @@ An external tool definition.
 **Attributes:**
 - `name` (str) - Tool identifier
 - `description` (str) - What this tool does
+- `input_schema` (dict) - JSON Schema for inputs (optional)
+- `output_schema` (dict) - JSON Schema for outputs (optional)
+- `eip_binding` (EIPBinding | None) - Links tool to EIP provider/service (optional)
 
 **Example:**
 ```python
-from ainalyn.domain.entities import Tool
+from ainalyn.domain.entities import Tool, EIPBinding
 
 tool = Tool(
-    name="calculator",
-    description="Performs mathematical operations"
+    name="speech-to-text",
+    description="Converts audio to text using OpenAI Whisper",
+    input_schema={"type": "object", "properties": {"audio_url": {"type": "string"}}},
+    output_schema={"type": "object", "properties": {"text": {"type": "string"}}},
+    eip_binding=EIPBinding(provider="openai", service="whisper")
 )
+```
+
+## EIPBinding
+
+Links a Tool or Module to a specific EIP (Execution Implementation Provider) service.
+
+**Attributes:**
+- `provider` (str) - EIP provider identifier (e.g., "openai", "anthropic", "platform")
+- `service` (str) - Service name within the provider (e.g., "whisper", "gpt-4")
+
+**Example:**
+```python
+from ainalyn.domain.entities import EIPBinding
+
+# OpenAI Whisper binding
+whisper_binding = EIPBinding(provider="openai", service="whisper")
+
+# OpenAI GPT-4 binding
+gpt_binding = EIPBinding(provider="openai", service="gpt-4")
+
+# Platform-provided service
+platform_binding = EIPBinding(provider="platform", service="http-client")
+```
+
+**Note:** EIPBinding tells Platform Core which external service implementation to use when executing this Tool or Module.
+
+## EIPDependency
+
+Declares an agent-level dependency on an EIP service for Platform Review Gate 5.
+
+**Attributes:**
+- `provider` (str) - EIP provider identifier
+- `service` (str) - Service name within the provider
+- `version` (str) - Version constraint (default: "*")
+- `config_hints` (dict) - Configuration hints for the service (optional)
+
+**Example:**
+```python
+from ainalyn.domain.entities import EIPDependency
+
+# OpenAI Whisper with streaming
+whisper_dep = EIPDependency(
+    provider="openai",
+    service="whisper",
+    version=">=1.0.0",
+    config_hints={
+        "streaming": True,
+        "model": "whisper-1",
+        "response_format": "verbose_json"
+    }
+)
+
+# OpenAI GPT-4 with specific settings
+gpt_dep = EIPDependency(
+    provider="openai",
+    service="gpt-4",
+    version=">=1.0.0",
+    config_hints={
+        "streaming": True,
+        "temperature": 0.3
+    }
+)
+```
+
+**Note:** EIPDependency is used for agent-level declarations. Platform Core validates these during Review Gate 5.
+
+## CompletionCriteria
+
+Defines success and failure conditions for an agent (Platform Review Gate 1).
+
+**Attributes:**
+- `success` (str) - Description of what constitutes successful completion
+- `failure` (str) - Description of what constitutes failure
+
+**Example:**
+```python
+from ainalyn.domain.entities import CompletionCriteria
+
+criteria = CompletionCriteria(
+    success="Complete transcript generated with timestamps and speaker labels",
+    failure="Audio format unsupported, file corrupted, or speech unrecognizable"
+)
+```
+
+**Note:** CompletionCriteria helps Platform Core understand when an agent has completed its task successfully or failed.
+
+## SubmissionResult
+
+Result of submitting an agent definition to Platform Core.
+
+**Attributes:**
+- `review_id` (str) - Unique identifier for tracking the submission
+- `status` (SubmissionStatus) - Current review status
+- `agent_id` (str | None) - Assigned agent ID after approval
+- `tracking_url` (str | None) - URL to track submission progress
+- `marketplace_url` (str | None) - URL to agent in marketplace (if live)
+- `feedback` (tuple) - Feedback items from Platform Core
+
+**Properties:**
+- `is_accepted` (bool) - True if submission was accepted for review
+- `is_live` (bool) - True if agent is published to marketplace
+- `is_rejected` (bool) - True if submission was rejected
+
+**Example:**
+```python
+from ainalyn import submit_agent, track_submission
+
+# Submit agent
+result = submit_agent(agent, api_key="dev_sk_xxx")
+print(f"Review ID: {result.review_id}")
+print(f"Status: {result.status.value}")
+print(f"Track at: {result.tracking_url}")
+
+# Later, check status
+result = track_submission(result.review_id, api_key="dev_sk_xxx")
+if result.is_live:
+    print(f"Agent is live: {result.marketplace_url}")
+```
+
+## SubmissionStatus
+
+Enum for submission review status.
+
+**Values:**
+- `SubmissionStatus.PENDING_REVIEW` - Awaiting Platform Core review
+- `SubmissionStatus.ACCEPTED` - Approved and ready for deployment
+- `SubmissionStatus.REJECTED` - Rejected with feedback
+- `SubmissionStatus.DEPLOYED` - Live in marketplace
+
+**Example:**
+```python
+from ainalyn.domain.entities import SubmissionStatus
+
+if result.status == SubmissionStatus.ACCEPTED:
+    print("Agent approved!")
+elif result.status == SubmissionStatus.REJECTED:
+    print("Agent rejected. Review feedback.")
 ```
 
 ## Immutability

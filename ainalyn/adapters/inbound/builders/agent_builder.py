@@ -11,19 +11,21 @@ from __future__ import annotations
 
 from typing import Self
 
+from ainalyn.domain.entities import (
+    AgentDefinition,
+    CompletionCriteria,
+    EIPDependency,
+    Module,
+    Prompt,
+    Tool,
+    Workflow,
+)
 from ainalyn.domain.errors import (
     DuplicateError,
     EmptyCollectionError,
     InvalidFormatError,
     MissingFieldError,
     ReferenceError,
-)
-from ainalyn.domain.entities import (
-    AgentDefinition,
-    Module,
-    Prompt,
-    Tool,
-    Workflow,
 )
 from ainalyn.domain.rules import DefinitionRules
 
@@ -49,9 +51,7 @@ class AgentBuilder:
         ...     .version("1.0.0")
         ...     .description("My first agent")
         ...     .add_module(
-        ...         ModuleBuilder("http-fetcher")
-        ...         .description("Fetches HTTP data")
-        ...         .build()
+        ...         ModuleBuilder("http-fetcher").description("Fetches HTTP data").build()
         ...     )
         ...     .add_workflow(
         ...         WorkflowBuilder("main")
@@ -89,6 +89,9 @@ class AgentBuilder:
         self._name = name
         self._version: str | None = None
         self._description: str | None = None
+        self._task_goal: str | None = None
+        self._completion_criteria: CompletionCriteria | None = None
+        self._eip_dependencies: list[EIPDependency] = []
         self._workflows: list[Workflow] = []
         self._modules: list[Module] = []
         self._prompts: list[Prompt] = []
@@ -127,6 +130,66 @@ class AgentBuilder:
             Self: This builder for method chaining.
         """
         self._description = desc
+        return self
+
+    def task_goal(self, goal: str) -> Self:
+        """
+        Set the task goal for this Agent.
+
+        The task goal is a clear description of what this Agent accomplishes.
+        This is required for Platform Core Review Gate 1 validation.
+
+        Args:
+            goal: Description of the task this Agent completes.
+
+        Returns:
+            Self: This builder for method chaining.
+        """
+        self._task_goal = goal
+        return self
+
+    def completion_criteria(self, criteria: CompletionCriteria) -> Self:
+        """
+        Set the completion criteria for this Agent.
+
+        Completion criteria define what constitutes success or failure.
+        This is required for Platform Core Review Gate 1 validation.
+
+        Args:
+            criteria: CompletionCriteria instance defining success/failure conditions.
+
+        Returns:
+            Self: This builder for method chaining.
+        """
+        self._completion_criteria = criteria
+        return self
+
+    def add_eip_dependency(self, dependency: EIPDependency) -> Self:
+        """
+        Add an EIP dependency to this Agent.
+
+        EIP dependencies declare which Execution Implementation Providers
+        this Agent requires. This is used for Platform Core Review Gate 5.
+
+        Args:
+            dependency: EIPDependency instance declaring the required EIP.
+
+        Returns:
+            Self: This builder for method chaining.
+
+        Raises:
+            DuplicateError: If an EIP with this provider/service already exists.
+        """
+        key = (dependency.provider, dependency.service)
+        for existing in self._eip_dependencies:
+            if (existing.provider, existing.service) == key:
+                raise DuplicateError(
+                    "eip_dependency",
+                    f"{dependency.provider}/{dependency.service}",
+                    f"agent '{self._name}'",
+                )
+
+        self._eip_dependencies.append(dependency)
         return self
 
     def add_workflow(self, workflow: Workflow) -> Self:
@@ -349,6 +412,9 @@ class AgentBuilder:
             name=self._name,
             version=self._version,
             description=self._description,
+            task_goal=self._task_goal,
+            completion_criteria=self._completion_criteria,
+            eip_dependencies=tuple(self._eip_dependencies),
             workflows=tuple(self._workflows),
             modules=tuple(self._modules),
             prompts=tuple(self._prompts),

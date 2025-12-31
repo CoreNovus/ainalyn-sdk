@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ainalyn.domain.entities.eip_dependency import EIPBinding
 
 
 @dataclass(frozen=True, slots=True)
@@ -26,24 +29,29 @@ class Module:
             Should conform to JSON Schema Draft 2020-12 or compatible.
         output_schema: JSON Schema defining the output structure.
             Should conform to JSON Schema Draft 2020-12 or compatible.
+        eip_binding: Optional binding to a specific EIP provider and service.
+            When specified, Platform Core will route this Module's execution
+            to the designated EIP. This is a declaration, not execution.
 
     Example:
+        >>> from ainalyn.domain.entities.eip_dependency import EIPBinding
         >>> module = Module(
-        ...     name="http-fetcher",
-        ...     description="Fetches data from HTTP endpoints",
+        ...     name="audio-transcriber",
+        ...     description="Transcribes audio to text with timestamps",
+        ...     eip_binding=EIPBinding(provider="openai", service="whisper"),
         ...     input_schema={
         ...         "type": "object",
         ...         "properties": {
-        ...             "url": {"type": "string", "format": "uri"},
-        ...             "method": {"type": "string", "enum": ["GET", "POST"]},
+        ...             "audio_url": {"type": "string", "format": "uri"},
+        ...             "language": {"type": "string", "default": "auto"},
         ...         },
-        ...         "required": ["url"],
+        ...         "required": ["audio_url"],
         ...     },
         ...     output_schema={
         ...         "type": "object",
         ...         "properties": {
-        ...             "status": {"type": "integer"},
-        ...             "body": {"type": "string"},
+        ...             "transcript": {"type": "string"},
+        ...             "segments": {"type": "array"},
         ...         },
         ...     },
         ... )
@@ -53,3 +61,4 @@ class Module:
     description: str
     input_schema: dict[str, Any] = field(default_factory=dict)
     output_schema: dict[str, Any] = field(default_factory=dict)
+    eip_binding: EIPBinding | None = None

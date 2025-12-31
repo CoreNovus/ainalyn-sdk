@@ -8,7 +8,7 @@ for use during development and testing before the real API is available.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from ainalyn.domain.entities.review_feedback import (
@@ -43,10 +43,7 @@ class MockPlatformClient:
 
     Usage:
         >>> client = MockPlatformClient()
-        >>> result = client.submit_agent(
-        ...     definition=my_agent,
-        ...     api_key="dev_mock_123"
-        ... )
+        >>> result = client.submit_agent(definition=my_agent, api_key="dev_mock_123")
         >>> print(result.review_id)  # "review_mock_..."
 
     Special Behaviors:
@@ -97,10 +94,7 @@ class MockPlatformClient:
 
         Example:
             >>> client = MockPlatformClient()
-            >>> result = client.submit_agent(
-            ...     definition=agent,
-            ...     api_key="dev_mock_123"
-            ... )
+            >>> result = client.submit_agent(definition=agent, api_key="dev_mock_123")
             >>> print(result.status)
             SubmissionStatus.PENDING_REVIEW
         """
@@ -117,7 +111,7 @@ class MockPlatformClient:
 
         # Generate mock review ID
         review_id = f"review_mock_{uuid.uuid4().hex[:12]}"
-        timestamp = datetime.now(timezone.utc).isoformat()
+        timestamp = datetime.now(UTC).isoformat()
 
         # Simulate rejection case
         if definition.name == "rejected-test":
@@ -247,7 +241,8 @@ class MockPlatformClient:
             True
         """
         if review_id not in self._submissions:
-            raise KeyError(f"Review ID '{review_id}' not found")
+            msg = f"Review ID '{review_id}' not found"
+            raise KeyError(msg)
 
         original = self._submissions[review_id]
         agent_id = f"agent_mock_{uuid.uuid4().hex[:12]}"

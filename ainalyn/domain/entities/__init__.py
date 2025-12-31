@@ -11,6 +11,11 @@ pure description, with no execution semantics.
 from __future__ import annotations
 
 from ainalyn.domain.entities.agent_definition import AgentDefinition
+from ainalyn.domain.entities.eip_dependency import (
+    CompletionCriteria,
+    EIPBinding,
+    EIPDependency,
+)
 from ainalyn.domain.entities.module import Module
 from ainalyn.domain.entities.node import Node, NodeType
 from ainalyn.domain.entities.prompt import Prompt
@@ -32,6 +37,10 @@ __all__ = [
     "Prompt",
     "Tool",
     "Workflow",
+    # EIP-related entities
+    "EIPBinding",
+    "EIPDependency",
+    "CompletionCriteria",
     # Submission-related entities
     "SubmissionResult",
     "SubmissionStatus",

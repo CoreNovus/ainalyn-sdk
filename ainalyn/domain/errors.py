@@ -335,7 +335,7 @@ class SubmissionError(DomainError):
     def __init__(
         self,
         message: str,
-        validation_errors: tuple | None = None,
+        validation_errors: tuple[object, ...] | None = None,
         http_status: int | None = None,
     ) -> None:
         """

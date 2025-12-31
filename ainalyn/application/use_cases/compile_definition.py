@@ -13,14 +13,14 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from ainalyn.application.ports.inbound.validate_agent_definition import (
+        ValidationResult,
+    )
     from ainalyn.application.use_cases.export_definition import ExportDefinitionUseCase
     from ainalyn.application.use_cases.validate_definition import (
         ValidateDefinitionUseCase,
     )
     from ainalyn.domain.entities import AgentDefinition
-    from ainalyn.application.ports.inbound.validate_agent_definition import (
-        ValidationResult,
-    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -77,16 +77,16 @@ class CompileDefinitionUseCase:
 
     Example:
         >>> from ainalyn.adapters.secondary import (
-        ...     SchemaValidator, StaticAnalyzer, YamlExporter
+        ...     SchemaValidator,
+        ...     StaticAnalyzer,
+        ...     YamlExporter,
         ... )
         >>> from ainalyn.application.use_cases import (
         ...     ValidateDefinitionUseCase,
         ...     ExportDefinitionUseCase,
         ...     CompileDefinitionUseCase,
         ... )
-        >>> validator = ValidateDefinitionUseCase(
-        ...     SchemaValidator(), StaticAnalyzer()
-        ... )
+        >>> validator = ValidateDefinitionUseCase(SchemaValidator(), StaticAnalyzer())
         >>> exporter = ExportDefinitionUseCase(YamlExporter())
         >>> compiler = CompileDefinitionUseCase(validator, exporter)
         >>> result = compiler.execute(agent_definition)

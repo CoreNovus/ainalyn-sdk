@@ -336,7 +336,9 @@ def main():
     if result.is_valid:
         print("  Validation: PASSED")
         if result.has_warnings:
-            print(f"  Warnings: {len([e for e in result.errors if e.severity.value == 'warning'])}")
+            print(
+                f"  Warnings: {len([e for e in result.errors if e.severity.value == 'warning'])}"
+            )
     else:
         print("  Validation: FAILED")
         for error in result.errors:

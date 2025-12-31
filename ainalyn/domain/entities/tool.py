@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ainalyn.domain.entities.eip_dependency import EIPBinding
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,25 +28,29 @@ class Tool:
             Should conform to JSON Schema Draft 2020-12 or compatible.
         output_schema: JSON Schema defining the output structure.
             Should conform to JSON Schema Draft 2020-12 or compatible.
+        eip_binding: Optional binding to a specific EIP provider and service.
+            When specified, Platform Core will route this Tool's execution
+            to the designated EIP. This is a declaration, not execution.
 
     Example:
+        >>> from ainalyn.domain.entities.eip_dependency import EIPBinding
         >>> tool = Tool(
-        ...     name="file-writer",
-        ...     description="Writes content to a file in the workspace",
+        ...     name="speech-to-text",
+        ...     description="Converts audio to text using speech recognition",
+        ...     eip_binding=EIPBinding(provider="openai", service="whisper"),
         ...     input_schema={
         ...         "type": "object",
         ...         "properties": {
-        ...             "path": {"type": "string"},
-        ...             "content": {"type": "string"},
-        ...             "encoding": {"type": "string", "default": "utf-8"},
+        ...             "audio_url": {"type": "string", "format": "uri"},
+        ...             "language": {"type": "string", "default": "auto"},
         ...         },
-        ...         "required": ["path", "content"],
+        ...         "required": ["audio_url"],
         ...     },
         ...     output_schema={
         ...         "type": "object",
         ...         "properties": {
-        ...             "success": {"type": "boolean"},
-        ...             "bytes_written": {"type": "integer"},
+        ...             "transcript": {"type": "string"},
+        ...             "segments": {"type": "array"},
         ...         },
         ...     },
         ... )
@@ -53,3 +60,4 @@ class Tool:
     description: str
     input_schema: dict[str, Any] = field(default_factory=dict)
     output_schema: dict[str, Any] = field(default_factory=dict)
+    eip_binding: EIPBinding | None = None

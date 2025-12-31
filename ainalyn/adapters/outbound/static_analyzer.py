@@ -128,9 +128,7 @@ class StaticAnalyzer:
                         issues.append(
                             ValidationError(
                                 code="UNREACHABLE_NODE",
-                                path=(
-                                    f"agent.workflows[{wf_idx}].nodes[{node_idx}]"
-                                ),
+                                path=(f"agent.workflows[{wf_idx}].nodes[{node_idx}]"),
                                 message=(
                                     f"Node '{node_name}' is unreachable from "
                                     f"entry node '{workflow.entry_node}' in "

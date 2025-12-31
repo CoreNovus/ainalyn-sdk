@@ -48,6 +48,48 @@ tool = (
 )
 ```
 
+## EIP Binding
+
+Tools can be linked to external EIP (Execution Implementation Provider) services using `.eip_binding()`:
+
+```python
+from ainalyn import ToolBuilder
+from ainalyn.domain.entities import EIPBinding
+
+# Tool with OpenAI Whisper binding
+speech_to_text = (
+    ToolBuilder("speech-to-text")
+    .description("Converts audio to text using OpenAI Whisper")
+    .eip_binding(EIPBinding(provider="openai", service="whisper"))
+    .input_schema({
+        "type": "object",
+        "properties": {
+            "audio_url": {"type": "string", "format": "uri"},
+            "language": {"type": "string", "default": "auto"}
+        },
+        "required": ["audio_url"]
+    })
+    .output_schema({
+        "type": "object",
+        "properties": {
+            "text": {"type": "string"},
+            "segments": {"type": "array"}
+        }
+    })
+    .build()
+)
+```
+
+**When to use EIP binding:**
+- When the tool uses an external service (OpenAI, Anthropic, etc.)
+- When Platform Core needs to know which service to invoke
+- For tools that require specific provider implementations
+
+**Common EIP providers:**
+- `openai` - OpenAI services (whisper, gpt-4, dall-e, etc.)
+- `anthropic` - Anthropic services (claude, etc.)
+- `platform` - Platform-provided services
+
 ## Using Tools in Workflows
 
 **Step 1: Define the tool**

@@ -147,7 +147,9 @@ def create_data_analyst_agent():
 
     quality_checker = (
         ModuleBuilder("quality-checker")
-        .description("Assesses data quality metrics: completeness, accuracy, consistency")
+        .description(
+            "Assesses data quality metrics: completeness, accuracy, consistency"
+        )
         .input_schema({"type": "object", "properties": {"data": {"type": "array"}}})
         .output_schema(
             {

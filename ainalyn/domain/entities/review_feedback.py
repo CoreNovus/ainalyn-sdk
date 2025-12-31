@@ -102,7 +102,7 @@ class ReviewFeedback:
         ...     severity=FeedbackSeverity.ERROR,
         ...     message="Tool 'file-writer' requires explicit permission",
         ...     path="tools[0]",
-        ...     code="SEC001"
+        ...     code="SEC001",
         ... )
         >>> print(f"[{feedback.severity.value}] {feedback.message}")
         [error] Tool 'file-writer' requires explicit permission
@@ -127,14 +127,14 @@ class ReviewFeedback:
             >>> error_feedback = ReviewFeedback(
             ...     category=FeedbackCategory.SECURITY,
             ...     severity=FeedbackSeverity.ERROR,
-            ...     message="Critical issue"
+            ...     message="Critical issue",
             ... )
             >>> error_feedback.is_blocking()
             True
             >>> warning_feedback = ReviewFeedback(
             ...     category=FeedbackCategory.QUALITY,
             ...     severity=FeedbackSeverity.WARNING,
-            ...     message="Consider improvement"
+            ...     message="Consider improvement",
             ... )
             >>> warning_feedback.is_blocking()
             False
@@ -153,7 +153,7 @@ class ReviewFeedback:
             ...     category=FeedbackCategory.QUALITY,
             ...     severity=FeedbackSeverity.WARNING,
             ...     message="Consider adding more examples",
-            ...     path="agent.description"
+            ...     path="agent.description",
             ... )
             >>> print(feedback)
             [quality/warning] agent.description: Consider adding more examples

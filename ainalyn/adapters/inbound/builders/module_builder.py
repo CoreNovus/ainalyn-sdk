@@ -11,11 +11,11 @@ from __future__ import annotations
 
 from typing import Any, Self
 
+from ainalyn.domain.entities import EIPBinding, Module
 from ainalyn.domain.errors import (
     InvalidFormatError,
     MissingFieldError,
 )
-from ainalyn.domain.entities import Module
 from ainalyn.domain.rules import DefinitionRules
 
 
@@ -35,14 +35,18 @@ class ModuleBuilder:
         >>> module = (
         ...     ModuleBuilder("http-fetcher")
         ...     .description("Fetches data from HTTP endpoints")
-        ...     .input_schema({
-        ...         "type": "object",
-        ...         "properties": {"url": {"type": "string"}},
-        ...     })
-        ...     .output_schema({
-        ...         "type": "object",
-        ...         "properties": {"body": {"type": "string"}},
-        ...     })
+        ...     .input_schema(
+        ...         {
+        ...             "type": "object",
+        ...             "properties": {"url": {"type": "string"}},
+        ...         }
+        ...     )
+        ...     .output_schema(
+        ...         {
+        ...             "type": "object",
+        ...             "properties": {"body": {"type": "string"}},
+        ...         }
+        ...     )
         ...     .build()
         ... )
     """
@@ -66,6 +70,7 @@ class ModuleBuilder:
             )
         self._name = name
         self._description: str | None = None
+        self._eip_binding: EIPBinding | None = None
         self._input_schema: dict[str, Any] = {}
         self._output_schema: dict[str, Any] = {}
 
@@ -80,6 +85,22 @@ class ModuleBuilder:
             Self: This builder for method chaining.
         """
         self._description = desc
+        return self
+
+    def eip_binding(self, binding: EIPBinding) -> Self:
+        """
+        Bind this Module to a specific EIP provider and service.
+
+        When specified, Platform Core will route this Module's execution
+        to the designated EIP. This is a declaration, not execution.
+
+        Args:
+            binding: EIPBinding instance specifying provider and service.
+
+        Returns:
+            Self: This builder for method chaining.
+        """
+        self._eip_binding = binding
         return self
 
     def input_schema(self, schema: dict[str, Any]) -> Self:
@@ -126,4 +147,5 @@ class ModuleBuilder:
             description=self._description,
             input_schema=self._input_schema,
             output_schema=self._output_schema,
+            eip_binding=self._eip_binding,
         )

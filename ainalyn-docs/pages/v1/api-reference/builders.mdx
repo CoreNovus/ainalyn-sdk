@@ -181,6 +181,72 @@ Set all modules at once.
 
 ---
 
+#### .task_goal(goal: str) -> Self
+
+Set the high-level task goal for Platform Review Gate 1.
+
+**Parameters:**
+- `goal` (required) - Human-readable description of what task this agent accomplishes
+
+**Returns:** Self for method chaining
+
+**Required:** No (but recommended for Platform submission)
+
+**Example:**
+```python
+.task_goal("Convert meeting audio recordings into structured text transcripts with timestamps")
+```
+
+---
+
+#### .completion_criteria(criteria: CompletionCriteria) -> Self
+
+Set success/failure conditions for Platform Review Gate 1.
+
+**Parameters:**
+- `criteria` (required) - CompletionCriteria instance defining success and failure conditions
+
+**Returns:** Self for method chaining
+
+**Required:** No (but recommended for Platform submission)
+
+**Example:**
+```python
+from ainalyn.domain.entities import CompletionCriteria
+
+.completion_criteria(CompletionCriteria(
+    success="Complete transcript with timestamps generated",
+    failure="Audio format unsupported or speech unrecognizable"
+))
+```
+
+---
+
+#### .add_eip_dependency(dependency: EIPDependency) -> Self
+
+Add an EIP dependency for Platform Review Gate 5.
+
+**Parameters:**
+- `dependency` (required) - EIPDependency instance
+
+**Returns:** Self for method chaining
+
+**Required:** No (but required if agent uses external EIP services)
+
+**Example:**
+```python
+from ainalyn.domain.entities import EIPDependency
+
+.add_eip_dependency(EIPDependency(
+    provider="openai",
+    service="whisper",
+    version=">=1.0.0",
+    config_hints={"streaming": True, "model": "whisper-1"}
+))
+```
+
+---
+
 #### .build() -> AgentDefinition
 
 Build and return immutable AgentDefinition.
@@ -561,6 +627,28 @@ Define output JSON Schema.
 
 ---
 
+#### .eip_binding(binding: EIPBinding) -> Self
+
+Link this module to a specific EIP provider/service.
+
+**Parameters:**
+- `binding` (required) - EIPBinding instance specifying provider and service
+
+**Returns:** Self for method chaining
+
+**Required:** No (but recommended for modules that use external services)
+
+**Example:**
+```python
+from ainalyn.domain.entities import EIPBinding
+
+.eip_binding(EIPBinding(provider="platform", service="audio-segmenter"))
+```
+
+**Note:** EIP binding tells Platform Core which service implementation to use when executing this module.
+
+---
+
 #### .build() -> Module
 
 Build and return immutable Module.
@@ -789,6 +877,28 @@ Define output JSON Schema.
     }
 })
 ```
+
+---
+
+#### .eip_binding(binding: EIPBinding) -> Self
+
+Link this tool to a specific EIP provider/service.
+
+**Parameters:**
+- `binding` (required) - EIPBinding instance specifying provider and service
+
+**Returns:** Self for method chaining
+
+**Required:** No (but recommended for tools that use external services)
+
+**Example:**
+```python
+from ainalyn.domain.entities import EIPBinding
+
+.eip_binding(EIPBinding(provider="openai", service="whisper"))
+```
+
+**Note:** EIP binding tells Platform Core which external service to invoke when executing this tool.
 
 ---
 

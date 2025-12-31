@@ -38,14 +38,18 @@ class ModuleBuilder:
         >>> module = (
         ...     ModuleBuilder("http-fetcher")
         ...     .description("Fetches data from HTTP endpoints")
-        ...     .input_schema({
-        ...         "type": "object",
-        ...         "properties": {"url": {"type": "string"}},
-        ...     })
-        ...     .output_schema({
-        ...         "type": "object",
-        ...         "properties": {"body": {"type": "string"}},
-        ...     })
+        ...     .input_schema(
+        ...         {
+        ...             "type": "object",
+        ...             "properties": {"url": {"type": "string"}},
+        ...         }
+        ...     )
+        ...     .output_schema(
+        ...         {
+        ...             "type": "object",
+        ...             "properties": {"body": {"type": "string"}},
+        ...         }
+        ...     )
         ...     .build()
         ... )
     """
@@ -244,14 +248,18 @@ class ToolBuilder:
         >>> tool = (
         ...     ToolBuilder("file-writer")
         ...     .description("Writes content to a file")
-        ...     .input_schema({
-        ...         "type": "object",
-        ...         "properties": {"path": {"type": "string"}},
-        ...     })
-        ...     .output_schema({
-        ...         "type": "object",
-        ...         "properties": {"success": {"type": "boolean"}},
-        ...     })
+        ...     .input_schema(
+        ...         {
+        ...             "type": "object",
+        ...             "properties": {"path": {"type": "string"}},
+        ...         }
+        ...     )
+        ...     .output_schema(
+        ...         {
+        ...             "type": "object",
+        ...             "properties": {"success": {"type": "boolean"}},
+        ...         }
+        ...     )
         ...     .build()
         ... )
     """
@@ -684,9 +692,7 @@ class AgentBuilder:
         ...     .version("1.0.0")
         ...     .description("My first agent")
         ...     .add_module(
-        ...         ModuleBuilder("http-fetcher")
-        ...         .description("Fetches HTTP data")
-        ...         .build()
+        ...         ModuleBuilder("http-fetcher").description("Fetches HTTP data").build()
         ...     )
         ...     .add_workflow(
         ...         WorkflowBuilder("main")

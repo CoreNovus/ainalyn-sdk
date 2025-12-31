@@ -54,16 +54,13 @@ class SubmitDefinitionUseCase:
         >>> from ainalyn.adapters.outbound import YamlExporter, HttpPlatformClient
         >>> from ainalyn.application.use_cases import (
         ...     ValidateDefinitionUseCase,
-        ...     SubmitDefinitionUseCase
+        ...     SubmitDefinitionUseCase,
         ... )
         >>> validator = ValidateDefinitionUseCase(...)
         >>> exporter = YamlExporter()
         >>> client = HttpPlatformClient()
         >>> use_case = SubmitDefinitionUseCase(validator, exporter, client)
-        >>> result = use_case.execute(
-        ...     definition=agent,
-        ...     api_key="dev_sk_abc123"
-        ... )
+        >>> result = use_case.execute(definition=agent, api_key="dev_sk_abc123")
         >>> print(f"Review ID: {result.review_id}")
     """
 
@@ -85,7 +82,7 @@ class SubmitDefinitionUseCase:
             >>> use_case = SubmitDefinitionUseCase(
             ...     validator=ValidateDefinitionUseCase(...),
             ...     serializer=YamlExporter(),
-            ...     platform_client=HttpPlatformClient()
+            ...     platform_client=HttpPlatformClient(),
             ... )
         """
         self._validator = validator
@@ -139,7 +136,7 @@ class SubmitDefinitionUseCase:
             ...     result = use_case.execute(
             ...         definition=my_agent,
             ...         api_key="dev_sk_abc123",
-            ...         options=SubmissionOptions(auto_deploy=True)
+            ...         options=SubmissionOptions(auto_deploy=True),
             ...     )
             ...     print(f"Submitted! Review ID: {result.review_id}")
             ...     print(f"Track at: {result.tracking_url}")
@@ -198,10 +195,7 @@ class TrackSubmissionUseCase:
 
     Example:
         >>> use_case = TrackSubmissionUseCase(platform_client)
-        >>> result = use_case.execute(
-        ...     review_id="review_abc123",
-        ...     api_key="dev_sk_abc123"
-        ... )
+        >>> result = use_case.execute(review_id="review_abc123", api_key="dev_sk_abc123")
         >>> print(f"Status: {result.status.value}")
         >>> if result.is_live:
         ...     print(f"Agent is live: {result.marketplace_url}")
@@ -238,10 +232,7 @@ class TrackSubmissionUseCase:
             SubmissionError: If review_id is not found or other errors.
 
         Example:
-            >>> result = use_case.execute(
-            ...     review_id="review_abc123",
-            ...     api_key="dev_sk_abc123"
-            ... )
+            >>> result = use_case.execute(review_id="review_abc123", api_key="dev_sk_abc123")
             >>> if result.status == SubmissionStatus.ACCEPTED:
             ...     print(f"Agent ID: {result.agent_id}")
             ... elif result.status == SubmissionStatus.REJECTED:

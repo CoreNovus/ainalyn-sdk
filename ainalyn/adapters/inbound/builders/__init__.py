@@ -13,6 +13,8 @@ All execution authority belongs to Platform Core.
 See: https://docs.ainalyn.io/sdk/platform-boundaries/
 """
 
+from __future__ import annotations
+
 from ainalyn.adapters.inbound.builders.agent_builder import AgentBuilder
 from ainalyn.adapters.inbound.builders.module_builder import ModuleBuilder
 from ainalyn.adapters.inbound.builders.node_builder import NodeBuilder

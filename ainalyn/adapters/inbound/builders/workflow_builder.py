@@ -11,13 +11,13 @@ from __future__ import annotations
 
 from typing import Self
 
+from ainalyn.domain.entities import Node, Workflow
 from ainalyn.domain.errors import (
     DuplicateError,
     EmptyCollectionError,
     InvalidFormatError,
     MissingFieldError,
 )
-from ainalyn.domain.entities import Node, Workflow
 from ainalyn.domain.rules import DefinitionRules
 
 

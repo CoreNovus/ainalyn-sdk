@@ -39,6 +39,48 @@ module = (
 )
 ```
 
+## EIP Binding
+
+Modules can be linked to EIP (Execution Implementation Provider) services using `.eip_binding()`:
+
+```python
+from ainalyn import ModuleBuilder
+from ainalyn.domain.entities import EIPBinding
+
+# Module with platform-provided implementation
+audio_segmenter = (
+    ModuleBuilder("audio-segmenter")
+    .description("Splits long audio files into segments")
+    .eip_binding(EIPBinding(provider="platform", service="audio-segmenter"))
+    .input_schema({
+        "type": "object",
+        "properties": {
+            "audio_url": {"type": "string", "format": "uri"},
+            "max_segment_size_mb": {"type": "number", "default": 24}
+        },
+        "required": ["audio_url"]
+    })
+    .output_schema({
+        "type": "object",
+        "properties": {
+            "segments": {"type": "array"},
+            "segment_count": {"type": "integer"}
+        }
+    })
+    .build()
+)
+```
+
+**When to use EIP binding:**
+- When the module requires a specific platform service implementation
+- When Platform Core needs to know which service to invoke
+- For modules that interface with external systems
+
+**Common EIP providers:**
+- `platform` - Platform-provided services
+- `openai` - OpenAI services
+- `anthropic` - Anthropic services
+
 ## Using Modules in Workflows
 
 **Step 1: Define the module**
