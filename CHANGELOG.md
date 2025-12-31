@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0-alpha.5] - 2025-12-31
+
+### Fixed
+- **CI/CD Configuration**: Fixed incorrect source directory paths in CI workflows and pre-commit hooks
+  - Updated `.github/workflows/ci.yml` to use correct paths (`ainalyn` instead of `src`)
+  - Updated `.pre-commit-config.yaml` MyPy and Bandit paths
+  - Updated `Makefile` to use correct `SRC_DIR=ainalyn` and added `EXAMPLES_DIR`
+- **Static Type Checking**: Added missing `types-PyYAML` dependency for MyPy
+- **Code Quality**: Fixed 3 import sorting issues and reformatted 2 files with Ruff
+
+### Changed
+- **Submission API Warning**: Added explicit warnings to `submit_agent()` and `track_submission()` documentation
+  - Clearly states these functions are NOT available in current version
+  - Raises `NotImplementedError` when called
+  - Guides developers to use `validate()` and `export_yaml()` instead
+- **Service Factory Default**: Changed `create_default_service()` to disable platform client by default
+  - `with_mock_platform_client` now defaults to `False` instead of `True`
+  - Ensures submission functionality is explicitly opt-in
+
+### Added
+- **Quality Assurance Documentation**:
+  - `AGENT_DEFINITION_REFERENCE.md`: Technical reference for EIP and Platform Core teams
+  - `QUALITY_ASSURANCE.md`: Complete guide to static checks, CI/CD, and development workflow
+  - `DEVELOPMENT_QUICKSTART.md`: Quick reference for developers
+- **Static Check Automation**: All static checks can now be run locally before CI
+  - `make check-all`: Run complete checks (lint, type, test, security)
+  - Pre-commit hooks ensure code quality before commits
+  - Verified all checks pass: Ruff (✅), MyPy (✅), Pytest (160 tests ✅), Bandit (⚠️ 2 known issues)
+
+### Platform Constitution Compliance
+- **Submission Disabled**: Confirmed SDK does NOT provide agent submission in current version
+  - `HttpPlatformClient.submit_agent()` raises `NotImplementedError`
+  - `MockPlatformClient` only for internal SDK testing
+  - Clear API warnings prevent accidental usage
+  - Developers must use local validation and YAML export only
+
+### Developer Experience
+- Improved local development workflow with comprehensive Makefile
+- All CI checks can be run locally to catch issues before push
+- Pre-commit hooks automatically enforce code quality standards
+- Clear documentation on available vs. unavailable features
+
 ## [0.1.0-alpha.3] - 2025-12-31
 
 ### Fixed

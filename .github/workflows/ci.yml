@@ -55,13 +55,10 @@ jobs:
           pip install ruff black
 
       - name: Run Ruff linter
-        run: ruff check src tests --output-format=github
+        run: ruff check ainalyn tests examples --output-format=github
 
       - name: Run Ruff formatter check
-        run: ruff format --check src tests
-
-      - name: Run Black formatter check
-        run: black --check src tests
+        run: ruff format --check ainalyn tests examples
 
   # ===========================================================================
   # Type Checking
@@ -93,7 +90,7 @@ jobs:
           pip install -e ".[type]"
 
       - name: Run MyPy
-        run: mypy src --show-error-codes
+        run: mypy ainalyn --show-error-codes --config-file=pyproject.toml
 
   # ===========================================================================
   # Unit Tests
@@ -145,7 +142,7 @@ jobs:
       - name: Run tests with coverage
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
         run: |
-          pytest tests/unit --cov=src --cov-report=xml --cov-report=html
+          pytest tests/unit --cov=ainalyn --cov-report=xml --cov-report=html
 
       - name: Upload coverage report
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
@@ -218,7 +215,7 @@ jobs:
           pip install bandit[toml] safety
 
       - name: Run Bandit security scan
-        run: bandit -r src -c pyproject.toml -f json -o bandit-report.json || true
+        run: bandit -r ainalyn -c pyproject.toml -f json -o bandit-report.json || true
 
       - name: Upload Bandit report
         uses: actions/upload-artifact@v4

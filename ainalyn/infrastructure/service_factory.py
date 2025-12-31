@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 
 def create_default_service(
-    with_mock_platform_client: bool = True,
+    with_mock_platform_client: bool = False,
 ) -> DefinitionService:
     """
     Create DefinitionService with default adapter implementations.
@@ -34,7 +34,7 @@ def create_default_service(
     Args:
         with_mock_platform_client: If True, includes MockPlatformClient
             for submission features. If False, submission methods will
-            raise RuntimeError. Defaults to True for convenience.
+            raise RuntimeError. Defaults to False (submission NOT available).
 
     Returns:
         DefinitionService: A fully configured service instance with
@@ -43,14 +43,14 @@ def create_default_service(
 
     Example:
         >>> from ainalyn.infrastructure import create_default_service
-        >>> # With submission support (uses MockPlatformClient)
+        >>> # Default: without submission support
         >>> service = create_default_service()
         >>> result = service.validate(agent_definition)
         >>> if result.is_valid:
         ...     print("Valid!")
         >>>
-        >>> # Without submission support
-        >>> service = create_default_service(with_mock_platform_client=False)
+        >>> # With submission support (uses MockPlatformClient for testing)
+        >>> service = create_default_service(with_mock_platform_client=True)
 
     Note:
         This function creates a new service instance each time it's called.

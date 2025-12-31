@@ -5,9 +5,9 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
+from ainalyn.adapters.outbound.schema_validator import SchemaValidator
 from ainalyn.adapters.outbound.static_analyzer import StaticAnalyzer
 from ainalyn.adapters.outbound.yaml_serializer import YamlExporter
-from ainalyn.adapters.outbound.schema_validator import SchemaValidator
 from ainalyn.application.use_cases.compile_definition import CompileDefinitionUseCase
 from ainalyn.application.use_cases.export_definition import ExportDefinitionUseCase
 from ainalyn.application.use_cases.validate_definition import ValidateDefinitionUseCase

@@ -10,8 +10,9 @@ SHELL := /bin/bash
 
 # Project settings
 PACKAGE_NAME := ainalyn
-SRC_DIR := src
+SRC_DIR := ainalyn
 TEST_DIR := tests
+EXAMPLES_DIR := examples
 DOCS_DIR := docs
 
 # Python settings
@@ -96,28 +97,28 @@ venv: ## Create virtual environment
 .PHONY: lint
 lint: ## Run all linters
 	@echo -e "$(BLUE)Running Ruff...$(NC)"
-	ruff check $(SRC_DIR) $(TEST_DIR)
+	ruff check $(SRC_DIR) $(TEST_DIR) $(EXAMPLES_DIR)
 	@echo -e "$(BLUE)Running Ruff format check...$(NC)"
-	ruff format --check $(SRC_DIR) $(TEST_DIR)
+	ruff format --check $(SRC_DIR) $(TEST_DIR) $(EXAMPLES_DIR)
 	@echo -e "$(GREEN)All lint checks passed!$(NC)"
 
 .PHONY: lint-fix
 lint-fix: ## Run linters and fix issues
 	@echo -e "$(BLUE)Running Ruff with fixes...$(NC)"
-	ruff check --fix $(SRC_DIR) $(TEST_DIR)
+	ruff check --fix $(SRC_DIR) $(TEST_DIR) $(EXAMPLES_DIR)
 	@echo -e "$(BLUE)Running Ruff format...$(NC)"
-	ruff format $(SRC_DIR) $(TEST_DIR)
+	ruff format $(SRC_DIR) $(TEST_DIR) $(EXAMPLES_DIR)
 	@echo -e "$(GREEN)Lint fixes applied!$(NC)"
 
 .PHONY: format
 format: ## Format code with Ruff/Black
-	ruff format $(SRC_DIR) $(TEST_DIR)
+	ruff format $(SRC_DIR) $(TEST_DIR) $(EXAMPLES_DIR)
 	@echo -e "$(GREEN)Code formatted!$(NC)"
 
 .PHONY: type
 type: ## Run type checking with mypy
 	@echo -e "$(BLUE)Running MyPy...$(NC)"
-	mypy $(SRC_DIR)
+	mypy $(SRC_DIR) --config-file=pyproject.toml
 	@echo -e "$(GREEN)Type checking passed!$(NC)"
 
 .PHONY: check
@@ -176,7 +177,7 @@ test-cov-report: ## Open coverage report in browser
 .PHONY: security
 security: ## Run security checks
 	@echo -e "$(BLUE)Running Bandit...$(NC)"
-	bandit -r $(SRC_DIR) -c pyproject.toml
+	bandit -r $(SRC_DIR) -c pyproject.toml --quiet
 	@echo -e "$(GREEN)Security check passed!$(NC)"
 
 .PHONY: audit

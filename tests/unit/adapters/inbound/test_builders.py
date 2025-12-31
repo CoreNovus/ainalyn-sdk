@@ -389,10 +389,18 @@ class TestAgentBuilder:
         tool = ToolBuilder("t").description("T").build()
 
         node1 = (
-            NodeBuilder("n1").description("N1").uses_module("m").next_nodes("n2").build()
+            NodeBuilder("n1")
+            .description("N1")
+            .uses_module("m")
+            .next_nodes("n2")
+            .build()
         )
         node2 = (
-            NodeBuilder("n2").description("N2").uses_prompt("p").next_nodes("n3").build()
+            NodeBuilder("n2")
+            .description("N2")
+            .uses_prompt("p")
+            .next_nodes("n3")
+            .build()
         )
         node3 = NodeBuilder("n3").description("N3").uses_tool("t").build()
 
@@ -433,11 +441,7 @@ class TestAgentBuilder:
         module = ModuleBuilder("m").description("M").build()
         node = NodeBuilder("n").description("N").uses_module("m").build()
         workflow = (
-            WorkflowBuilder("w")
-            .description("W")
-            .add_node(node)
-            .entry_node("n")
-            .build()
+            WorkflowBuilder("w").description("W").add_node(node).entry_node("n").build()
         )
 
         builder = (
@@ -465,11 +469,7 @@ class TestAgentBuilder:
         """Test that undefined module reference raises error."""
         node = NodeBuilder("n").description("N").uses_module("undefined").build()
         workflow = (
-            WorkflowBuilder("w")
-            .description("W")
-            .add_node(node)
-            .entry_node("n")
-            .build()
+            WorkflowBuilder("w").description("W").add_node(node).entry_node("n").build()
         )
 
         builder = (
@@ -489,11 +489,7 @@ class TestAgentBuilder:
         """Test that undefined prompt reference raises error."""
         node = NodeBuilder("n").description("N").uses_prompt("undefined").build()
         workflow = (
-            WorkflowBuilder("w")
-            .description("W")
-            .add_node(node)
-            .entry_node("n")
-            .build()
+            WorkflowBuilder("w").description("W").add_node(node).entry_node("n").build()
         )
 
         builder = (

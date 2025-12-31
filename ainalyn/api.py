@@ -158,6 +158,14 @@ def submit_agent(
     """
     Submit an Agent Definition to Platform Core for review.
 
+    ⚠️ WARNING - NOT AVAILABLE IN CURRENT VERSION:
+    This function is NOT yet implemented. Platform Core submission API is
+    under development. This is a PREVIEW API for future use only.
+
+    Current behavior:
+    - Raises NotImplementedError when called
+    - Use validate() and export_yaml() for local development instead
+
     This function performs the complete submission workflow:
     1. Validates the definition (SDK-level validation)
     2. Exports to YAML format
@@ -230,6 +238,13 @@ def track_submission(
 ) -> SubmissionResult:
     """
     Track the status of a submitted Agent Definition.
+
+    ⚠️ WARNING - NOT AVAILABLE IN CURRENT VERSION:
+    This function is NOT yet implemented. Platform Core submission API is
+    under development. This is a PREVIEW API for future use only.
+
+    Current behavior:
+    - Raises NotImplementedError when called
 
     This function queries Platform Core for the current status
     of a previously submitted agent.

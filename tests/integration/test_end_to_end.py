@@ -122,7 +122,9 @@ class TestEndToEndCompilation:
     def test_unicode_agent_compilation(self) -> None:
         """Test compiling an agent with Unicode content."""
         module = Module("processor", "數據處理模組")
-        node = Node("node", "處理節點", NodeType.MODULE, "processor", outputs=("result",))
+        node = Node(
+            "node", "處理節點", NodeType.MODULE, "processor", outputs=("result",)
+        )
         workflow = Workflow("main", "主要工作流程", (node,), "node")
         agent = AgentDefinition(
             name="unicode-agent",
@@ -161,7 +163,9 @@ class TestEndToEndCompilation:
         assert not result.is_successful
         assert not result.validation_result.is_valid
         assert result.yaml_content is None
-        assert any(e.code == "INVALID_AGENT_NAME" for e in result.validation_result.errors)
+        assert any(
+            e.code == "INVALID_AGENT_NAME" for e in result.validation_result.errors
+        )
 
     def test_agent_with_warnings_compiles(self) -> None:
         """Test that agents with warnings still compile successfully."""

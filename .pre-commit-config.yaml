@@ -70,14 +70,12 @@ repos:
     hooks:
       - id: mypy
         additional_dependencies:
-          - types-setuptools>=69.0.0
-          - pydantic>=2.5.0
-          - httpx>=0.25.0
+          - types-PyYAML>=6.0.0
         args:
           - --config-file=pyproject.toml
         pass_filenames: false
-        # Only run on src directory
-        files: ^src/
+        # Only run on ainalyn directory
+        files: ^ainalyn/
 
   # ==========================================================================
   # Security scanning - Bandit
@@ -91,7 +89,7 @@ repos:
           - pyproject.toml
           - --quiet
         additional_dependencies: ["bandit[toml]"]
-        files: ^src/
+        files: ^ainalyn/
 
   # ==========================================================================
   # Dependency security - pip-audit
