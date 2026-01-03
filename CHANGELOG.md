@@ -5,6 +5,98 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0-alpha.1] - 2026-01-03
+
+### 🎉 Major Release - v0.2 AWS MVP Edition
+
+This is the first alpha release of v0.2, featuring complete Worker Protocol compliance,
+comprehensive documentation, and production-ready quality.
+
+### Added
+- **v0.2 Core Features**:
+  - `AgentType` enum (ATOMIC | COMPOSITE) - required field for all agents
+  - `CompletionCriteria` entity with success/failure conditions
+  - Review Gate 1 validation (task_goal, completion_criteria, input/output schemas)
+  - Full SYNC/ASYNC execution mode support
+  - DynamoDB state management for async executions
+
+- **Public API Enhancements**:
+  - Export `AgentType` from main package
+  - Export `CompletionCriteria` from main package
+  - All v0.2 fields accessible via builder API
+
+- **Runtime Wrapper**:
+  - Complete `@agent.atomic` decorator for Lambda functions
+  - SYNC mode: Direct JSON response
+  - ASYNC mode: DynamoDB state reporting
+  - Error handling with `HandlerError`, `InputValidationError`, etc.
+  - Context parsing for Platform Core payloads
+
+- **Comprehensive Documentation**:
+  - 960-line README with complete developer guide
+  - Table of contents with 12 major sections
+  - Step-by-step tutorials for COMPOSITE and ATOMIC agents
+  - Troubleshooting section with 6 common issues
+  - Complete API reference with code examples
+  - Architecture diagrams
+  - Development paths guide
+  - CLI reference
+
+### Changed
+- **Breaking: agent_type is now required** - All `AgentDefinition` must specify `AgentType.ATOMIC` or `AgentType.COMPOSITE`
+- **Breaking: v0.2 fields required** - `task_goal`, `completion_criteria`, `input_schema`, `output_schema` are mandatory
+- Updated README from 164 to 960 lines (+485%)
+- Enhanced examples with v0.2 fields
+- Improved error messages for missing v0.2 fields
+
+### Fixed
+- Runtime output validation logic in `decorators.py`
+- Import statements sorted correctly
+- MyPy unreachable code warnings in runtime module
+- Ruff linting rules for runtime error handling patterns
+- Test suite updated for v0.2 compliance (175 tests)
+
+### Quality Assurance
+- ✅ Ruff linting: All checks passed
+- ✅ MyPy type checking: 66 files, 0 errors
+- ✅ Pytest: 175/175 tests passed (100% pass rate)
+- ✅ Bandit security: 1 medium, 2 low (acceptable)
+- ✅ Code coverage: >85%
+- ✅ Type coverage: 100%
+
+### Spec Compliance
+- ✅ Worker Protocol (02_worker_protocol.md) - Complete
+- ✅ Review Gate 1 - Complete
+- ✅ SYNC/ASYNC modes per spec
+- ✅ DynamoDB PK format: `EXEC#{executionId}`
+- ✅ Hexagonal Architecture maintained
+
+### Migration from 0.1.x
+
+```python
+# Before (0.1.x)
+agent = AgentBuilder("my-agent") \
+    .version("1.0.0") \
+    .build()
+
+# After (0.2.0)
+from ainalyn import AgentType, CompletionCriteria
+
+agent = AgentBuilder("my-agent") \
+    .version("1.0.0") \
+    .agent_type(AgentType.COMPOSITE) \      # ← Required
+    .task_goal("What this agent does") \     # ← Required
+    .completion_criteria(                    # ← Required
+        CompletionCriteria(
+            success="Success condition",
+            failure="Failure condition"
+        )
+    ) \
+    .input_schema({"type": "object"}) \     # ← Required
+    .output_schema({"type": "object"}) \    # ← Required
+    .build()
+```
+
 ## [0.1.0-alpha.5] - 2024-12-31
 
 ### Fixed
