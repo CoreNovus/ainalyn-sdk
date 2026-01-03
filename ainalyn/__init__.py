@@ -67,6 +67,8 @@ from ainalyn.application.ports.inbound.validate_agent_definition import (
 )
 from ainalyn.domain.entities import (
     AgentDefinition,
+    AgentType,
+    CompletionCriteria,
     Module,
     Node,
     NodeType,
@@ -97,6 +99,8 @@ __all__ = [
     "track_submission",
     # Domain Entities
     "AgentDefinition",
+    "AgentType",
+    "CompletionCriteria",
     "Module",
     "Node",
     "NodeType",
