@@ -14,6 +14,7 @@ from ainalyn.application.use_cases.validate_definition import ValidateDefinition
 from ainalyn.domain.entities import (
     AgentDefinition,
     AgentType,
+    CompletionCriteria,
     Module,
     Node,
     NodeType,
@@ -33,6 +34,11 @@ class TestValidateDefinitionUseCase:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
+            task_goal="Test agent",
+            completion_criteria=CompletionCriteria(success="Success", failure="Failure"),
+            input_schema={"type": "object"},
+            output_schema={"type": "object"},
             workflows=(workflow,),
             modules=(module,),
         )
@@ -54,6 +60,11 @@ class TestValidateDefinitionUseCase:
             name="",  # Invalid: empty name
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
+            task_goal="Test",
+            completion_criteria=CompletionCriteria(success="Success", failure="Failure"),
+            input_schema={"type": "object"},
+            output_schema={"type": "object"},
             workflows=(workflow,),
             modules=(module,),
         )
@@ -78,6 +89,11 @@ class TestValidateDefinitionUseCase:
             name="",  # Schema error
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
+            task_goal="Test",
+            completion_criteria=CompletionCriteria(success="Success", failure="Failure"),
+            input_schema={"type": "object"},
+            output_schema={"type": "object"},
             workflows=(workflow,),
             modules=(module1, module2),  # Would trigger unused warning
         )
@@ -105,6 +121,11 @@ class TestValidateDefinitionUseCase:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
+            task_goal="Test agent",
+            completion_criteria=CompletionCriteria(success="Success", failure="Failure"),
+            input_schema={"type": "object"},
+            output_schema={"type": "object"},
             workflows=(workflow,),
             modules=(module1, module2),
         )
@@ -133,6 +154,11 @@ class TestExportDefinitionUseCase:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
+            task_goal="Test agent",
+            completion_criteria=CompletionCriteria(success="Success", failure="Failure"),
+            input_schema={"type": "object"},
+            output_schema={"type": "object"},
             workflows=(workflow,),
             modules=(module,),
         )
@@ -155,6 +181,11 @@ class TestExportDefinitionUseCase:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
+            task_goal="Test agent",
+            completion_criteria=CompletionCriteria(success="Success", failure="Failure"),
+            input_schema={"type": "object"},
+            output_schema={"type": "object"},
             workflows=(workflow,),
             modules=(module,),
         )
@@ -183,6 +214,11 @@ class TestCompileDefinitionUseCase:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
+            task_goal="Test agent",
+            completion_criteria=CompletionCriteria(success="Success", failure="Failure"),
+            input_schema={"type": "object"},
+            output_schema={"type": "object"},
             workflows=(workflow,),
             modules=(module,),
         )
@@ -207,6 +243,11 @@ class TestCompileDefinitionUseCase:
             name="",  # Invalid
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
+            task_goal="Test",
+            completion_criteria=CompletionCriteria(success="Success", failure="Failure"),
+            input_schema={"type": "object"},
+            output_schema={"type": "object"},
             workflows=(workflow,),
             modules=(module,),
         )
@@ -230,6 +271,11 @@ class TestCompileDefinitionUseCase:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
+            task_goal="Test agent",
+            completion_criteria=CompletionCriteria(success="Success", failure="Failure"),
+            input_schema={"type": "object"},
+            output_schema={"type": "object"},
             workflows=(workflow,),
             modules=(module,),
         )
@@ -255,6 +301,11 @@ class TestCompileDefinitionUseCase:
             name="",  # Invalid
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
+            task_goal="Test",
+            completion_criteria=CompletionCriteria(success="Success", failure="Failure"),
+            input_schema={"type": "object"},
+            output_schema={"type": "object"},
             workflows=(workflow,),
             modules=(module,),
         )
@@ -280,6 +331,11 @@ class TestCompileDefinitionUseCase:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
+            task_goal="Test agent",
+            completion_criteria=CompletionCriteria(success="Success", failure="Failure"),
+            input_schema={"type": "object"},
+            output_schema={"type": "object"},
             workflows=(workflow,),
             modules=(module,),
         )
@@ -305,6 +361,11 @@ class TestCompileDefinitionUseCase:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
+            task_goal="Test agent",
+            completion_criteria=CompletionCriteria(success="Success", failure="Failure"),
+            input_schema={"type": "object"},
+            output_schema={"type": "object"},
             workflows=(workflow,),
             modules=(module1, module2),
         )

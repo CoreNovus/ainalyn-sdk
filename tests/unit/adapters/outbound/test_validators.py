@@ -143,7 +143,7 @@ class TestSchemaValidatorAgentLevel:
             name="test",
             version="1.0.0",
             description="Test",
-            agent_type=AgentType.ATOMIC,
+            agent_type=AgentType.COMPOSITE,
             workflows=(),
         )
 

@@ -22,7 +22,7 @@ Install with: pip install ainalyn-sdk[runtime]
 from __future__ import annotations
 
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 
 def get_iso_timestamp() -> str:
     """Get current timestamp in ISO 8601 format."""
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def report_start(context: ExecutionContext) -> None:

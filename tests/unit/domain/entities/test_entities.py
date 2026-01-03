@@ -243,6 +243,7 @@ class TestAgentDefinition:
             name="my-agent",
             version="1.0.0",
             description="My agent",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -276,6 +277,7 @@ class TestAgentDefinition:
             name="my-agent",
             version="1.0.0",
             description="My agent",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
             prompts=(prompt,),
@@ -297,6 +299,7 @@ class TestAgentDefinition:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -314,6 +317,7 @@ class TestAgentDefinition:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )

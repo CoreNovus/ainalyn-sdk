@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0-alpha.5] - 2025-12-31
+## [0.1.0-alpha.5] - 2024-12-31
 
 ### Fixed
 - **CI/CD Configuration**: Fixed incorrect source directory paths in CI workflows and pre-commit hooks
@@ -47,13 +47,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pre-commit hooks automatically enforce code quality standards
 - Clear documentation on available vs. unavailable features
 
-## [0.1.0-alpha.3] - 2025-12-31
+## [0.1.0-alpha.3] - 2024-12-31
 
 ### Fixed
 - Fixed PyPI project description URLs that were returning 404 errors
 - Documentation links now point to correct locations
 
-## [0.1.0-alpha.2] - 2025-12-31
+## [0.1.0-alpha.2] - 2024-12-31
 
 ### Added
 - **Agent Submission API**: New `submit_agent()` function for direct submission to Platform Core

@@ -2,7 +2,14 @@
 
 from __future__ import annotations
 
-from ainalyn.domain.entities import AgentDefinition, AgentType, Module, Node, NodeType, Workflow
+from ainalyn.domain.entities import (
+    AgentDefinition,
+    AgentType,
+    Module,
+    Node,
+    NodeType,
+    Workflow,
+)
 from ainalyn.domain.rules import DefinitionRules
 
 
@@ -148,7 +155,7 @@ class TestResourceReferences:
             name="test",
             version="1.0.0",
             description="Test",
-            agent_type=AgentType.ATOMIC,
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -168,7 +175,7 @@ class TestResourceReferences:
             name="test",
             version="1.0.0",
             description="Test",
-            agent_type=AgentType.ATOMIC,
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -261,7 +268,7 @@ class TestUnusedResources:
             name="test",
             version="1.0.0",
             description="Test",
-            agent_type=AgentType.ATOMIC,
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module1, module2),
         )
@@ -281,7 +288,7 @@ class TestUnusedResources:
             name="test",
             version="1.0.0",
             description="Test",
-            agent_type=AgentType.ATOMIC,
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )

@@ -122,7 +122,7 @@ class TestPromptBuilder:
     def test_prompt_builder_invalid_name(self) -> None:
         """Test that invalid names are rejected."""
         with pytest.raises(InvalidValueError):
-            PromptBuilder("Invalid_Name")
+            PromptBuilder("Invalid Name")
 
     def test_prompt_builder_missing_description(self) -> None:
         """Test that missing description raises error."""

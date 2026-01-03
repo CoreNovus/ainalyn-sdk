@@ -13,6 +13,7 @@ import yaml
 from ainalyn.domain.entities import (
     AgentDefinition,
     AgentType,
+    CompletionCriteria,
     Module,
     Node,
     NodeType,
@@ -43,6 +44,13 @@ class TestEndToEndCompilation:
             version="1.0.0",
             description="Simple API fetching agent",
             agent_type=AgentType.COMPOSITE,
+            task_goal="Test agent for validation",
+            completion_criteria=CompletionCriteria(
+                success="Task completed successfully",
+                failure="Task failed or timed out"
+            ),
+            input_schema={"type": "object", "properties": {"input": {"type": "string"}}},
+            output_schema={"type": "object", "properties": {"output": {"type": "string"}}},
             workflows=(workflow,),
             modules=(module,),
         )
@@ -107,6 +115,13 @@ class TestEndToEndCompilation:
             version="2.0.0",
             description="Complete data processing pipeline",
             agent_type=AgentType.COMPOSITE,
+            task_goal="Test agent for validation",
+            completion_criteria=CompletionCriteria(
+                success="Task completed successfully",
+                failure="Task failed or timed out"
+            ),
+            input_schema={"type": "object", "properties": {"input": {"type": "string"}}},
+            output_schema={"type": "object", "properties": {"output": {"type": "string"}}},
             workflows=(workflow,),
             modules=(module,),
             prompts=(prompt,),
@@ -137,6 +152,13 @@ class TestEndToEndCompilation:
             version="1.0.0",
             description="支持 Unicode 的代理",
             agent_type=AgentType.COMPOSITE,
+            task_goal="Test agent for validation",
+            completion_criteria=CompletionCriteria(
+                success="Task completed successfully",
+                failure="Task failed or timed out"
+            ),
+            input_schema={"type": "object", "properties": {"input": {"type": "string"}}},
+            output_schema={"type": "object", "properties": {"output": {"type": "string"}}},
             workflows=(workflow,),
             modules=(module,),
         )
@@ -160,6 +182,13 @@ class TestEndToEndCompilation:
             version="1.0.0",
             description="Test",
             agent_type=AgentType.COMPOSITE,
+            task_goal="Test agent for validation",
+            completion_criteria=CompletionCriteria(
+                success="Task completed successfully",
+                failure="Task failed or timed out"
+            ),
+            input_schema={"type": "object", "properties": {"input": {"type": "string"}}},
+            output_schema={"type": "object", "properties": {"output": {"type": "string"}}},
             workflows=(workflow,),
             modules=(module,),
         )
@@ -186,6 +215,13 @@ class TestEndToEndCompilation:
             version="1.0.0",
             description="Test",
             agent_type=AgentType.COMPOSITE,
+            task_goal="Test agent for validation",
+            completion_criteria=CompletionCriteria(
+                success="Task completed successfully",
+                failure="Task failed or timed out"
+            ),
+            input_schema={"type": "object", "properties": {"input": {"type": "string"}}},
+            output_schema={"type": "object", "properties": {"output": {"type": "string"}}},
             workflows=(workflow,),
             modules=(module1, module2),
         )
@@ -213,6 +249,13 @@ class TestEndToEndFileExport:
             version="1.0.0",
             description="Test agent",
             agent_type=AgentType.COMPOSITE,
+            task_goal="Test agent for validation",
+            completion_criteria=CompletionCriteria(
+                success="Task completed successfully",
+                failure="Task failed or timed out"
+            ),
+            input_schema={"type": "object", "properties": {"input": {"type": "string"}}},
+            output_schema={"type": "object", "properties": {"output": {"type": "string"}}},
             workflows=(workflow,),
             modules=(module,),
         )
@@ -242,6 +285,13 @@ class TestEndToEndFileExport:
             version="1.0.0",
             description="Test",
             agent_type=AgentType.COMPOSITE,
+            task_goal="Test agent for validation",
+            completion_criteria=CompletionCriteria(
+                success="Task completed successfully",
+                failure="Task failed or timed out"
+            ),
+            input_schema={"type": "object", "properties": {"input": {"type": "string"}}},
+            output_schema={"type": "object", "properties": {"output": {"type": "string"}}},
             workflows=(workflow,),
             modules=(module,),
         )
@@ -266,6 +316,13 @@ class TestEndToEndFileExport:
             version="1.0.0",
             description="Test",
             agent_type=AgentType.COMPOSITE,
+            task_goal="Test agent for validation",
+            completion_criteria=CompletionCriteria(
+                success="Task completed successfully",
+                failure="Task failed or timed out"
+            ),
+            input_schema={"type": "object", "properties": {"input": {"type": "string"}}},
+            output_schema={"type": "object", "properties": {"output": {"type": "string"}}},
             workflows=(workflow,),
             modules=(module,),
         )
@@ -293,6 +350,13 @@ class TestDefinitionServiceAPI:
             version="1.0.0",
             description="Test",
             agent_type=AgentType.COMPOSITE,
+            task_goal="Test agent for validation",
+            completion_criteria=CompletionCriteria(
+                success="Task completed successfully",
+                failure="Task failed or timed out"
+            ),
+            input_schema={"type": "object", "properties": {"input": {"type": "string"}}},
+            output_schema={"type": "object", "properties": {"output": {"type": "string"}}},
             workflows=(workflow,),
             modules=(module,),
         )
@@ -312,6 +376,13 @@ class TestDefinitionServiceAPI:
             version="1.0.0",
             description="Test",
             agent_type=AgentType.COMPOSITE,
+            task_goal="Test agent for validation",
+            completion_criteria=CompletionCriteria(
+                success="Task completed successfully",
+                failure="Task failed or timed out"
+            ),
+            input_schema={"type": "object", "properties": {"input": {"type": "string"}}},
+            output_schema={"type": "object", "properties": {"output": {"type": "string"}}},
             workflows=(workflow,),
             modules=(module,),
         )
@@ -332,6 +403,13 @@ class TestDefinitionServiceAPI:
             version="1.0.0",
             description="Test",
             agent_type=AgentType.COMPOSITE,
+            task_goal="Test agent for validation",
+            completion_criteria=CompletionCriteria(
+                success="Task completed successfully",
+                failure="Task failed or timed out"
+            ),
+            input_schema={"type": "object", "properties": {"input": {"type": "string"}}},
+            output_schema={"type": "object", "properties": {"output": {"type": "string"}}},
             workflows=(workflow,),
             modules=(module,),
         )
@@ -356,6 +434,13 @@ class TestDefinitionServiceAPI:
             version="1.0.0",
             description="Test",
             agent_type=AgentType.COMPOSITE,
+            task_goal="Test agent for validation",
+            completion_criteria=CompletionCriteria(
+                success="Task completed successfully",
+                failure="Task failed or timed out"
+            ),
+            input_schema={"type": "object", "properties": {"input": {"type": "string"}}},
+            output_schema={"type": "object", "properties": {"output": {"type": "string"}}},
             workflows=(workflow,),
             modules=(module,),
         )
@@ -377,6 +462,13 @@ class TestDefinitionServiceAPI:
             version="1.0.0",
             description="Test",
             agent_type=AgentType.COMPOSITE,
+            task_goal="Test agent for validation",
+            completion_criteria=CompletionCriteria(
+                success="Task completed successfully",
+                failure="Task failed or timed out"
+            ),
+            input_schema={"type": "object", "properties": {"input": {"type": "string"}}},
+            output_schema={"type": "object", "properties": {"output": {"type": "string"}}},
             workflows=(workflow,),
             modules=(module,),
         )

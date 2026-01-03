@@ -12,13 +12,16 @@ Ainalyn SDK helps you define, validate, and export task-oriented agents using a 
 
 ## Why Ainalyn SDK?
 
-- **Type-safe Builder API** - Define agents with IDE autocomplete and compile-time checks
-- **Comprehensive Validation** - Schema checks, review gates, and static analysis
-- **YAML Export** - One-line compilation to platform-ready format
-- **Runtime Wrapper (Optional)** - Helper decorator for ATOMIC handlers
-- **Clean Architecture** - Well-tested, maintainable codebase
+**Dual-Purpose Toolkit for Task-Oriented Agents:**
 
-## Quick Start
+- **Compiler** - Define agents with type-safe Builder API, validate, and export to YAML
+- **Runtime** - Deploy ATOMIC agents as Lambda functions with `@agent.atomic` decorator
+- **Two Development Paths:**
+  - **COMPOSITE Agents** - Build workflows visually using Builder API (graph-first)
+  - **ATOMIC Agents** - Write Python functions with custom logic (code-first)
+- **Production-Ready** - Comprehensive validation, clean architecture, 160+ tests
+
+## Quick Start (5 Minutes)
 
 ### Installation
 
@@ -26,131 +29,88 @@ Ainalyn SDK helps you define, validate, and export task-oriented agents using a 
 pip install ainalyn-sdk
 ```
 
-### Your First Agent
+### Path 1: COMPOSITE Agent (Graph-First)
+
+Build agents using workflows and nodes:
 
 ```python
-from ainalyn import AgentBuilder, WorkflowBuilder, NodeBuilder, PromptBuilder
-from ainalyn.api import validate, export_yaml
+from ainalyn import AgentBuilder, WorkflowBuilder, NodeBuilder, ModuleBuilder, compile_agent
 
-# Define a prompt
-greeting_prompt = (
-    PromptBuilder("greeting-prompt")
-    .description("Generates a personalized greeting")
-    .template("Generate a personalized greeting for {{user_name}}")
-    .variables("user_name")
+# Define a module (reusable capability)
+greeting_module = (
+    ModuleBuilder("greeting-module")
+    .description("Generates personalized greetings")
     .build()
 )
 
-# Define a simple agent
+# Build agent with workflow
 agent = (
     AgentBuilder("greeting-agent")
-    .description("Generates personalized greetings")
     .version("1.0.0")
-    .add_prompt(greeting_prompt)
+    .description("A simple greeting agent")
+    .add_module(greeting_module)
     .add_workflow(
-        WorkflowBuilder("greet-user")
+        WorkflowBuilder("main")
         .description("Main greeting workflow")
         .add_node(
-            NodeBuilder("generate-greeting")
-            .description("Generate a personalized greeting message")
-            .uses_prompt("greeting-prompt")
-            .outputs("greeting")
+            NodeBuilder("greet")
+            .description("Generate greeting")
+            .uses_module("greeting-module")
             .build()
         )
-        .entry_node("generate-greeting")
+        .entry_node("greet")
         .build()
     )
     .build()
 )
 
-# Validate and export
-result = validate(agent)
+# Compile to YAML
+result = compile_agent(agent, output_path="greeting-agent.yaml")
 if result.is_valid:
-    yaml_output = export_yaml(agent)
-    print(yaml_output)
+    print(f"✓ Agent compiled: {result.file_path}")
+else:
+    print(f"✗ Validation errors: {result.errors}")
 ```
 
-**Output:**
-```yaml
-# Ainalyn Agent Definition
-# This file is a description submitted to Platform Core for review.
-# It does NOT execute by itself. Execution is handled by Platform Core.
-#
-# Local compilation does NOT equal platform execution.
+### Path 2: ATOMIC Agent (Code-First)
 
-name: greeting-agent
-version: 1.0.0
-description: Generates personalized greetings
-workflows:
-- name: greet-user
-  description: Main greeting workflow
-  entry_node: generate-greeting
-  nodes:
-  - name: generate-greeting
-    description: Generate a personalized greeting message
-    type: prompt
-    reference: greeting-prompt
-    outputs:
-    - greeting
-prompts:
-- name: greeting-prompt
-  description: Generates a personalized greeting
-  template: Generate a personalized greeting for {{user_name}}
-  variables:
-  - user_name
-```
-
-### Optional Runtime Wrapper (ATOMIC)
-
-Use the runtime wrapper only when wiring an ATOMIC handler for Platform Core.
+Write Python functions with custom logic:
 
 ```python
 from ainalyn.runtime import agent
 
-@agent.atomic(name="greeting-agent", version="1.0.0")
+@agent.atomic(name="pdf-parser", version="1.0.0")
 def handler(input_data: dict) -> dict:
-    return {"message": f"Hello {input_data.get('user_name', 'there')}"}
+    """Extract text from PDF files."""
+    file_url = input_data["file_url"]
+
+    # Your custom logic here
+    text = extract_pdf_text(file_url)
+
+    return {"text": text, "page_count": 10}
 ```
 
-### Submitting Agents to Platform
-
-After compiling your agent, submit it directly to the Ainalyn Platform for review:
+Then create the agent definition for platform submission:
 
 ```python
-from ainalyn import AgentBuilder, submit_agent, track_submission
+from ainalyn import AgentBuilder, compile_agent
 
-# Build your agent
 agent = (
-    AgentBuilder("my-agent")
+    AgentBuilder("pdf-parser")
     .version("1.0.0")
-    .description("My awesome agent")
-    # ... add workflows, prompts, tools ...
+    .description("Extracts text from PDF files")
     .build()
 )
 
-# Submit for review
-result = submit_agent(agent, api_key="your_api_key")
-print(f"Review ID: {result.review_id}")
-print(f"Track at: {result.tracking_url}")
-
-# Check submission status
-status = track_submission(result.review_id, api_key="your_api_key")
-if status.is_live:
-    print(f"Agent is live: {status.marketplace_url}")
+compile_agent(agent, output_path="pdf-parser.yaml")
 ```
 
-**Important:**
-- SDK can submit but **NOT approve** - Platform Core has final authority
-- Submission does **NOT** create an Execution
-- Submission does **NOT** incur billing (unless platform policy states)
-- Get your API key at: `https://console.ainalyn.io/api-keys`
-
-See [example/submit_agent_example.py](https://github.com/CoreNovus/ainalyn-sdk/blob/master/examples/submit_agent_example.py) for a complete walkthrough.
+**Deploy:** Package handler as Lambda function → [See Runtime Deployment Guide](http://docs.ainalyn.corenovus.com/v1/guides/runtime-deployment/)
 
 ### CLI Usage
 
 ```bash
-# Validate an agent definition
+# Validate agent definition
 ainalyn validate my_agent.py
 
 # Compile to YAML
@@ -172,10 +132,10 @@ ainalyn compile my_agent.py --output agent.yaml
 
 Check out the `examples/` directory:
 
-- [basic_agent.py](https://github.com/CoreNovus/ainalyn-sdk/blob/master/examples/basic_agent.py) - Simple greeting agent
-- [multi_workflow_agent.py](https://github.com/CoreNovus/ainalyn-sdk/blob/master/examples/multi_workflow_agent.py) - Complex data analysis agent
-- [submit_agent_example.py](https://github.com/CoreNovus/ainalyn-sdk/blob/master/examples/submit_agent_example.py) - Agent submission workflow
-- [price_monitor_agent.py](https://github.com/CoreNovus/ainalyn-sdk/blob/master/examples/price_monitor_agent.py) - Complete price monitoring agent
+- [basic_agent.py](examples/basic_agent.py) - Simple greeting agent
+- [multi_workflow_agent.py](examples/multi_workflow_agent.py) - Complex data analysis agent
+- [price_monitor_agent.py](examples/price_monitor_agent.py) - Price monitoring agent
+- [meeting_transcriber_agent.py](examples/meeting_transcriber_agent.py) - Meeting transcription agent
 
 ## Contributing
 

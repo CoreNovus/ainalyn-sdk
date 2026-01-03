@@ -136,7 +136,9 @@ def _require_str(d: dict[str, Any], key: str, section: str) -> str:
     """Extract a required string field from a dictionary."""
     value = d.get(key)
     if value is None:
-        raise ContextParseError(f"{section}.{key}", "Required field is missing")
+        msg = f"{section}.{key}"
+        raise ContextParseError(msg, "Required field is missing")
     if not isinstance(value, str):
-        raise ContextParseError(f"{section}.{key}", "Field must be a string")
+        msg = f"{section}.{key}"
+        raise ContextParseError(msg, "Field must be a string")
     return value

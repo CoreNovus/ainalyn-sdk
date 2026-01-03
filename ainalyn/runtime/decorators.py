@@ -27,9 +27,12 @@ Usage:
 
 from __future__ import annotations
 
+import contextlib
+from collections.abc import Callable
 from functools import wraps
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
 
+from ainalyn.domain.entities.execution_context import ExecutionMode
 from ainalyn.runtime.context import ContextParseError, parse_event
 from ainalyn.runtime.errors import error_to_dict, translate_exception
 from ainalyn.runtime.state_reporter import (
@@ -38,7 +41,6 @@ from ainalyn.runtime.state_reporter import (
     report_start,
     report_success,
 )
-from ainalyn.domain.entities.execution_context import ExecutionMode
 
 # Type variables for handler signatures
 T = TypeVar("T")
@@ -125,17 +127,17 @@ class Agent:
 
                 # 3. Execute user handler
                 try:
-                    output = func(exec_context.input_data)
+                    raw_output = func(exec_context.input_data)
 
-                    # Validate output is a dict
-                    if not isinstance(output, dict):
-                        output = {"result": output}
+                    # Validate output is a dict (runtime safety check)
+                    if not isinstance(raw_output, dict):
+                        output = {"result": raw_output}
+                    else:
+                        output = raw_output
 
                     # 4. Report SUCCESS (ASYNC mode)
-                    try:
+                    with contextlib.suppress(Exception):
                         report_success(exec_context, output)
-                    except Exception:
-                        pass
 
                     # 5. Return Lambda response
                     if exec_context.meta.mode == ExecutionMode.ASYNC:
@@ -152,10 +154,8 @@ class Agent:
                     error = translate_exception(e)
 
                     # 5. Report FAILURE (ASYNC mode)
-                    try:
+                    with contextlib.suppress(Exception):
                         report_failure(exec_context, error)
-                    except Exception:
-                        pass
 
                     # 6. Return Lambda response
                     if exec_context.meta.mode == ExecutionMode.ASYNC:

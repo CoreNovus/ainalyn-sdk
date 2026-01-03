@@ -222,10 +222,6 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 "ainalyn/adapters/secondary/exporters.py" = [
     "S101",    # assert (used for type narrowing)
 ]
-# YAML serializer uses assert for type narrowing
-"ainalyn/adapters/outbound/yaml_serializer.py" = [
-    "S101",    # assert (used for type narrowing after yaml.dump)
-]
 # API module can use global state and have unused args for interface consistency
 "ainalyn/api.py" = [
     "PLW0603", # global statement (intentional singleton pattern)
@@ -238,7 +234,38 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 # Files that import ReferenceError from domain
 "ainalyn/domain/__init__.py" = ["A004"]
 "ainalyn/adapters/inbound/errors.py" = ["A004", "E402"]
-"ainalyn/adapters/inbound/builders/agent_builder.py" = ["A004"]
+# Runtime module has intentional error handling patterns for Lambda
+"ainalyn/runtime/decorators.py" = [
+    "ARG001",  # unused context arg (Lambda signature requirement)
+    "SIM105",  # contextlib.suppress (explicit try-except-pass is clearer)
+    "S110",    # try-except-pass (state reporting failures shouldn't stop execution)
+    "BLE001",  # blind Exception (catch-all for Lambda stability)
+    "SLF001",  # private member (intentional metadata storage)
+]
+"ainalyn/runtime/context.py" = [
+    "B904",    # raise from (context errors are user-facing, not chained)
+    "EM102",   # f-string in exception (needed for dynamic field names)
+]
+"ainalyn/runtime/errors.py" = [
+    "FBT001",  # boolean positional arg (retryable flag is common pattern)
+    "FBT002",  # boolean default arg (retryable flag is common pattern)
+    "A001",    # shadowing TimeoutError (intentional domain-specific error)
+]
+# Agent builder has intentional boolean args for behavior config
+"ainalyn/adapters/inbound/builders/agent_builder.py" = [
+    "A004",    # import shadowing
+    "FBT001",  # boolean positional arg (behavior config is declarative)
+    "FBT002",  # boolean default arg (behavior config is declarative)
+]
+# YAML serializer has complex branching logic
+"ainalyn/adapters/outbound/yaml_serializer.py" = [
+    "S101",    # assert (used for type narrowing after yaml.dump)
+    "PLR0912", # too many branches (serialization logic is inherently branching)
+]
+# Validation use case has performance-optimized list operations
+"ainalyn/application/use_cases/validate_definition.py" = [
+    "PERF401", # list.extend (current pattern is clearer)
+]
 # Mock client has intentional boolean args and unused args
 "ainalyn/adapters/outbound/mock_platform_client.py" = [
     "FBT001",  # boolean positional arg (simple API)
@@ -327,6 +354,13 @@ module = [
 ]
 disallow_untyped_defs = false
 disallow_untyped_calls = false
+
+[[tool.mypy.overrides]]
+module = [
+    "ainalyn.runtime.decorators",
+]
+# Runtime decorator has defensive runtime checks that mypy sees as unreachable
+warn_unreachable = false
 
 # ============================================================================
 # Pytest - Testing Framework

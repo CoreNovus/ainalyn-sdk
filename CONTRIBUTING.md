@@ -152,18 +152,24 @@ For detailed architecture documentation, see:
 
 ```
 ainalyn/
-├── domain/          # Business logic and entities
-│   ├── entities/    # Core domain models (immutable dataclasses)
-│   └── rules/       # Domain rules and validation logic
-├── ports/           # Interface definitions
-│   ├── inbound/     # Primary ports (use case interfaces)
-│   └── outbound/    # Secondary ports (infrastructure interfaces)
-├── adapters/        # Implementations of ports
-│   ├── primary/     # Primary adapters (Builder API)
-│   └── secondary/   # Secondary adapters (Validators, Exporters)
-└── application/     # Application services and use cases
-    ├── services/    # High-level application services
-    └── use_cases/   # Application use cases
+├── domain/              # Business logic and entities
+│   ├── entities/        # Core domain models (immutable dataclasses)
+│   ├── rules/           # Domain rules and validation logic
+│   └── errors.py        # Domain-level exceptions
+├── application/         # Application layer
+│   ├── ports/           # Interface definitions
+│   │   ├── inbound/     # Primary ports (use case interfaces)
+│   │   └── outbound/    # Secondary ports (infrastructure interfaces)
+│   ├── use_cases/       # Application use cases
+│   └── services.py      # High-level application services
+├── adapters/            # Implementations of ports
+│   ├── inbound/         # Primary adapters (Builder API)
+│   │   └── builders/
+│   └── outbound/        # Secondary adapters (Validators, Exporters)
+├── infrastructure/      # Infrastructure setup
+│   └── service_factory.py
+└── runtime/             # Optional runtime wrapper
+    └── decorators.py
 ```
 
 ### Design Principles
