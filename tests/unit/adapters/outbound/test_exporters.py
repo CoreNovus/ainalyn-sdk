@@ -10,6 +10,7 @@ import yaml
 from ainalyn.adapters.outbound.yaml_serializer import YamlExporter
 from ainalyn.domain.entities import (
     AgentDefinition,
+    AgentType,
     Module,
     Node,
     NodeType,
@@ -31,6 +32,7 @@ class TestYamlExporterExport:
             name="test-agent",
             version="1.0.0",
             description="Test agent",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -53,6 +55,7 @@ class TestYamlExporterExport:
             name="test-agent",
             version="1.0.0",
             description="Test agent",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -77,6 +80,7 @@ class TestYamlExporterExport:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -108,6 +112,7 @@ class TestYamlExporterExport:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -139,6 +144,7 @@ class TestYamlExporterExport:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -164,6 +170,7 @@ class TestYamlExporterExport:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
             prompts=(prompt,),
@@ -195,6 +202,7 @@ class TestYamlExporterExport:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
             tools=(tool,),
@@ -219,6 +227,7 @@ class TestYamlExporterExport:
             name="test-agent",
             version="1.0.0",
             description="這是一個測試代理",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -242,6 +251,7 @@ class TestYamlExporterExport:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow1, workflow2),
             modules=(module,),
         )
@@ -322,6 +332,7 @@ class TestYamlExporterIntegration:
             name="test-agent",
             version="1.0.0",
             description="Test agent",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -352,6 +363,7 @@ class TestYamlExporterIntegration:
             name="complex-agent",
             version="1.0.0",
             description="Complex test agent",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
             prompts=(prompt,),

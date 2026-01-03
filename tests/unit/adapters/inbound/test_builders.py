@@ -20,6 +20,7 @@ from ainalyn.adapters.inbound.errors import (
     MissingRequiredFieldError,
 )
 from ainalyn.domain.entities import (
+    AgentType,
     Module,
     Node,
     NodeType,
@@ -371,6 +372,7 @@ class TestAgentBuilder:
             AgentBuilder("my-agent")
             .version("1.0.0")
             .description("My agent")
+            .agent_type(AgentType.COMPOSITE)
             .add_module(module)
             .add_workflow(workflow)
             .build()
@@ -379,6 +381,7 @@ class TestAgentBuilder:
         assert agent.name == "my-agent"
         assert agent.version == "1.0.0"
         assert agent.description == "My agent"
+        assert agent.agent_type == AgentType.COMPOSITE
         assert len(agent.workflows) == 1
         assert len(agent.modules) == 1
 
@@ -416,6 +419,7 @@ class TestAgentBuilder:
             AgentBuilder("my-agent")
             .version("1.0.0")
             .description("My agent")
+            .agent_type(AgentType.COMPOSITE)
             .add_module(module)
             .add_prompt(prompt)
             .add_tool(tool)
@@ -447,6 +451,7 @@ class TestAgentBuilder:
         builder = (
             AgentBuilder("test")
             .description("Test")
+            .agent_type(AgentType.COMPOSITE)
             .add_module(module)
             .add_workflow(workflow)
         )
@@ -456,14 +461,54 @@ class TestAgentBuilder:
 
         assert exc_info.value.field_name == "version"
 
-    def test_agent_builder_empty_workflows(self) -> None:
-        """Test that agent with no workflows raises error."""
-        builder = AgentBuilder("test").version("1.0.0").description("Test")
+    def test_agent_builder_missing_agent_type(self) -> None:
+        """Test that missing agent_type raises error (v0.2 requirement)."""
+        module = ModuleBuilder("m").description("M").build()
+        node = NodeBuilder("n").description("N").uses_module("m").build()
+        workflow = (
+            WorkflowBuilder("w").description("W").add_node(node).entry_node("n").build()
+        )
+
+        builder = (
+            AgentBuilder("test")
+            .version("1.0.0")
+            .description("Test")
+            .add_module(module)
+            .add_workflow(workflow)
+        )
+
+        with pytest.raises(MissingRequiredFieldError) as exc_info:
+            builder.build()
+
+        assert exc_info.value.field_name == "agent_type"
+
+    def test_agent_builder_empty_workflows_for_composite(self) -> None:
+        """Test that COMPOSITE agent with no workflows raises error."""
+        builder = (
+            AgentBuilder("test")
+            .version("1.0.0")
+            .description("Test")
+            .agent_type(AgentType.COMPOSITE)
+        )
 
         with pytest.raises(EmptyCollectionError) as exc_info:
             builder.build()
 
         assert exc_info.value.collection_name == "workflows"
+
+    def test_agent_builder_atomic_without_workflows(self) -> None:
+        """Test that ATOMIC agent can be built without workflows."""
+        agent = (
+            AgentBuilder("my-atomic-agent")
+            .version("1.0.0")
+            .description("An atomic agent")
+            .agent_type(AgentType.ATOMIC)
+            .build()
+        )
+
+        assert agent.name == "my-atomic-agent"
+        assert agent.agent_type == AgentType.ATOMIC
+        assert len(agent.workflows) == 0
 
     def test_agent_builder_undefined_module_reference(self) -> None:
         """Test that undefined module reference raises error."""
@@ -476,6 +521,7 @@ class TestAgentBuilder:
             AgentBuilder("test")
             .version("1.0.0")
             .description("Test")
+            .agent_type(AgentType.COMPOSITE)
             .add_workflow(workflow)
         )
 
@@ -496,6 +542,7 @@ class TestAgentBuilder:
             AgentBuilder("test")
             .version("1.0.0")
             .description("Test")
+            .agent_type(AgentType.COMPOSITE)
             .add_workflow(workflow)
         )
 
@@ -527,6 +574,7 @@ class TestAgentBuilder:
             AgentBuilder("test")
             .version("1.0.0")
             .description("Test")
+            .agent_type(AgentType.COMPOSITE)
             .add_module(module)
             .add_workflow(workflow1)
         )

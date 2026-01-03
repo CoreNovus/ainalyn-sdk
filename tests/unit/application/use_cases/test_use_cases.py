@@ -13,6 +13,7 @@ from ainalyn.application.use_cases.export_definition import ExportDefinitionUseC
 from ainalyn.application.use_cases.validate_definition import ValidateDefinitionUseCase
 from ainalyn.domain.entities import (
     AgentDefinition,
+    AgentType,
     Module,
     Node,
     NodeType,

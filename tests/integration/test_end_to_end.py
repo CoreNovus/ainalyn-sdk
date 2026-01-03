@@ -1,4 +1,7 @@
-"""End-to-end integration tests for the compilation workflow."""
+"""End-to-end integration tests for the compilation workflow.
+
+Updated for v0.2 AWS MVP Edition - AgentType is now required.
+"""
 
 from __future__ import annotations
 
@@ -9,6 +12,7 @@ import yaml
 
 from ainalyn.domain.entities import (
     AgentDefinition,
+    AgentType,
     Module,
     Node,
     NodeType,
@@ -38,6 +42,7 @@ class TestEndToEndCompilation:
             name="api-fetcher",
             version="1.0.0",
             description="Simple API fetching agent",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -101,6 +106,7 @@ class TestEndToEndCompilation:
             name="data-pipeline",
             version="2.0.0",
             description="Complete data processing pipeline",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
             prompts=(prompt,),
@@ -130,6 +136,7 @@ class TestEndToEndCompilation:
             name="unicode-agent",
             version="1.0.0",
             description="支持 Unicode 的代理",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -152,6 +159,7 @@ class TestEndToEndCompilation:
             name="Invalid Name",  # Invalid: contains spaces
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -177,6 +185,7 @@ class TestEndToEndCompilation:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module1, module2),
         )
@@ -203,6 +212,7 @@ class TestEndToEndFileExport:
             name="test-agent",
             version="1.0.0",
             description="Test agent",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -231,6 +241,7 @@ class TestEndToEndFileExport:
             name="test-agent",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -254,6 +265,7 @@ class TestEndToEndFileExport:
             name="",  # Invalid
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -280,6 +292,7 @@ class TestDefinitionServiceAPI:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -298,6 +311,7 @@ class TestDefinitionServiceAPI:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -317,6 +331,7 @@ class TestDefinitionServiceAPI:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -340,6 +355,7 @@ class TestDefinitionServiceAPI:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -360,6 +376,7 @@ class TestDefinitionServiceAPI:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )

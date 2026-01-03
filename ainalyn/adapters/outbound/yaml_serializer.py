@@ -140,6 +140,9 @@ class YamlExporter:
         dictionary suitable for YAML serialization. Keys are ordered
         for readability.
 
+        v0.2 AWS MVP Edition: Now includes agent_type, display, behavior,
+        pricing_strategy, input_schema, output_schema, and required_permissions.
+
         Args:
             definition: The AgentDefinition to convert.
 
@@ -150,7 +153,12 @@ class YamlExporter:
             "name": definition.name,
             "version": definition.version,
             "description": definition.description,
+            "agent_type": definition.agent_type.value,
         }
+
+        # v0.2: Add display metadata
+        if definition.display:
+            result["display"] = self._display_to_dict(definition.display)
 
         # Add task_goal if present (Review Gate 1 requirement)
         if definition.task_goal:
@@ -161,6 +169,27 @@ class YamlExporter:
             result["completion_criteria"] = self._completion_criteria_to_dict(
                 definition.completion_criteria
             )
+
+        # v0.2: Add schemas
+        if definition.input_schema:
+            result["input_schema"] = definition.input_schema
+
+        if definition.output_schema:
+            result["output_schema"] = definition.output_schema
+
+        # v0.2: Add behavior
+        if definition.behavior:
+            result["behavior"] = self._behavior_to_dict(definition.behavior)
+
+        # v0.2: Add pricing strategy
+        if definition.pricing_strategy:
+            result["pricing_strategy"] = self._pricing_strategy_to_dict(
+                definition.pricing_strategy
+            )
+
+        # v0.2: Add required permissions
+        if definition.required_permissions:
+            result["required_permissions"] = list(definition.required_permissions)
 
         # Add EIP dependencies if present (Review Gate 5 requirement)
         if definition.eip_dependencies:
@@ -413,3 +442,125 @@ class YamlExporter:
             "success": criteria.success,
             "failure": criteria.failure,
         }
+
+    # ========== v0.2 Conversion Methods ==========
+
+    def _display_to_dict(self, display: object) -> dict[str, Any]:
+        """
+        Convert DisplayInfo to dictionary representation (v0.2).
+
+        Args:
+            display: The DisplayInfo to convert.
+
+        Returns:
+            dict[str, Any]: The dictionary representation.
+        """
+        from ainalyn.domain.entities import DisplayInfo
+
+        if not isinstance(display, DisplayInfo):
+            return {}
+
+        result: dict[str, Any] = {
+            "name": display.name,
+            "description": display.description,
+            "category": display.category,
+        }
+
+        if display.icon:
+            result["icon"] = display.icon
+
+        return result
+
+    def _behavior_to_dict(self, behavior: object) -> dict[str, Any]:
+        """
+        Convert BehaviorConfig to dictionary representation (v0.2).
+
+        Args:
+            behavior: The BehaviorConfig to convert.
+
+        Returns:
+            dict[str, Any]: The dictionary representation.
+        """
+        from ainalyn.domain.entities import BehaviorConfig
+
+        if not isinstance(behavior, BehaviorConfig):
+            return {}
+
+        return {
+            "is_long_running": behavior.is_long_running,
+            "timeout_seconds": behavior.timeout_seconds,
+            "idempotent": behavior.idempotent,
+            "stateless": behavior.stateless,
+        }
+
+    def _pricing_strategy_to_dict(self, pricing: object) -> dict[str, Any]:
+        """
+        Convert PricingStrategy to dictionary representation (v0.2).
+
+        IMPORTANT: This is a DESCRIPTION only. SDK does NOT calculate fees.
+
+        Args:
+            pricing: The PricingStrategy to convert.
+
+        Returns:
+            dict[str, Any]: The dictionary representation.
+        """
+        from ainalyn.domain.entities import PricingStrategy
+
+        if not isinstance(pricing, PricingStrategy):
+            return {}
+
+        result: dict[str, Any] = {
+            "type": pricing.type.value,
+            "currency": pricing.currency,
+        }
+
+        if pricing.fixed_price_cents is not None:
+            result["fixed_price_cents"] = pricing.fixed_price_cents
+
+        if pricing.usage_rate_per_unit is not None:
+            result["usage_rate_per_unit"] = pricing.usage_rate_per_unit
+
+        if pricing.usage_unit:
+            result["usage_unit"] = pricing.usage_unit
+
+        if pricing.components:
+            result["components"] = [
+                self._pricing_component_to_dict(c) for c in pricing.components
+            ]
+
+        return result
+
+    def _pricing_component_to_dict(self, component: object) -> dict[str, Any]:
+        """
+        Convert PricingComponent to dictionary representation (v0.2).
+
+        Args:
+            component: The PricingComponent to convert.
+
+        Returns:
+            dict[str, Any]: The dictionary representation.
+        """
+        from ainalyn.domain.entities import PricingComponent
+
+        if not isinstance(component, PricingComponent):
+            return {}
+
+        result: dict[str, Any] = {
+            "name": component.name,
+            "type": component.type.value,
+        }
+
+        if component.amount_cents is not None:
+            result["amount_cents"] = component.amount_cents
+
+        if component.rate_per_unit is not None:
+            result["rate_per_unit"] = component.rate_per_unit
+
+        if component.unit:
+            result["unit"] = component.unit
+
+        if component.included_units is not None:
+            result["included_units"] = component.included_units
+
+        return result

@@ -6,6 +6,7 @@ from ainalyn.adapters.outbound.schema_validator import SchemaValidator
 from ainalyn.application.ports.inbound.validate_agent_definition import Severity
 from ainalyn.domain.entities import (
     AgentDefinition,
+    AgentType,
     Module,
     Node,
     NodeType,
@@ -27,6 +28,7 @@ class TestSchemaValidatorAgentLevel:
             name="test-agent",
             version="1.0.0",
             description="Test agent",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -45,6 +47,7 @@ class TestSchemaValidatorAgentLevel:
             name="",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -65,6 +68,7 @@ class TestSchemaValidatorAgentLevel:
             name="Invalid Name",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -84,6 +88,7 @@ class TestSchemaValidatorAgentLevel:
             name="test",
             version="",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -102,6 +107,7 @@ class TestSchemaValidatorAgentLevel:
             name="test",
             version="invalid",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -121,6 +127,7 @@ class TestSchemaValidatorAgentLevel:
             name="test",
             version="1.0.0",
             description="",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -136,6 +143,7 @@ class TestSchemaValidatorAgentLevel:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.ATOMIC,
             workflows=(),
         )
 
@@ -157,6 +165,7 @@ class TestSchemaValidatorWorkflowLevel:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -175,6 +184,7 @@ class TestSchemaValidatorWorkflowLevel:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -193,6 +203,7 @@ class TestSchemaValidatorWorkflowLevel:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -209,6 +220,7 @@ class TestSchemaValidatorWorkflowLevel:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
         )
 
@@ -226,6 +238,7 @@ class TestSchemaValidatorWorkflowLevel:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -244,6 +257,7 @@ class TestSchemaValidatorWorkflowLevel:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -267,6 +281,7 @@ class TestSchemaValidatorNodeLevel:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -285,6 +300,7 @@ class TestSchemaValidatorNodeLevel:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -303,6 +319,7 @@ class TestSchemaValidatorNodeLevel:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -320,6 +337,7 @@ class TestSchemaValidatorNodeLevel:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
         )
 
@@ -337,6 +355,7 @@ class TestSchemaValidatorNodeLevel:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -359,6 +378,7 @@ class TestSchemaValidatorResourceLevel:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
         )
 
@@ -376,6 +396,7 @@ class TestSchemaValidatorResourceLevel:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
         )
 
@@ -393,6 +414,7 @@ class TestSchemaValidatorResourceLevel:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
         )
 
@@ -411,6 +433,7 @@ class TestSchemaValidatorResourceLevel:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -429,6 +452,7 @@ class TestSchemaValidatorResourceLevel:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -447,6 +471,7 @@ class TestSchemaValidatorResourceLevel:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -465,6 +490,7 @@ class TestSchemaValidatorResourceLevel:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             prompts=(prompt,),
         )
@@ -483,6 +509,7 @@ class TestSchemaValidatorResourceLevel:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             tools=(tool,),
         )
@@ -505,6 +532,7 @@ class TestSchemaValidatorMultipleErrors:
             name="",
             version="",
             description="",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
         )
 
@@ -526,6 +554,7 @@ class TestSchemaValidatorMultipleErrors:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )

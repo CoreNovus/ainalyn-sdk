@@ -6,6 +6,7 @@ from ainalyn.adapters.outbound.static_analyzer import StaticAnalyzer
 from ainalyn.application.ports.inbound.validate_agent_definition import Severity
 from ainalyn.domain.entities import (
     AgentDefinition,
+    AgentType,
     Module,
     Node,
     NodeType,
@@ -28,6 +29,7 @@ class TestStaticAnalyzerCircularDependencies:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -47,6 +49,7 @@ class TestStaticAnalyzerCircularDependencies:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -68,6 +71,7 @@ class TestStaticAnalyzerCircularDependencies:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -89,6 +93,7 @@ class TestStaticAnalyzerCircularDependencies:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -113,6 +118,7 @@ class TestStaticAnalyzerUnreachableNodes:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -133,6 +139,7 @@ class TestStaticAnalyzerUnreachableNodes:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -157,6 +164,7 @@ class TestStaticAnalyzerUnreachableNodes:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -181,6 +189,7 @@ class TestStaticAnalyzerUnreachableNodes:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -208,6 +217,7 @@ class TestStaticAnalyzerUnusedResources:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
             prompts=(prompt,),
@@ -231,6 +241,7 @@ class TestStaticAnalyzerUnusedResources:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module1, module2),
         )
@@ -255,6 +266,7 @@ class TestStaticAnalyzerUnusedResources:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
             prompts=(prompt1, prompt2),
@@ -279,6 +291,7 @@ class TestStaticAnalyzerUnusedResources:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
             tools=(tool1, tool2),
@@ -306,6 +319,7 @@ class TestStaticAnalyzerUnusedResources:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module1, module2),
             prompts=(prompt1, prompt2),
@@ -335,6 +349,7 @@ class TestStaticAnalyzerDeadEndNodes:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -354,6 +369,7 @@ class TestStaticAnalyzerDeadEndNodes:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -378,6 +394,7 @@ class TestStaticAnalyzerDeadEndNodes:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -399,6 +416,7 @@ class TestStaticAnalyzerDeadEndNodes:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -425,6 +443,7 @@ class TestStaticAnalyzerMultipleIssues:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module1, module2),
         )
@@ -455,6 +474,7 @@ class TestStaticAnalyzerMultipleIssues:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow1, workflow2),
             modules=(module,),
         )
@@ -480,6 +500,7 @@ class TestStaticAnalyzerMultipleIssues:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.COMPOSITE,
             workflows=(workflow,),
             modules=(module1, module2),
         )

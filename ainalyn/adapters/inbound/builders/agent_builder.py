@@ -1,6 +1,9 @@
 """
 AgentBuilder - Fluent builder for AgentDefinition entities (Aggregate Root).
 
+v0.2 AWS MVP Edition: Enhanced with AgentType, DisplayInfo, PricingStrategy,
+BehaviorConfig, and JSON Schema support.
+
 ⚠️ SDK BOUNDARY WARNING ⚠️
 This builder creates DESCRIPTIONS of agents/workflows/nodes, not executables.
 Building locally does NOT mean the platform will execute it.
@@ -9,13 +12,19 @@ All execution authority belongs to Platform Core.
 
 from __future__ import annotations
 
-from typing import Self
+from typing import Any, Self
 
 from ainalyn.domain.entities import (
     AgentDefinition,
+    AgentType,
+    BehaviorConfig,
     CompletionCriteria,
+    DisplayInfo,
     EIPDependency,
     Module,
+    PricingComponent,
+    PricingStrategy,
+    PricingType,
     Prompt,
     Tool,
     Workflow,
@@ -40,31 +49,39 @@ class AgentBuilder:
     This is the primary entry point for creating Agent Definitions using
     the builder API.
 
+    v0.2 AWS MVP Edition adds:
+    - agent_type(): Set ATOMIC or COMPOSITE type
+    - display(): Set marketplace display metadata
+    - pricing_fixed/pricing_usage_based(): Set pricing strategy
+    - behavior(): Set execution behavior configuration
+    - input_schema/output_schema(): Set JSON schemas
+    - add_permission(): Add required permissions
+
     ⚠️ SDK BOUNDARY WARNING ⚠️
     This builder creates DESCRIPTIONS of agents/workflows/nodes, not executables.
     Building locally does NOT mean the platform will execute it.
     All execution authority belongs to Platform Core.
 
-    Example:
+    Example - v0.2 ATOMIC Agent:
         >>> agent = (
-        ...     AgentBuilder("my-agent")
+        ...     AgentBuilder("pdf-parser")
         ...     .version("1.0.0")
-        ...     .description("My first agent")
-        ...     .add_module(
-        ...         ModuleBuilder("http-fetcher").description("Fetches HTTP data").build()
+        ...     .description("Extracts text from PDF documents")
+        ...     .agent_type(AgentType.ATOMIC)
+        ...     .display(
+        ...         name="PDF Parser",
+        ...         description="Extract text from PDF documents",
+        ...         category="document",
         ...     )
-        ...     .add_workflow(
-        ...         WorkflowBuilder("main")
-        ...         .description("Main workflow")
-        ...         .add_node(
-        ...             NodeBuilder("fetch")
-        ...             .description("Fetch data")
-        ...             .uses_module("http-fetcher")
-        ...             .build()
-        ...         )
-        ...         .entry_node("fetch")
-        ...         .build()
-        ...     )
+        ...     .task_goal("Extract all text content from a PDF file")
+        ...     .completion_criteria(CompletionCriteria(
+        ...         success="Text extracted with page numbers",
+        ...         failure="PDF corrupted or password protected",
+        ...     ))
+        ...     .input_schema({"type": "object", "properties": {"file_url": {"type": "string"}}})
+        ...     .output_schema({"type": "object", "properties": {"text": {"type": "string"}}})
+        ...     .behavior(is_long_running=False, timeout_seconds=60)
+        ...     .pricing_fixed(price_cents=5)
         ...     .build()
         ... )
     """
@@ -74,7 +91,7 @@ class AgentBuilder:
         Initialize an AgentBuilder with a name.
 
         Args:
-            name: The unique identifier for this Agent. Must match [a-z0-9-]+.
+            name: The unique identifier for this Agent (agentId). Must match [a-z0-9-]+.
 
         Raises:
             InvalidFormatError: If the name doesn't match the required pattern.
@@ -89,8 +106,17 @@ class AgentBuilder:
         self._name = name
         self._version: str | None = None
         self._description: str | None = None
+        # v0.2 fields
+        self._agent_type: AgentType | None = None
+        self._display: DisplayInfo | None = None
         self._task_goal: str | None = None
         self._completion_criteria: CompletionCriteria | None = None
+        self._input_schema: dict[str, Any] = {}
+        self._output_schema: dict[str, Any] = {}
+        self._behavior: BehaviorConfig | None = None
+        self._pricing_strategy: PricingStrategy | None = None
+        self._required_permissions: list[str] = []
+        # Existing fields
         self._eip_dependencies: list[EIPDependency] = []
         self._workflows: list[Workflow] = []
         self._modules: list[Module] = []
@@ -131,6 +157,219 @@ class AgentBuilder:
         """
         self._description = desc
         return self
+
+    # ========== v0.2 Methods ==========
+
+    def agent_type(self, type_: AgentType) -> Self:
+        """
+        Set the Agent type (v0.2).
+
+        Args:
+            type_: AgentType.ATOMIC or AgentType.COMPOSITE.
+                - ATOMIC: Code-first, executed by SDK Runtime
+                - COMPOSITE: Graph-first, executed by Platform Core Graph Executor
+
+        Returns:
+            Self: This builder for method chaining.
+        """
+        self._agent_type = type_
+        return self
+
+    def display(
+        self,
+        name: str,
+        description: str,
+        category: str,
+        icon: str | None = None,
+    ) -> Self:
+        """
+        Set marketplace display metadata (v0.2).
+
+        Args:
+            name: Human-readable display name for marketplace.
+            description: Full description for marketplace detail view.
+            category: Marketplace category for discovery.
+                Examples: "productivity", "finance", "developer-tools", "ai-ml".
+            icon: Optional icon identifier.
+
+        Returns:
+            Self: This builder for method chaining.
+        """
+        self._display = DisplayInfo(
+            name=name,
+            description=description,
+            category=category,
+            icon=icon,
+        )
+        return self
+
+    def input_schema(self, schema: dict[str, Any]) -> Self:
+        """
+        Set the input JSON Schema (v0.2).
+
+        The input schema defines the expected structure of input data.
+        Used for client-side validation and UI generation.
+
+        Args:
+            schema: JSON Schema object defining input structure.
+
+        Returns:
+            Self: This builder for method chaining.
+        """
+        self._input_schema = schema
+        return self
+
+    def output_schema(self, schema: dict[str, Any]) -> Self:
+        """
+        Set the output JSON Schema (v0.2).
+
+        The output schema defines the structure of execution results.
+        Used for result validation.
+
+        Args:
+            schema: JSON Schema object defining output structure.
+
+        Returns:
+            Self: This builder for method chaining.
+        """
+        self._output_schema = schema
+        return self
+
+    def behavior(
+        self,
+        is_long_running: bool = False,
+        timeout_seconds: int = 300,
+        idempotent: bool = True,
+        stateless: bool = True,
+    ) -> Self:
+        """
+        Set execution behavior configuration (v0.2).
+
+        Args:
+            is_long_running: If True, uses Heavy Route (Step Functions + SQS).
+                If False (default), uses Lite Route (direct Lambda invoke).
+            timeout_seconds: Maximum execution time in seconds (default: 300).
+            idempotent: If True (default), safe to retry on transient failures.
+            stateless: If True (default), no persistent state between invocations.
+
+        Returns:
+            Self: This builder for method chaining.
+        """
+        self._behavior = BehaviorConfig(
+            is_long_running=is_long_running,
+            timeout_seconds=timeout_seconds,
+            idempotent=idempotent,
+            stateless=stateless,
+        )
+        return self
+
+    def pricing_fixed(self, price_cents: int, currency: str = "USD") -> Self:
+        """
+        Set fixed pricing strategy (v0.2).
+
+        IMPORTANT: This is a HINT only. Actual billing is handled by Platform Core.
+        SDK does NOT calculate or return fees (Gate 4 compliance).
+
+        Args:
+            price_cents: Price in cents per successful execution.
+                Example: 10 = $0.10 per execution.
+            currency: Currency code (default: "USD").
+
+        Returns:
+            Self: This builder for method chaining.
+        """
+        self._pricing_strategy = PricingStrategy(
+            type=PricingType.FIXED,
+            fixed_price_cents=price_cents,
+            currency=currency,
+        )
+        return self
+
+    def pricing_usage_based(
+        self,
+        rate_per_unit: float,
+        unit: str,
+        currency: str = "USD",
+    ) -> Self:
+        """
+        Set usage-based pricing strategy (v0.2).
+
+        IMPORTANT: This is a HINT only. Actual billing is handled by Platform Core.
+        SDK does NOT calculate or return fees (Gate 4 compliance).
+
+        Args:
+            rate_per_unit: Rate per usage unit.
+                Example: 0.001 = $0.001 per unit.
+            unit: Name of usage unit.
+                Examples: "token", "minute", "page", "request".
+            currency: Currency code (default: "USD").
+
+        Returns:
+            Self: This builder for method chaining.
+        """
+        self._pricing_strategy = PricingStrategy(
+            type=PricingType.USAGE_BASED,
+            usage_rate_per_unit=rate_per_unit,
+            usage_unit=unit,
+            currency=currency,
+        )
+        return self
+
+    def pricing_composite(
+        self,
+        components: list[PricingComponent],
+        currency: str = "USD",
+    ) -> Self:
+        """
+        Set composite pricing strategy (v0.2).
+
+        Composite pricing combines fixed base fee with usage-based overage.
+
+        IMPORTANT: This is a HINT only. Actual billing is handled by Platform Core.
+        SDK does NOT calculate or return fees (Gate 4 compliance).
+
+        Args:
+            components: List of pricing components.
+            currency: Currency code (default: "USD").
+
+        Returns:
+            Self: This builder for method chaining.
+        """
+        self._pricing_strategy = PricingStrategy(
+            type=PricingType.COMPOSITE,
+            components=tuple(components),
+            currency=currency,
+        )
+        return self
+
+    def add_permission(self, permission: str) -> Self:
+        """
+        Add a required permission (v0.2).
+
+        Args:
+            permission: Permission string this Agent requires.
+
+        Returns:
+            Self: This builder for method chaining.
+        """
+        if permission not in self._required_permissions:
+            self._required_permissions.append(permission)
+        return self
+
+    def permissions(self, *permissions: str) -> Self:
+        """
+        Set all required permissions at once (v0.2).
+
+        Args:
+            *permissions: Permission strings this Agent requires.
+
+        Returns:
+            Self: This builder for method chaining.
+        """
+        self._required_permissions = list(dict.fromkeys(permissions))
+        return self
+
+    # ========== Existing Methods ==========
 
     def task_goal(self, goal: str) -> Self:
         """
@@ -371,8 +610,8 @@ class AgentBuilder:
         Build and return an immutable AgentDefinition entity.
 
         This method performs validation to ensure:
-        - All required fields are set
-        - At least one workflow is defined
+        - All required fields are set (v0.2: includes agent_type)
+        - For COMPOSITE agents: at least one workflow is defined
         - All node references point to existing resources
 
         Returns:
@@ -380,15 +619,20 @@ class AgentBuilder:
 
         Raises:
             MissingFieldError: If required fields are not set.
-            EmptyCollectionError: If no workflows have been added.
+            EmptyCollectionError: If COMPOSITE agent has no workflows.
             ReferenceError: If nodes reference undefined resources.
         """
+        # v0.2: agent_type is now required
+        if self._agent_type is None:
+            raise MissingFieldError("agent_type", "AgentBuilder")
         if self._version is None:
             raise MissingFieldError("version", "AgentBuilder")
         if self._description is None:
             raise MissingFieldError("description", "AgentBuilder")
-        if not self._workflows:
-            raise EmptyCollectionError("workflows", f"Agent '{self._name}'")
+
+        # COMPOSITE agents must have at least one workflow
+        if self._agent_type == AgentType.COMPOSITE and not self._workflows:
+            raise EmptyCollectionError("workflows", f"COMPOSITE Agent '{self._name}'")
 
         # Build sets of defined resource names
         module_names = {m.name for m in self._modules}
@@ -412,8 +656,17 @@ class AgentBuilder:
             name=self._name,
             version=self._version,
             description=self._description,
+            agent_type=self._agent_type,
+            # v0.2 fields
+            display=self._display,
             task_goal=self._task_goal,
             completion_criteria=self._completion_criteria,
+            input_schema=self._input_schema,
+            output_schema=self._output_schema,
+            behavior=self._behavior,
+            pricing_strategy=self._pricing_strategy,
+            required_permissions=tuple(self._required_permissions),
+            # Existing fields
             eip_dependencies=tuple(self._eip_dependencies),
             workflows=tuple(self._workflows),
             modules=tuple(self._modules),

@@ -6,6 +6,7 @@ import pytest
 
 from ainalyn.domain.entities import (
     AgentDefinition,
+    AgentType,
     Module,
     Node,
     NodeType,

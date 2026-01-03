@@ -16,6 +16,7 @@ Examples:
 - SchemaValidator: Validates definition structure against SDK rules
 - StaticAnalyzer: Performs logical consistency checks
 - YamlExporter: Serializes definitions to YAML format
+- JsonExporter: Serializes definitions to agent.json format (v0.2)
 - MockPlatformClient: Mock Platform Core API client for testing
 - HttpPlatformClient: HTTP Platform Core API client (placeholder)
 """
@@ -23,6 +24,7 @@ Examples:
 from __future__ import annotations
 
 from ainalyn.adapters.outbound.http_platform_client import HttpPlatformClient
+from ainalyn.adapters.outbound.json_exporter import JsonExporter
 from ainalyn.adapters.outbound.mock_platform_client import MockPlatformClient
 from ainalyn.adapters.outbound.schema_validator import SchemaValidator
 from ainalyn.adapters.outbound.static_analyzer import StaticAnalyzer
@@ -32,6 +34,7 @@ __all__ = [
     "SchemaValidator",
     "StaticAnalyzer",
     "YamlExporter",
+    "JsonExporter",
     "MockPlatformClient",
     "HttpPlatformClient",
 ]

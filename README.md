@@ -6,15 +6,16 @@
 
 **Agent Definition Compiler for the Ainalyn Platform**
 
-Ainalyn SDK helps you define, validate, and export task-oriented agents using a clean Python API. Think of it as a compiler: you describe what your agent does, the SDK validates it, and outputs a platform-ready YAML file.
+Ainalyn SDK helps you define, validate, and export task-oriented agents using a clean Python API. Think of it as a compiler-first toolkit: you describe what your agent does, the SDK validates it, and outputs a platform-ready YAML file.
 
-> **Note**: This SDK is a **compiler, not a runtime**. It creates agent descriptions—the Ainalyn Platform handles execution.
+> **Note**: The SDK is **compiler-first** and includes an optional runtime wrapper for ATOMIC handlers. Platform Core still owns execution, state, and billing.
 
 ## Why Ainalyn SDK?
 
 - **Type-safe Builder API** - Define agents with IDE autocomplete and compile-time checks
-- **Comprehensive Validation** - Catch errors before deployment
+- **Comprehensive Validation** - Schema checks, review gates, and static analysis
 - **YAML Export** - One-line compilation to platform-ready format
+- **Runtime Wrapper (Optional)** - Helper decorator for ATOMIC handlers
 - **Clean Architecture** - Well-tested, maintainable codebase
 
 ## Quick Start
@@ -97,6 +98,18 @@ prompts:
   template: Generate a personalized greeting for {{user_name}}
   variables:
   - user_name
+```
+
+### Optional Runtime Wrapper (ATOMIC)
+
+Use the runtime wrapper only when wiring an ATOMIC handler for Platform Core.
+
+```python
+from ainalyn.runtime import agent
+
+@agent.atomic(name="greeting-agent", version="1.0.0")
+def handler(input_data: dict) -> dict:
+    return {"message": f"Hello {input_data.get('user_name', 'there')}"}
 ```
 
 ### Submitting Agents to Platform
