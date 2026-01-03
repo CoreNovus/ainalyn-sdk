@@ -4,19 +4,24 @@ How validation works and what gets checked.
 
 ## What Gets Validated
 
-The SDK validates your agent definition before export to ensure it's ready for the platform.
+The SDK validates your agent definition before export to keep it ready for review.
 
 **Schema Validation:**
-- Required fields are present
-- Naming conventions are correct
-- Version format is valid (semantic versioning)
-- References are defined
+- Required fields present
+- Name and version format
+- References resolve
 
-**Structural Validation:**
-- Workflows have at least one node
-- Entry nodes exist
-- Node references point to valid resources
-- All dependencies are defined
+**Review Gates:**
+- Contract completeness (goal, completion criteria, schemas)
+- No shadow runtime patterns
+- Result sovereignty
+- Billing hint only
+- EIP dependency declarations
+
+**Static Analysis:**
+- Cycles in workflows
+- Unreachable nodes
+- Unused resources
 
 ## Using validate()
 
@@ -48,8 +53,8 @@ The `ValidationResult` object contains:
 
 **Properties:**
 - `is_valid` - Boolean indicating if validation passed
-- `errors` - List of validation errors
-- `warnings` - List of warnings (optional issues)
+- `has_warnings` - True if any WARNING-level issues exist
+- `errors` - Tuple of errors and warnings
 
 **Error Details:**
 Each error contains:
@@ -62,33 +67,34 @@ Each error contains:
 
 **Valid names:**
 ```python
-"my-agent"           # Lowercase with hyphens
-"data-processor-v2"  # Letters, numbers, hyphens
-"fetch-data"         # Starts with letter
+"my-agent"          # Letters, numbers, hyphens
+"MyAgent"           # Uppercase allowed
+"my_agent"         # Underscore allowed
+"agent-123"         # Numbers allowed
 ```
 
 **Invalid names:**
 ```python
-"MyAgent"      # Must be lowercase
-"my_agent"     # No underscores
 "my agent"     # No spaces
-"2-agent"      # Must start with letter
+"my@agent"     # No special symbols
+"my.agent"     # No dots
 ```
 
 ## Version Format
 
+
 **Valid versions:**
 ```python
-"1.0.0"        # Semantic versioning
-"2.1.3"        # Major.minor.patch
-"0.1.0"        # Pre-release
+"1.0.0"        # MAJOR.MINOR.PATCH
+"2.1.3"
+"0.1.0"
 ```
 
 **Invalid versions:**
 ```python
 "1.0"          # Must have three parts
 "v1.0.0"       # No 'v' prefix
-"1.0.0-beta"   # No pre-release tags (yet)
+"1.0.0-beta"   # Pre-release not allowed
 ```
 
 ## Common Validation Errors
@@ -237,9 +243,9 @@ else:
 - Validates value formats
 - Throws exceptions immediately
 
-**Schema validation:**
+**Validation:**
 - Happens when you call `validate()`
-- Checks structural correctness
+- Checks schema, review gates, and static analysis
 - Returns ValidationResult
 - Does not throw exceptions
 

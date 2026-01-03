@@ -376,11 +376,11 @@ workflow = WorkflowBuilder("main").add_node(node).entry_node("node-name").build(
 ```python
 # Wrong
 AgentBuilder("My Agent")   # No spaces
-AgentBuilder("MyAgent")    # Must start with lowercase
+AgentBuilder("My@Agent")   # No special symbols
 
-# Correct (use lowercase with hyphens)
-AgentBuilder("my-agent")
-AgentBuilder("research-assistant")
+# Correct (use letters/numbers with hyphens or underscores)
+AgentBuilder("MyAgent")
+AgentBuilder("research_assistant")
 ```
 
 ## Next Steps

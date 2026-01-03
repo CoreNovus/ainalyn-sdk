@@ -24,7 +24,7 @@ agent = (
 ```
 
 **Developer Controls:**
-- Workflow structure (nodes and edges)
+- Workflow structure (nodes and `next_nodes`)
 - Resource definitions (prompts, tools, modules)
 - Input/output schemas
 - Node dependencies and execution order
@@ -415,7 +415,7 @@ agent = (
 
 ### Q: Can I test execution locally?
 
-**A:** No. The SDK validates structure only. Execution requires platform infrastructure.
+**A:** No. The SDK validates schema, review gates, and static analysis. Execution requires platform infrastructure.
 
 ```python
 # SDK can do this

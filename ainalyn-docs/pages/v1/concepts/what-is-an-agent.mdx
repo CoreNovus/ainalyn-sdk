@@ -70,14 +70,15 @@ Node types are determined by resource reference:
 
 ## SDK Boundary
 
-The SDK is a compiler, not a runtime:
+The SDK is compiler-first with an optional runtime wrapper for ATOMIC handlers:
 
 | SDK Does | SDK Does NOT Do |
 |----------|----------------|
-| Validate definition structure | Execute workflows |
+| Validate schema, review gates, and static analysis | Execute workflows |
 | Check reference integrity | Make network requests |
 | Generate YAML output | Calculate execution costs |
 | Perform static analysis | Handle authentication |
+| Wrap ATOMIC handlers (optional) | Decide execution or billing |
 | Catch cycles and unreachable nodes | Manage retries |
 
 <Callout type="warning">
@@ -87,7 +88,7 @@ Local compilation success does not guarantee platform execution. Platform Core a
 ## Execution Flow
 
 1. Developer builds Agent Definition using SDK
-2. SDK validates structure and exports YAML
+2. SDK validates schema, review gates, and static analysis, then exports YAML
 3. Developer submits YAML to Platform Core
 4. Platform reviews and approves definition
 5. Users invoke Agent through official clients
@@ -118,19 +119,19 @@ yaml = export_yaml(agent)
 ## Required Fields
 
 Agent Definition:
-- `name` - Matches pattern `[a-z][a-z0-9-]*`
+- `name` - Matches pattern `[A-Za-z0-9_-]+`
 - `version` - Semantic versioning (e.g., "1.0.0")
 - `description` - Human-readable summary
 - `workflows` - At least one workflow
 
 Workflow:
-- `name` - Matches pattern `[a-z][a-z0-9-]*`
+- `name` - Matches pattern `[A-Za-z0-9_-]+`
 - `description` - Workflow purpose
 - `nodes` - At least one node
 - `entry_node` - Name of starting node
 
 Node:
-- `name` - Matches pattern `[a-z][a-z0-9-]*`
+- `name` - Matches pattern `[A-Za-z0-9_-]+`
 - `description` - Node purpose
 - `type` - One of: prompt, tool, module
 - `reference` - Name of referenced resource
@@ -191,7 +192,7 @@ The SDK performs:
 
 Checks include:
 - Required fields present
-- Names match pattern `[a-z][a-z0-9-]*`
+- Names match pattern `[A-Za-z0-9_-]+`
 - Versions follow semantic versioning
 - All references resolve (no undefined resources)
 - Workflows form valid DAGs (no cycles)

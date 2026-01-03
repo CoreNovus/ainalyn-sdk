@@ -13,7 +13,7 @@ Understanding where the Ainalyn SDK fits in the overall system architecture.
 
 ## SDK as a Compiler
 
-The most important concept to understand: **The SDK is a compiler, not a runtime.**
+The most important concept to understand: the SDK is **compiler-first** with an optional runtime wrapper for ATOMIC handlers. Platform Core still owns execution, state, and billing.
 
 ---
 
@@ -24,17 +24,18 @@ The most important concept to understand: **The SDK is a compiler, not a runtime
 | Responsibility | Description |
 |----------------|-------------|
 | **Define** | Provides builders to define Agent structure |
-| **Validate** | Checks definition correctness before submission |
+| **Validate** | Checks schema, review gates, and static analysis |
 | **Export** | Produces platform-compatible YAML format |
-| **Compile** | Complete workflow: validate → serialize → output |
+| **Runtime wrapper (optional)** | Wraps ATOMIC handlers to follow the Core invocation protocol |
+| **Compile** | Complete workflow: validate -> serialize -> output |
 
 ### What the SDK Does NOT Do
 
 | NOT Responsibility | Why |
 |--------------------|-----|
-| **Execute agents** | Platform Core handles execution |
+| **Decide execution** | Platform Core schedules and authorizes runs |
 | **Call LLMs** | Platform Core manages LLM interactions |
-| **Manage state** | Platform Core handles runtime state |
+| **Manage state** | Platform Core owns runtime state |
 | **Handle I/O** | Platform Core manages external integrations |
 
 ---
@@ -44,62 +45,21 @@ The most important concept to understand: **The SDK is a compiler, not a runtime
 Think of Ainalyn SDK like a programming language compiler:
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        Traditional Compiler                          │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│   Source Code (.py)  ──▶  Compiler  ──▶  Bytecode (.pyc)           │
-│                                                                     │
-│   The compiler doesn't run your program;                            │
-│   it produces something that can be run later.                      │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────┐
-│                          Ainalyn SDK                                 │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│   Python Builders  ──▶  SDK  ──▶  Agent Definition (YAML)          │
-│                                                                     │
-│   The SDK doesn't run your agent;                                   │
-│   it produces a definition that Platform Core executes.             │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
+Python Builders -> SDK -> Agent Definition (YAML)
+                        Platform Core executes
 ```
 
 ---
 
 ## Data Flow Overview
 
-```
-Developer                    SDK                         Platform
-────────                    ───                         ────────
+Developer -> SDK -> Platform Core
 
-  │                          │                             │
-  │  1. Write Python code    │                             │
-  │  using builders          │                             │
-  │                          │                             │
-  ├─────────────────────────▶│                             │
-  │                          │                             │
-  │                          │  2. Validate structure      │
-  │                          │     Check references        │
-  │                          │     Detect cycles           │
-  │                          │                             │
-  │                          │  3. Serialize to YAML       │
-  │                          │                             │
-  │◀─────────────────────────┤                             │
-  │  4. Return YAML / errors │                             │
-  │                          │                             │
-  │                          │                             │
-  ├──────────────────────────┼────────────────────────────▶│
-  │  5. Submit YAML to platform                            │
-  │                          │                             │
-  │                          │                             │  6. Parse YAML
-  │                          │                             │  7. Execute agent
-  │                          │                             │  8. Call LLMs
-  │                          │                             │  9. Return results
-  │                          │                             │
-```
+1) Build with builders
+2) Validate (schema + gates + static)
+3) Export YAML
+4) Submit to Platform Core
+5) Core executes and governs
 
 ---
 
@@ -143,9 +103,20 @@ agent = (
     .description("Handles customer inquiries")
     .add_workflow(
         WorkflowBuilder("handle-inquiry")
-        .add_node(NodeBuilder("classify").type("llm").build())
-        .add_node(NodeBuilder("respond").type("llm").build())
-        .add_edge("classify", "respond")
+        .add_node(
+            NodeBuilder("classify")
+            .description("Classify request")
+            .uses_prompt("classify-prompt")
+            .next_nodes("respond")
+            .build()
+        )
+        .add_node(
+            NodeBuilder("respond")
+            .description("Respond to request")
+            .uses_prompt("respond-prompt")
+            .build()
+        )
+        .entry_node("classify")
         .build()
     )
     .build()
@@ -159,14 +130,18 @@ version: 1.0.0
 description: Handles customer inquiries
 workflows:
   - name: handle-inquiry
+    entry_node: classify
     nodes:
-      - id: classify
-        type: llm
-      - id: respond
-        type: llm
-    edges:
-      - from: classify
-        to: respond
+      - name: classify
+        description: Classify request
+        type: prompt
+        reference: classify-prompt
+        next_nodes:
+          - respond
+      - name: respond
+        description: Respond to request
+        type: prompt
+        reference: respond-prompt
 ```
 
 ---

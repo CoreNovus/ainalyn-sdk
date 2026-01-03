@@ -19,7 +19,7 @@ An Agent Definition is a **declarative, structured description** of:
 Think of an Agent Definition as a **recipe**:
 - It describes ingredients (tools, prompts)
 - It defines steps (workflow nodes)
-- It specifies order (workflow edges)
+- It specifies order (workflow links via `next_nodes`)
 - But it doesn't cook anything—Platform Core does that
 
 ## Agent vs Agent Definition
@@ -76,7 +76,7 @@ Agent Definition
 ### Required Components
 
 1. **Metadata**
-   - `name`: Unique identifier (`[a-z][a-z0-9-]*`)
+   - `name`: Unique identifier (`[A-Za-z0-9_-]+`)
    - `version`: Semantic version (e.g., "1.0.0")
    - `description`: Human-readable summary
 
@@ -120,6 +120,7 @@ extract_node = (
     NodeBuilder("extract", "prompt")
     .reference("summarize")
     .outputs("summary")
+    .next_nodes("format")
     .build()
 )
 
@@ -137,7 +138,6 @@ main_workflow = (
     .description("Summarization workflow")
     .add_node(extract_node)
     .add_node(format_node)
-    .add_edge("extract", "format")
     .entry_node("extract")
     .build()
 )
@@ -171,7 +171,7 @@ else:
 
 The SDK checks:
 - ✓ Required fields present
-- ✓ Names match pattern `[a-z][a-z0-9-]*`
+- ✓ Names match pattern `[A-Za-z0-9_-]+`
 - ✓ Versions follow semantic versioning
 - ✓ All references resolve (no undefined prompts/tools/modules)
 - ✓ Workflows form valid DAGs (no cycles)
@@ -187,26 +187,21 @@ Workflows are the core of your Agent Definition. They describe **how** the task 
 Every workflow must be a valid DAG:
 
 ```python
-# Valid DAG ✓
+# Valid DAG
 workflow = (
     WorkflowBuilder("process")
-    .add_node(NodeBuilder("A", "prompt").reference("prompt-a").build())
-    .add_node(NodeBuilder("B", "tool").reference("tool-b").build())
+    .add_node(NodeBuilder("A", "prompt").reference("prompt-a").next_nodes("B", "C").build())
+    .add_node(NodeBuilder("B", "tool").reference("tool-b").next_nodes("C").build())
     .add_node(NodeBuilder("C", "module").reference("module-c").build())
-    .add_edge("A", "B")  # A → B
-    .add_edge("B", "C")  # B → C
-    .add_edge("A", "C")  # A → C (branching is OK)
     .entry_node("A")
     .build()
 )
 
-# Invalid: Cycle ✗
+# Invalid: Cycle
 workflow = (
     WorkflowBuilder("bad")
-    .add_node(NodeBuilder("X", "prompt").reference("p").build())
-    .add_node(NodeBuilder("Y", "prompt").reference("q").build())
-    .add_edge("X", "Y")  # X → Y
-    .add_edge("Y", "X")  # Y → X ← Creates cycle!
+    .add_node(NodeBuilder("X", "prompt").reference("p").next_nodes("Y").build())
+    .add_node(NodeBuilder("Y", "prompt").reference("q").next_nodes("X").build())
     .entry_node("X")
     .build()
 )
@@ -250,19 +245,17 @@ module_node = (
 )
 ```
 
-### Edges and Flow Control
+### Links and Flow Control
 
-Edges define execution order:
+Links are defined via each node's `next_nodes`.
 
 ```python
 workflow = (
     WorkflowBuilder("process")
-    .add_node(node1)
-    .add_node(node2)
-    .add_node(node3)
-    .add_edge("node1", "node2")  # Sequential: 1 → 2
-    .add_edge("node2", "node3")  # Sequential: 2 → 3
-    .entry_node("node1")         # Start at node1
+    .add_node(NodeBuilder("node1").next_nodes("node2").build())
+    .add_node(NodeBuilder("node2").next_nodes("node3").build())
+    .add_node(NodeBuilder("node3").build())
+    .entry_node("node1")
     .build()
 )
 ```
@@ -270,25 +263,19 @@ workflow = (
 <Callout>
 **Parallel Execution**
 
-If a node has edges to multiple nodes, Platform Core may execute them in parallel:
+If a node points to multiple `next_nodes`, Platform Core may execute them in parallel:
 
 ```python
 workflow = (
     WorkflowBuilder("parallel-demo")
-    .add_node(node_start)
-    .add_node(node_branch_a)
-    .add_node(node_branch_b)
-    .add_node(node_merge)
-    .add_edge("start", "branch_a")   # start → branch_a
-    .add_edge("start", "branch_b")   # start → branch_b (parallel)
-    .add_edge("branch_a", "merge")   # branch_a → merge
-    .add_edge("branch_b", "merge")   # branch_b → merge
+    .add_node(NodeBuilder("start").next_nodes("branch_a", "branch_b").build())
+    .add_node(NodeBuilder("branch_a").next_nodes("merge").build())
+    .add_node(NodeBuilder("branch_b").next_nodes("merge").build())
+    .add_node(NodeBuilder("merge").build())
     .entry_node("start")
     .build()
 )
 ```
-
-Parallelism is determined by Platform Core at runtime, not by the SDK.
 </Callout>
 
 ## Resources: Prompts, Tools, Modules
@@ -381,6 +368,8 @@ workflows:
     reference: summarize
     outputs:
     - summary
+    next_nodes:
+    - format
   - name: format
     description: Format output
     type: module
@@ -389,9 +378,6 @@ workflows:
     - summary
     outputs:
     - formatted_output
-  edges:
-  - from: extract
-    to: format
 
 prompts:
 - name: summarize
@@ -420,7 +406,7 @@ print(f"Status: {result.status.value}")
 ### Definition Lifecycle
 
 1. **Build**: Create definition using SDK
-2. **Validate**: SDK checks structural correctness
+2. **Validate**: SDK checks schema, review gates, and static analysis
 3. **Submit**: Send to Platform Core for review
 4. **Review**: Platform applies governance policies
 5. **Approve/Reject**: Platform decides if definition meets standards
@@ -494,20 +480,18 @@ agent_v2 = AgentBuilder("my-agent").version("2.0.0").build()
 ### 3. Keep Workflows Simple
 
 ```python
-# ✓ Good: Linear, easy to understand
+# ??Good: Linear, easy to understand
 workflow = (
     WorkflowBuilder("simple")
-    .add_node(fetch)
-    .add_node(process)
-    .add_node(output)
-    .add_edge("fetch", "process")
-    .add_edge("process", "output")
+    .add_node(NodeBuilder("fetch").next_nodes("process").build())
+    .add_node(NodeBuilder("process").next_nodes("output").build())
+    .add_node(NodeBuilder("output").build())
     .entry_node("fetch")
     .build()
 )
 
-# ⚠ Complex: Hard to debug, maintain
-# (20 nodes, 50 edges, multiple branches)
+# ??Complex: Hard to debug, maintain
+# (20 nodes, 50 links, multiple branches)
 ```
 
 ### 4. Validate Before Submitting
@@ -532,11 +516,9 @@ submit_agent(agent_definition, api_key=api_key)
 ```python
 workflow = (
     WorkflowBuilder("sequential")
-    .add_node(step1)
-    .add_node(step2)
-    .add_node(step3)
-    .add_edge("step1", "step2")
-    .add_edge("step2", "step3")
+    .add_node(NodeBuilder("step1").next_nodes("step2").build())
+    .add_node(NodeBuilder("step2").next_nodes("step3").build())
+    .add_node(NodeBuilder("step3").build())
     .entry_node("step1")
     .build()
 )
@@ -547,11 +529,9 @@ workflow = (
 ```python
 workflow = (
     WorkflowBuilder("branching")
-    .add_node(input_node)
-    .add_node(branch_a)
-    .add_node(branch_b)
-    .add_edge("input", "branch_a")  # input → branch_a
-    .add_edge("input", "branch_b")  # input → branch_b (parallel)
+    .add_node(NodeBuilder("input").next_nodes("branch_a", "branch_b").build())
+    .add_node(NodeBuilder("branch_a").build())
+    .add_node(NodeBuilder("branch_b").build())
     .entry_node("input")
     .build()
 )
@@ -562,11 +542,9 @@ workflow = (
 ```python
 workflow = (
     WorkflowBuilder("converging")
-    .add_node(source_a)
-    .add_node(source_b)
-    .add_node(merge)
-    .add_edge("source_a", "merge")
-    .add_edge("source_b", "merge")
+    .add_node(NodeBuilder("source_a").next_nodes("merge").build())
+    .add_node(NodeBuilder("source_b").next_nodes("merge").build())
+    .add_node(NodeBuilder("merge").build())
     .entry_node("source_a")  # Note: source_b must also be reachable
     .build()
 )
@@ -574,15 +552,16 @@ workflow = (
 
 ## Summary
 
+
 An Agent Definition is:
 
 - ✓ A **declarative description** of what your agent does
 - ✓ Built using the SDK's **fluent builder API**
-- ✓ Validated for **structural correctness** by the SDK
+- ✓ Validated with **schema checks, review gates, and static analysis** by the SDK
 - ✓ Compiled to **YAML** for submission
 - ✓ Submitted to **Platform Core** for review and approval
 - ✗ **NOT an executable** (Platform Core executes it)
-- ✗ **NOT a runtime** (SDK is a compiler)
+- ✗ **NOT a runtime authority** (SDK is compiler-first with an optional runtime wrapper)
 
 ## Next Steps
 

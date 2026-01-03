@@ -2,12 +2,12 @@ import { Callout } from 'nextra/components'
 
 # Ainalyn SDK
 
-Build task-oriented agents with Python. The Ainalyn SDK is a compiler that turns your Python code into platform-ready agent definitions.
+Build task-oriented agents with Python. The Ainalyn SDK is compiler-first and turns your code into platform-ready agent definitions.
 
 <Callout type="info">
-**SDK = Compiler, Not Runtime**
+**SDK = Compiler-First**
 
-The SDK creates agent descriptions. The Ainalyn Platform executes them.
+The SDK creates agent descriptions and offers an optional runtime wrapper for ATOMIC handlers. The Ainalyn Platform executes and governs.
 </Callout>
 
 ## User Flow
@@ -18,7 +18,7 @@ The SDK creates agent descriptions. The Ainalyn Platform executes them.
 ## What it does
 
 - **Define** agents with a Python API
-- **Validate** definitions before deployment
+- **Validate** with schema checks, review gates, and static analysis
 - **Export** to YAML for the platform
 
 ## Features
@@ -26,6 +26,7 @@ The SDK creates agent descriptions. The Ainalyn Platform executes them.
 - **Type-safe API** - Full type hints and IDE autocomplete
 - **Fluent builders** - Chainable, intuitive API
 - **Validation** - Catch errors before deployment
+- **Runtime wrapper (optional)** - Wrap ATOMIC handlers for Core invocation
 - **YAML export** - One command to platform-ready format
 
 ## Example

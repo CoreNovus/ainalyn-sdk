@@ -7,7 +7,7 @@ Core domain entities represent the structure of agent definitions.
 The complete agent specification.
 
 **Attributes:**
-- `name` (str) - Unique agent identifier (lowercase, hyphens only)
+- `name` (str) - Unique agent identifier (`[A-Za-z0-9_-]+`)
 - `version` (str) - Version string (e.g., "1.0.0")
 - `description` (str) - What the agent does
 - `task_goal` (str | None) - High-level task goal for Platform Review Gate 1 (optional)

@@ -274,16 +274,16 @@ api_client = (
 
 **Valid names:**
 ```python
-"web-search"          # Lowercase with hyphens
-"file-writer"         # Descriptive
-"api-client-v2"       # With version
+"web-search"          # Hyphens ok
+"WebSearch"           # Uppercase ok
+"file_writer"         # Underscores ok
 ```
 
 **Invalid names:**
 ```python
-"WebSearch"           # Must be lowercase
-"file_writer"         # No underscores
 "my tool"             # No spaces
+"web.search"          # No dots
+"web@search"          # No special symbols
 ```
 
 ## Best Practices

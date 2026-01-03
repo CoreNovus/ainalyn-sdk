@@ -281,16 +281,16 @@ file_module = (
 
 **Valid names:**
 ```python
-"http-client"        # Lowercase with hyphens
-"data-processor"     # Descriptive
-"file-handler-v2"    # With version suffix
+"http-client"        # Hyphens ok
+"HttpClient"         # Uppercase ok
+"data_processor"     # Underscores ok
 ```
 
 **Invalid names:**
 ```python
-"HttpClient"         # Must be lowercase
-"data_processor"     # No underscores
 "my module"          # No spaces
+"http.client"        # No dots
+"http@client"        # No special symbols
 ```
 
 ## Best Practices

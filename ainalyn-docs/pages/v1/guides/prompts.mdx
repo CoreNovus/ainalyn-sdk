@@ -263,16 +263,16 @@ PromptBuilder("analyzer")
 
 **Valid names:**
 ```python
-"text-analyzer"       # Lowercase with hyphens
-"data-summarizer"     # Descriptive
-"qa-assistant-v2"     # With version
+"text-analyzer"       # Hyphens ok
+"TextAnalyzer"        # Uppercase ok
+"text_analyzer"       # Underscores ok
 ```
 
 **Invalid names:**
 ```python
-"TextAnalyzer"        # Must be lowercase
-"text_analyzer"       # No underscores
 "my prompt"           # No spaces
+"text.analyzer"       # No dots
+"text@analyzer"       # No special symbols
 ```
 
 ## Prompt Design Tips

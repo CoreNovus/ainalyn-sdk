@@ -2,14 +2,14 @@ import { Callout } from 'nextra/components'
 
 # How the SDK Works
 
-The SDK is a compiler that transforms Python code into validated YAML definitions for Platform Core.
+The SDK is compiler-first: it transforms Python code into validated YAML definitions for Platform Core.
 
 ## Core Function
 
 <Callout type="info">
-SDK Purpose: Create and validate Agent Definitions locally before platform submission.
+SDK Purpose: Create and validate Agent Definitions locally before platform submission, with an optional runtime wrapper for ATOMIC handlers.
 
-It does NOT execute agents or simulate runtime behavior.
+It does not decide execution, state, or billing?Platform Core does.
 </Callout>
 
 ## Compilation Pipeline
@@ -116,10 +116,10 @@ workflows:
 
 ### Builder-Time Validation
 
-Immediate checks when calling `.build()`:
+Immediate checks when calling `.build()`: 
 
-- Name format: `[a-z][a-z0-9-]*`
-- Version format: Semantic versioning
+- Name format: `[A-Za-z0-9_-]+`
+- Version format: `MAJOR.MINOR.PATCH`
 - Required fields present
 - No duplicate names in scope
 - Referenced resources exist
@@ -129,8 +129,7 @@ Example error:
 ```python
 AgentBuilder("Invalid Name")  # Raises InvalidFormatError
 # InvalidFormatError: Invalid value for 'name': 'Invalid Name'.
-# Agent name must start with lowercase letter and contain only
-# lowercase letters, numbers, and hyphens
+# Agent name must contain only letters, numbers, hyphens, and underscores.
 ```
 
 ### Compile-Time Validation
@@ -142,6 +141,15 @@ Checks performed by `validate()`:
 - All required fields present
 - Field types correct
 - Values within constraints
+
+
+#### Review Gates
+
+- Contract completeness (goal, completion criteria, schemas)
+- No shadow runtime patterns (loops, retries, billing signals)
+- Result sovereignty (workflow-determined outcomes)
+- Billing hint only (no price decisions)
+- EIP dependency declarations
 
 #### Static Analysis
 
@@ -168,7 +176,7 @@ Checks performed by `validate()`:
 ## What the SDK Does NOT Do
 
 <Callout type="warning">
-The SDK is NOT a runtime. It cannot and does not:
+The SDK does not decide execution. It cannot and does not:
 - Execute workflows
 - Make network requests
 - Call tools or modules
@@ -236,7 +244,7 @@ for error in result.errors:
     error.code          # str: Error code (e.g., "CYCLIC_DEPENDENCY")
     error.message       # str: Human-readable message
     error.severity      # Severity: ERROR or WARNING
-    error.location      # Optional[str]: Where error occurred
+    error.path      # str: Where the issue occurred
 ```
 
 ## Error Codes

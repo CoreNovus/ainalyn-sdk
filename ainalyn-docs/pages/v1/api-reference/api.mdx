@@ -41,18 +41,25 @@ Each error in `result.errors` contains:
 | `code` | str | Error code (see Error Codes below) |
 | `message` | str | Human-readable error message |
 | `severity` | Severity | ERROR or WARNING |
-| `location` | str \| None | Optional location where error occurred |
+| `path` | str | JSON Path-style location of the issue |
 
 ### Validation Process
 
-The function performs two validation phases:
+The function performs three validation phases:
 
 **1. Schema Validation**
 - Checks structural correctness
 - Verifies all required fields present
 - Validates field types and formats
 
-**2. Static Analysis**
+**2. Review Gates**
+- Contract completeness
+- No shadow runtime patterns
+- Result sovereignty
+- Billing hint only
+- EIP dependency declarations
+
+**3. Static Analysis**
 - Detects cycles in workflows (DAG requirement)
 - Identifies unreachable nodes
 - Verifies all references resolve
@@ -114,8 +121,8 @@ else:
     print("Validation failed:")
     for error in result.errors:
         print(f"  [{error.severity}] {error.code}: {error.message}")
-        if error.location:
-            print(f"    Location: {error.location}")
+        if error.path:
+            print(f"    Path: {error.path}")
 ```
 
 ### Error Handling
@@ -330,8 +337,8 @@ else:
     for error in result.validation_result.errors:
         print(f"\n[{error.severity}] {error.code}")
         print(f"  Message: {error.message}")
-        if error.location:
-            print(f"  Location: {error.location}")
+        if error.path:
+            print(f"  Path: {error.path}")
 ```
 
 ---
@@ -374,18 +381,18 @@ agent = (
 
 **Example:**
 ```python
-agent = AgentBuilder("Invalid Name")  # Uppercase and space
+agent = AgentBuilder("Invalid Name")  # Space
 ```
 
 **Error Message:**
 ```
 InvalidFormatError: Invalid value for 'name': 'Invalid Name'.
-Agent name must start with lowercase letter and contain only lowercase letters, numbers, and hyphens
+Agent name must contain only letters, numbers, hyphens, and underscores
 ```
 
 **Fix:**
 ```python
-agent = AgentBuilder("invalid-name")  # Lowercase with hyphens
+agent = AgentBuilder("Valid_Name")  # Letters, numbers, hyphens, underscores
 ```
 
 ---
@@ -538,7 +545,7 @@ CyclicDependencyError: Workflow contains a cycle: node-a → node-b → node-c �
 **Error Message:**
 ```
 UnreachableNodeError: Node 'orphan-node' is unreachable from entry node 'entry-node'.
-All nodes must be reachable via edges.
+All nodes must be reachable via next_nodes links.
 ```
 
 **Fix:** Connect node to workflow or remove it

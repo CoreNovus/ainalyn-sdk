@@ -2,13 +2,13 @@ import { Callout } from 'nextra/components'
 
 # Compiler, Not Runtime
 
-The Ainalyn SDK is a **compiler**, not a runtime. Understanding this distinction is critical to using the SDK correctly and avoiding common misconceptions about what the SDK does—and what only **Platform Core** can do.
+The Ainalyn SDK is **compiler-first** and ships an optional runtime wrapper for ATOMIC handlers. That wrapper does not own execution authority?**Platform Core** does. This distinction keeps responsibilities clear and prevents costly misconceptions.
 
 ## The Core Distinction
 
 <Callout type="info">
-**SDK = Compiler**
-Transforms your Python code into a validated YAML definition.
+**SDK = Compiler (plus optional runtime wrapper)**
+Transforms your Python code into a validated YAML definition and offers a thin adapter for ATOMIC handlers.
 
 **Platform Core = Runtime**
 Executes the definition, manages resources, handles billing, and enforces governance.
@@ -19,7 +19,7 @@ Think of it like this:
 - A **compiler** (like `gcc` or `javac`) transforms source code into executable format. It checks syntax, validates types, and catches errors—but it doesn't run your program.
 - A **runtime** (like the JVM or operating system) actually executes the compiled output, manages memory, handles I/O, and enforces security policies.
 
-The Ainalyn SDK is your compiler. Platform Core is your runtime.
+The Ainalyn SDK is your compiler-first toolkit. Platform Core is the runtime authority.
 
 ## What the SDK Actually Does
 
@@ -37,7 +37,7 @@ agent = (
     .build()
 )
 
-# Validate: Check for structural errors
+# Validate: Check schema, review gates, and static analysis
 result = validate(agent)
 if result.is_valid:
     # Compile: Transform to YAML
@@ -82,7 +82,7 @@ assert result.is_valid  # ✓ Passes
 # - Business policy constraints
 ```
 
-The SDK checks **structural correctness**. Platform Core enforces **platform policies**.
+The SDK checks **schema, review gates, and static analysis**. Platform Core enforces **platform policies**.
 
 ### 2. SDK Cannot Predict Execution Costs
 
@@ -106,9 +106,8 @@ agent = AgentBuilder("my-agent").build()
 # This creates a DESCRIPTION of a workflow
 workflow = (
     WorkflowBuilder("process")
-    .add_node(node1)
-    .add_node(node2)
-    .add_edge("node1", "node2")
+    .add_node(NodeBuilder("node1").next_nodes("node2").build())
+    .add_node(NodeBuilder("node2").build())
     .build()
 )
 
@@ -116,10 +115,10 @@ workflow = (
 # ❌ SDK cannot call the tools/prompts
 # ❌ SDK cannot produce execution results
 
-# ✓ SDK can only validate structure:
-# - Is it a valid DAG?
-# - Are all references defined?
-# - Are there cycles or unreachable nodes?
+# ??SDK can validate schema, review gates, and static analysis:
+# - Required fields and formats
+# - Review gate compliance
+# - Cycles, unreachable nodes, and references
 ```
 
 ## The Compilation Process
@@ -150,7 +149,7 @@ Step 7: **Platform Core (Runtime)**
    agent = AgentBuilder("my-agent").version("1.0.0").build()
    ```
 
-2. **Validate**: Check structural correctness
+2. **Validate**: Check schema, review gates, and static analysis
    ```python
    result = validate(agent)
    ```
@@ -204,7 +203,7 @@ validate(agent)  # Just checks structure
 
 ### ❌ "If validation passes, my agent will work"
 
-Not guaranteed. The SDK validates structure. Platform Core validates policy.
+Not guaranteed. The SDK validates schema, review gates, and static analysis. Platform Core validates policy.
 
 ```python
 # Passes SDK validation
@@ -249,7 +248,7 @@ As a developer using the SDK, you control:
 - Resource declarations
 
 ✓ **Local validation**
-- Catch structural errors early
+- Catch schema issues and review gate violations early
 - Verify reference integrity
 - Check DAG validity
 

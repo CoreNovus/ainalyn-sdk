@@ -25,7 +25,7 @@ AgentBuilder(name: str)
 ```
 
 **Parameters:**
-- `name` (required) - Agent identifier. Must match pattern `[a-z][a-z0-9-]*`
+- `name` (required) - Agent identifier. Must match pattern `[A-Za-z0-9_-]+`
 
 **Raises:**
 - `InvalidFormatError` - If name doesn't match required pattern
@@ -260,7 +260,7 @@ Build and return immutable AgentDefinition.
 
 ### Naming Convention
 
-Agent names must match pattern: `[a-z][a-z0-9-]*`
+Agent names must match pattern: `[A-Za-z0-9_-]+`
 
 Valid names:
 - `my-agent`
@@ -301,7 +301,7 @@ WorkflowBuilder(name: str)
 ```
 
 **Parameters:**
-- `name` (required) - Workflow identifier. Must match pattern `[a-z][a-z0-9-]*`
+- `name` (required) - Workflow identifier. Must match pattern `[A-Za-z0-9_-]+`
 
 **Raises:**
 - `InvalidFormatError` - If name doesn't match required pattern
@@ -379,7 +379,7 @@ Build and return immutable Workflow.
 
 ### Naming Convention
 
-Workflow names must match pattern: `[a-z][a-z0-9-]*`
+Workflow names must match pattern: `[A-Za-z0-9_-]+`
 
 ## NodeBuilder
 
@@ -406,7 +406,7 @@ NodeBuilder(name: str)
 ```
 
 **Parameters:**
-- `name` (required) - Node identifier. Must match pattern `[a-z][a-z0-9-]*`
+- `name` (required) - Node identifier. Must match pattern `[A-Za-z0-9_-]+`
 
 **Raises:**
 - `InvalidFormatError` - If name doesn't match required pattern
@@ -508,7 +508,7 @@ Specify which nodes follow this one.
 
 **Required:** No
 
-**Note:** Creates directed edges in the workflow DAG.
+**Note:** Creates directed links via `next_nodes`.
 
 ---
 
@@ -533,7 +533,7 @@ Each node must reference exactly one resource type.
 
 ### Naming Convention
 
-Node names must match pattern: `[a-z][a-z0-9-]*`
+Node names must match pattern: `[A-Za-z0-9_-]+`
 
 ## ModuleBuilder
 
@@ -558,7 +558,7 @@ ModuleBuilder(name: str)
 ```
 
 **Parameters:**
-- `name` (required) - Module identifier. Must match pattern `[a-z][a-z0-9-]*`
+- `name` (required) - Module identifier. Must match pattern `[A-Za-z0-9_-]+`
 
 **Raises:**
 - `InvalidFormatError` - If name doesn't match required pattern
@@ -660,7 +660,7 @@ Build and return immutable Module.
 
 ### Naming Convention
 
-Module names must match pattern: `[a-z][a-z0-9-]*`
+Module names must match pattern: `[A-Za-z0-9_-]+`
 
 ## PromptBuilder
 
@@ -685,7 +685,7 @@ PromptBuilder(name: str)
 ```
 
 **Parameters:**
-- `name` (required) - Prompt identifier. Must match pattern `[a-z][a-z0-9-]*`
+- `name` (required) - Prompt identifier. Must match pattern `[A-Za-z0-9_-]+`
 
 **Raises:**
 - `InvalidFormatError` - If name doesn't match required pattern
@@ -772,7 +772,7 @@ variables = ("input_data", "model_name")
 
 ### Naming Convention
 
-Prompt names must match pattern: `[a-z][a-z0-9-]*`
+Prompt names must match pattern: `[A-Za-z0-9_-]+`
 
 ## ToolBuilder
 
@@ -808,7 +808,7 @@ ToolBuilder(name: str)
 ```
 
 **Parameters:**
-- `name` (required) - Tool identifier. Must match pattern `[a-z][a-z0-9-]*`
+- `name` (required) - Tool identifier. Must match pattern `[A-Za-z0-9_-]+`
 
 **Raises:**
 - `InvalidFormatError` - If name doesn't match required pattern
@@ -913,7 +913,7 @@ Build and return immutable Tool.
 
 ### Naming Convention
 
-Tool names must match pattern: `[a-z][a-z0-9-]*`
+Tool names must match pattern: `[A-Za-z0-9_-]+`
 
 ## Common Patterns
 

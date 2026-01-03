@@ -6,7 +6,7 @@ The Ainalyn SDK is built on **Hexagonal Architecture** (Ports & Adapters), ensur
 
 ## Core Principles
 
-1. **Compiler, Not Runtime** - The SDK creates Agent Definitions; execution belongs to the platform
+1. **Compiler-First** - The SDK builds definitions and offers an optional runtime wrapper; Platform Core owns execution
 2. **Dependency Inversion** - Core business logic depends on abstractions, not implementations
 3. **Clean Boundaries** - Each component has a single, well-defined responsibility
 4. **Immutability** - Domain entities are immutable by design
@@ -16,46 +16,16 @@ The Ainalyn SDK is built on **Hexagonal Architecture** (Ports & Adapters), ensur
 ## Architecture Diagram
 
 ```
-                              ┌─────────────────────┐
-                              │    CLI (cli.py)     │
-                              │   Inbound Adapter   │
-                              └──────────┬──────────┘
-                                         │
-    ┌──────────────────┐                 │                 ┌──────────────────┐
-    │  Python API      │                 │                 │  YAML Serializer │
-    │  (api.py)        │                 │                 │  Outbound Adapter│
-    │  Inbound Adapter │                 │                 └────────┬─────────┘
-    └────────┬─────────┘                 │                          │
-             │                           │                          │
-             │         ╔═════════════════╧══════════════════╗       │
-             │         ║                                    ║       │
-             └────────▶║       APPLICATION CORE             ║◀──────┘
-                       ║  ┌──────────────────────────────┐  ║
-    ┌──────────────┐   ║  │         Application          │  ║   ┌──────────────┐
-    │   Builders   │   ║  │  ┌────────────────────────┐  │  ║   │   Schema     │
-    │   (inbound/  │──▶║  │  │  Services & Use Cases  │  │  ║◀──│   Validator  │
-    │   builders/) │   ║  │  │  (Orchestration)       │  │  ║   │   (outbound/)│
-    └──────────────┘   ║  │  └───────────┬────────────┘  │  ║   └──────────────┘
-                       ║  │              │               │  ║
-                       ║  │    Ports     │    Ports      │  ║
-                       ║  │   (inbound)  │   (outbound)  │  ║
-                       ║  │              │               │  ║
-                       ║  │  ┌───────────▼────────────┐  │  ║   ┌──────────────┐
-                       ║  │  │        Domain          │  │  ║   │   Static     │
-                       ║  │  │  ┌──────────────────┐  │  │  ║◀──│   Analyzer   │
-                       ║  │  │  │ Entities, Rules  │  │  │  ║   │   (outbound/)│
-                       ║  │  │  │ (Business Logic) │  │  │  ║   └──────────────┘
-                       ║  │  │  └──────────────────┘  │  │  ║
-                       ║  │  └────────────────────────┘  │  ║
-                       ║  └──────────────────────────────┘  ║
-                       ║                                    ║
-                       ╚════════════════════════════════════╝
-                                         │
-                              ┌──────────┴──────────┐
-                              │    Infrastructure   │
-                              │  (service_factory)  │
-                              │    Wiring/DI        │
-                              └─────────────────────┘
+Inbound Adapters (api.py, cli.py, builders)
+           |
+           v
+   Application Core (services/use_cases)
+           |
+           v
+Domain (entities + rules) <-> Ports <-> Outbound Adapters
+           |
+           v
+   Infrastructure (service_factory)
 ```
 
 Unlike layered/onion architecture where layers wrap around each other, hexagonal architecture places the **Application Core** at the center with **Ports** defining boundaries and **Adapters** connecting to the outside world.

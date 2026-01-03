@@ -10,7 +10,7 @@ YAML export transforms your Python agent definition into a YAML file that the Ai
 - YAML is the platform's input format
 - Export does NOT execute your agent
 - The platform reads YAML files to run agents
-- SDK is a compiler, not a runtime
+- SDK is compiler-first; Platform Core owns execution
 
 ## Using export_yaml()
 
@@ -259,7 +259,7 @@ After exporting your agent:
 1. **You created:** YAML definition file
 2. **Platform reads:** YAML to understand agent structure
 3. **Platform executes:** Agent based on definition
-4. **SDK's job is done:** No runtime involvement
+4. **SDK's job is done:** Platform Core takes over execution
 
 See [Platform Boundaries](/v1/concepts/platform-boundaries/) for the SDK's role.
 

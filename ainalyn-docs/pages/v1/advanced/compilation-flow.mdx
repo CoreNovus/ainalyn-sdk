@@ -9,76 +9,9 @@ This page explains how data flows through the SDK when compiling an Agent Defini
 The compilation process follows a clear pipeline:
 
 ```
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                           SDK User (Developer)                                │
-└──────────────────────────────────┬───────────────────────────────────────────┘
-                                   │
-                                   ▼
-┌──────────────────────────────────────────────────────────────────────────────┐
-│ 1. BUILD                                                                      │
-│    ┌────────────────┐                                                        │
-│    │  AgentBuilder  │  (Inbound Adapter)                                     │
-│    │  .version()    │                                                        │
-│    │  .add_workflow()                                                        │
-│    │  .build()      │────────────────────────────────────────────────────┐   │
-│    └────────────────┘                                                    │   │
-└──────────────────────────────────────────────────────────────────────────┼───┘
-                                                                           │
-                                   ▼                                       │
-┌──────────────────────────────────────────────────────────────────────────┼───┐
-│ 2. CREATE DOMAIN ENTITY                                                  │   │
-│    ┌────────────────────────────────────────────────────────────────┐    │   │
-│    │  AgentDefinition (Domain Entity)                               │◀───┘   │
-│    │  - Immutable (frozen dataclass)                                │        │
-│    │  - Self-validating via __post_init__                           │        │
-│    │  - Contains: workflows, prompts, tools, modules                │        │
-│    └────────────────────────────────────────────────────────────────┘        │
-└──────────────────────────────────┬───────────────────────────────────────────┘
-                                   │
-                                   ▼
-┌──────────────────────────────────────────────────────────────────────────────┐
-│ 3. COMPILE via API                                                            │
-│    ┌────────────────┐      ┌───────────────────────────────────────────┐     │
-│    │ compile_agent()│─────▶│  DefinitionService (Application Service)  │     │
-│    │ (api.py)       │      │                                           │     │
-│    └────────────────┘      │  Orchestrates via Outbound Ports:         │     │
-│                            │  - IDefinitionSchemaValidator             │     │
-│                            │  - IDefinitionAnalyzer                    │     │
-│                            │  - IDefinitionSerializer                  │     │
-│                            └───────────────────┬───────────────────────┘     │
-└────────────────────────────────────────────────┼─────────────────────────────┘
-                                                 │
-            ┌────────────────────────────────────┼────────────────────────────┐
-            │                                    │                            │
-            ▼                                    ▼                            ▼
-┌───────────────────────┐         ┌───────────────────────┐    ┌─────────────────────┐
-│ 4a. VALIDATE          │         │ 4b. ANALYZE           │    │ 4c. SERIALIZE       │
-│ ┌───────────────────┐ │         │ ┌───────────────────┐ │    │ ┌─────────────────┐ │
-│ │ SchemaValidator   │ │         │ │ StaticAnalyzer    │ │    │ │ YamlExporter    │ │
-│ │ (Outbound Adapter)│ │         │ │ (Outbound Adapter)│ │    │ │ (Outbound       │ │
-│ └───────────────────┘ │         │ └───────────────────┘ │    │ │  Adapter)       │ │
-│ - Structure checks    │         │ - DAG validation      │    │ └─────────────────┘ │
-│ - Required fields     │         │ - Reference integrity │    │ - Domain → YAML     │
-│ - Type validation     │         │ - Unused detection    │    │ - Platform format   │
-└───────────────────────┘         └───────────────────────┘    └─────────────────────┘
-            │                                    │                            │
-            └────────────────────────────────────┼────────────────────────────┘
-                                                 │
-                                                 ▼
-┌──────────────────────────────────────────────────────────────────────────────┐
-│ 5. OUTPUT                                                                     │
-│    ┌────────────────────────────────────────────────────────────────────┐    │
-│    │  CompilationResult                                                 │    │
-│    │  - validation_result: ValidationResult (errors, warnings)          │    │
-│    │  - yaml_content: str | None (only if valid)                        │    │
-│    │  - is_successful: bool                                             │    │
-│    └────────────────────────────────────────────────────────────────────┘    │
-│                                         │                                     │
-│                                         ▼                                     │
-│                              ┌─────────────────────┐                          │
-│                              │  agent.yaml file    │  ──▶  Submit to Platform │
-│                              └─────────────────────┘                          │
-└──────────────────────────────────────────────────────────────────────────────┘
+Builder API -> AgentDefinition -> validate() -> export_yaml()
+                 |                 |              |
+               Domain      Schema + Gates + Static   YAML
 ```
 
 ---
@@ -188,37 +121,44 @@ class SchemaValidator:
 - Value constraints
 - Structural integrity
 
-### Step 4b: Static Analysis
+### Step 4b: Review Gates
+
+`ReviewGateRules` enforces platform-aligned contract checks:
+
+- Contract completeness
+- No shadow runtime patterns
+- Result sovereignty
+- Billing hint only
+- EIP dependency declarations
+
+### Step 4c: Static Analysis
 
 `StaticAnalyzer` checks logical correctness:
 
 ```python
+from ainalyn.domain.rules import DefinitionRules
+
 class StaticAnalyzer:
-    """Outbound Adapter implementing IDefinitionAnalyzer"""
-
-    def analyze(self, definition: AgentDefinition) -> tuple[AnalysisIssue, ...]:
+    def analyze(self, definition: AgentDefinition) -> tuple[ValidationError, ...]:
         issues = []
-
         for workflow in definition.workflows:
-            # DAG validation
-            if self._has_cycles(workflow):
-                issues.append(AnalysisIssue("W001", f"Workflow '{workflow.name}' has cycles"))
+            cycles = DefinitionRules.detect_circular_dependencies(workflow)
+            if cycles:
+                issues.append(ValidationError(code="CIRCULAR_DEPENDENCY", path=f"workflow:{workflow.name}", message="Cycle detected"))
 
-            # Reference integrity
-            for edge in workflow.edges:
-                if not self._node_exists(workflow, edge.to):
-                    issues.append(AnalysisIssue("E010", f"Edge references unknown node '{edge.to}'"))
+            unreachable = DefinitionRules.get_unreachable_nodes(workflow)
+            for node_name in unreachable:
+                issues.append(ValidationError(code="UNREACHABLE_NODE", path=f"workflow:{workflow.name}", message=f"Unreachable node: {node_name}"))
 
         return tuple(issues)
 ```
 
 **Checks performed**:
-- Workflow is a DAG (no cycles)
-- All references resolve
-- No orphan nodes
-- No unused definitions
+- Workflow cycles
+- Unreachable nodes
+- Unused resources
 
-### Step 4c: Serialization
+### Step 4d: Serialization
 
 `YamlExporter` converts domain to YAML:
 
@@ -281,6 +221,7 @@ The SDK has multiple validation layers, each with a specific responsibility:
 |-------|----------|------|---------|
 | **Domain** | `domain/entities/` | Entity creation | Invariants that must always hold |
 | **Schema** | `adapters/outbound/schema_validator.py` | Compilation | Structural correctness |
+| **Review Gates** | `domain/rules/review_gate_rules.py` | Compilation | Contract gate enforcement |
 | **Static Analysis** | `adapters/outbound/static_analyzer.py` | Compilation | Logical correctness |
 
 ### Domain Validation Example
@@ -297,15 +238,21 @@ result = compile_agent(agent)
 # result.validation_result.errors contains "version required"
 ```
 
+### Review Gates Example
+```python
+# Example: missing task_goal or output_schema triggers gate violations
+result = validate(agent)
+for error in result.errors:
+    print(error.code, error.message)
+```
+
 ### Static Analysis Example
 ```python
 # Valid structure, but logical error
 workflow = (
     WorkflowBuilder("main")
-    .add_node(NodeBuilder("a").build())
-    .add_node(NodeBuilder("b").build())
-    .add_edge("a", "b")
-    .add_edge("b", "a")  # Creates cycle!
+    .add_node(NodeBuilder("a").next_nodes("b").build())
+    .add_node(NodeBuilder("b").next_nodes("a").build())  # Creates cycle!
     .build()
 )
 result = compile_agent(agent)
@@ -333,7 +280,7 @@ result = compile_agent(agent)
 if not result.is_successful:
     for error in result.validation_result.errors:
         print(f"[{error.code}] {error.message}")
-        print(f"  Location: {error.location}")
+        print(f"  Path: {error.path}")
         print(f"  Suggestion: {error.suggestion}")
 ```
 
