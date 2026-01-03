@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ainalyn.domain.entities import AgentDefinition, Module, Node, NodeType, Workflow
+from ainalyn.domain.entities import AgentDefinition, AgentType, Module, Node, NodeType, Workflow
 from ainalyn.domain.rules import DefinitionRules
 
 
@@ -17,28 +17,20 @@ class TestNameValidation:
         assert DefinitionRules.is_valid_name("a")
         assert DefinitionRules.is_valid_name("a1")
         assert DefinitionRules.is_valid_name("agent-123")
+        assert DefinitionRules.is_valid_name("MyAgent")
+        assert DefinitionRules.is_valid_name("HTTP-Fetcher")
+        assert DefinitionRules.is_valid_name("my_agent")
+        assert DefinitionRules.is_valid_name("123-agent")
+        assert DefinitionRules.is_valid_name("-agent")
 
     def test_invalid_names(self) -> None:
         """Test that invalid names fail validation."""
         # Empty string
         assert not DefinitionRules.is_valid_name("")
 
-        # Uppercase letters
-        assert not DefinitionRules.is_valid_name("MyAgent")
-        assert not DefinitionRules.is_valid_name("HTTP-Fetcher")
-
         # Spaces
         assert not DefinitionRules.is_valid_name("my agent")
         assert not DefinitionRules.is_valid_name("http fetcher")
-
-        # Underscores
-        assert not DefinitionRules.is_valid_name("my_agent")
-
-        # Starting with number
-        assert not DefinitionRules.is_valid_name("123-agent")
-
-        # Starting with hyphen
-        assert not DefinitionRules.is_valid_name("-agent")
 
         # Special characters
         assert not DefinitionRules.is_valid_name("my@agent")
@@ -53,10 +45,6 @@ class TestVersionValidation:
         assert DefinitionRules.is_valid_version("1.0.0")
         assert DefinitionRules.is_valid_version("0.1.0")
         assert DefinitionRules.is_valid_version("10.20.30")
-        assert DefinitionRules.is_valid_version("1.0.0-alpha")
-        assert DefinitionRules.is_valid_version("1.0.0-alpha.1")
-        assert DefinitionRules.is_valid_version("1.0.0+build.123")
-        assert DefinitionRules.is_valid_version("1.0.0-beta+build")
 
     def test_invalid_versions(self) -> None:
         """Test that invalid versions fail validation."""
@@ -75,6 +63,10 @@ class TestVersionValidation:
         # Invalid format
         assert not DefinitionRules.is_valid_version("1.0.0.0")
         assert not DefinitionRules.is_valid_version("a.b.c")
+        assert not DefinitionRules.is_valid_version("1.0.0-alpha")
+        assert not DefinitionRules.is_valid_version("1.0.0-alpha.1")
+        assert not DefinitionRules.is_valid_version("1.0.0+build.123")
+        assert not DefinitionRules.is_valid_version("1.0.0-beta+build")
 
 
 class TestWorkflowValidation:
@@ -156,6 +148,7 @@ class TestResourceReferences:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.ATOMIC,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -175,6 +168,7 @@ class TestResourceReferences:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.ATOMIC,
             workflows=(workflow,),
             modules=(module,),
         )
@@ -267,6 +261,7 @@ class TestUnusedResources:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.ATOMIC,
             workflows=(workflow,),
             modules=(module1, module2),
         )
@@ -286,6 +281,7 @@ class TestUnusedResources:
             name="test",
             version="1.0.0",
             description="Test",
+            agent_type=AgentType.ATOMIC,
             workflows=(workflow,),
             modules=(module,),
         )

@@ -14,6 +14,7 @@ from ainalyn.application.ports.inbound.validate_agent_definition import (
     ValidationError,
     ValidationResult,
 )
+from ainalyn.domain.rules import ReviewGateRules
 
 if TYPE_CHECKING:
     from ainalyn.application.ports.outbound.definition_schema_validation import (
@@ -89,9 +90,19 @@ class ValidateDefinitionUseCase:
         schema_errors = self._schema_validator.validate_schema(definition)
         errors.extend(schema_errors)
 
-        # Phase 2: Static analysis (only if no schema errors)
+        # Phase 2: Review Gates + Static analysis (only if no schema errors)
         has_schema_errors = any(e.severity == Severity.ERROR for e in schema_errors)
         if not has_schema_errors:
+            gate_violations = ReviewGateRules.validate_all_gates(definition)
+            for violation in gate_violations:
+                errors.append(
+                    ValidationError(
+                        code=violation.code.value,
+                        path=violation.location or "agent",
+                        message=violation.message,
+                        severity=Severity.ERROR,
+                    )
+                )
             analysis_issues = self._static_analyzer.analyze(definition)
             errors.extend(analysis_issues)
 

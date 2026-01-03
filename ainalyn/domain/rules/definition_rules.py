@@ -17,11 +17,11 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ainalyn.domain.entities import AgentDefinition, Workflow
 
-# Pattern for valid names: lowercase letters, numbers, and hyphens
-NAME_PATTERN = re.compile(r"^[a-z][a-z0-9-]*$")
+# Pattern for valid names: alphanumeric, hyphen, underscore
+NAME_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
 
-# Pattern for semantic versioning (simplified)
-SEMVER_PATTERN = re.compile(r"^\d+\.\d+\.\d+(?:-[\w.]+)?(?:\+[\w.]+)?$")
+# Pattern for semantic versioning (rule schema)
+SEMVER_PATTERN = re.compile(r"^\d+\.\d+\.\d+$")
 
 
 class DefinitionRules:
