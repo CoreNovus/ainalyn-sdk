@@ -22,6 +22,24 @@ from enum import Enum
 from typing import Any
 
 
+class PlatformErrors(str, Enum):
+    """
+    Standard error codes from Platform Core.
+
+    According to 00_global_types.py specification, these are
+    the standard error codes that Platform Core may return.
+
+    Attributes:
+        TIMEOUT: Platform timeout occurred.
+        INTERNAL_ERROR: Platform internal error.
+        USER_INPUT_INVALID: User input validation failed.
+    """
+
+    TIMEOUT = "PLATFORM_TIMEOUT"
+    INTERNAL_ERROR = "PLATFORM_INTERNAL_ERROR"
+    USER_INPUT_INVALID = "USER_INPUT_INVALID"
+
+
 class ExecutionStatus(Enum):
     """
     Execution status for SDK Runtime reporting.
@@ -31,17 +49,23 @@ class ExecutionStatus(Enum):
     these statuses to REPORT to Platform Core.
 
     Attributes:
+        REQUESTED: Execution request just received.
+            Initial state when task is accepted.
         RUNNING: Execution is in progress.
             Reported at start of handler execution.
         SUCCEEDED: Execution completed successfully.
             Terminal state. Full billing applies.
         FAILED: Execution failed.
             Terminal state. Billing depends on failure type.
+        ABORTED: Execution cancelled by user.
+            Terminal state. Prorated billing based on progress.
     """
 
+    REQUESTED = "REQUESTED"
     RUNNING = "RUNNING"
     SUCCEEDED = "SUCCEEDED"
     FAILED = "FAILED"
+    ABORTED = "ABORTED"
 
 
 @dataclass(frozen=True, slots=True)

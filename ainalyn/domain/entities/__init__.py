@@ -35,6 +35,7 @@ from ainalyn.domain.entities.execution_context import (
 from ainalyn.domain.entities.execution_result import (
     ExecutionResult,
     ExecutionStatus,
+    PlatformErrors,
     StandardError,
 )
 from ainalyn.domain.entities.module import Module
@@ -79,6 +80,7 @@ __all__ = [
     "InfraContext",
     "ExecutionResult",
     "ExecutionStatus",
+    "PlatformErrors",
     "StandardError",
     # EIP-related entities
     "EIPBinding",
