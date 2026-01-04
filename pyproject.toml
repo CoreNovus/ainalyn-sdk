@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ainalyn-sdk"
-version = "0.1.0-alpha.5"
+version = "0.2.0-alpha.2"
 description = "Agent Definition Compiler for Ainalyn Platform"
 readme = "README.md"
 license = { text = "MIT" }
