@@ -441,6 +441,16 @@ directory = "htmlcov"
 output = "coverage.xml"
 
 # ============================================================================
+# Bandit - Security Linter
+# ============================================================================
+[tool.bandit]
+skips = [
+    "B101",  # assert_used - Used for type narrowing in yaml_serializer.py
+    "B102",  # exec_used - Needed to load agent definitions in cli.py
+    "B110",  # try_except_pass - Intentional in runtime/decorators.py
+]
+
+# ============================================================================
 # Hatch - Build System
 # ============================================================================
 [tool.hatch.build.targets.wheel]
