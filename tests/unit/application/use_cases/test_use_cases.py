@@ -36,7 +36,9 @@ class TestValidateDefinitionUseCase:
             description="Test",
             agent_type=AgentType.COMPOSITE,
             task_goal="Test agent",
-            completion_criteria=CompletionCriteria(success="Success", failure="Failure"),
+            completion_criteria=CompletionCriteria(
+                success="Success", failure="Failure"
+            ),
             input_schema={"type": "object"},
             output_schema={"type": "object"},
             workflows=(workflow,),
@@ -62,7 +64,9 @@ class TestValidateDefinitionUseCase:
             description="Test",
             agent_type=AgentType.COMPOSITE,
             task_goal="Test",
-            completion_criteria=CompletionCriteria(success="Success", failure="Failure"),
+            completion_criteria=CompletionCriteria(
+                success="Success", failure="Failure"
+            ),
             input_schema={"type": "object"},
             output_schema={"type": "object"},
             workflows=(workflow,),
@@ -91,7 +95,9 @@ class TestValidateDefinitionUseCase:
             description="Test",
             agent_type=AgentType.COMPOSITE,
             task_goal="Test",
-            completion_criteria=CompletionCriteria(success="Success", failure="Failure"),
+            completion_criteria=CompletionCriteria(
+                success="Success", failure="Failure"
+            ),
             input_schema={"type": "object"},
             output_schema={"type": "object"},
             workflows=(workflow,),
@@ -123,7 +129,9 @@ class TestValidateDefinitionUseCase:
             description="Test",
             agent_type=AgentType.COMPOSITE,
             task_goal="Test agent",
-            completion_criteria=CompletionCriteria(success="Success", failure="Failure"),
+            completion_criteria=CompletionCriteria(
+                success="Success", failure="Failure"
+            ),
             input_schema={"type": "object"},
             output_schema={"type": "object"},
             workflows=(workflow,),
@@ -156,7 +164,9 @@ class TestExportDefinitionUseCase:
             description="Test",
             agent_type=AgentType.COMPOSITE,
             task_goal="Test agent",
-            completion_criteria=CompletionCriteria(success="Success", failure="Failure"),
+            completion_criteria=CompletionCriteria(
+                success="Success", failure="Failure"
+            ),
             input_schema={"type": "object"},
             output_schema={"type": "object"},
             workflows=(workflow,),
@@ -183,7 +193,9 @@ class TestExportDefinitionUseCase:
             description="Test",
             agent_type=AgentType.COMPOSITE,
             task_goal="Test agent",
-            completion_criteria=CompletionCriteria(success="Success", failure="Failure"),
+            completion_criteria=CompletionCriteria(
+                success="Success", failure="Failure"
+            ),
             input_schema={"type": "object"},
             output_schema={"type": "object"},
             workflows=(workflow,),
@@ -216,7 +228,9 @@ class TestCompileDefinitionUseCase:
             description="Test",
             agent_type=AgentType.COMPOSITE,
             task_goal="Test agent",
-            completion_criteria=CompletionCriteria(success="Success", failure="Failure"),
+            completion_criteria=CompletionCriteria(
+                success="Success", failure="Failure"
+            ),
             input_schema={"type": "object"},
             output_schema={"type": "object"},
             workflows=(workflow,),
@@ -245,7 +259,9 @@ class TestCompileDefinitionUseCase:
             description="Test",
             agent_type=AgentType.COMPOSITE,
             task_goal="Test",
-            completion_criteria=CompletionCriteria(success="Success", failure="Failure"),
+            completion_criteria=CompletionCriteria(
+                success="Success", failure="Failure"
+            ),
             input_schema={"type": "object"},
             output_schema={"type": "object"},
             workflows=(workflow,),
@@ -273,7 +289,9 @@ class TestCompileDefinitionUseCase:
             description="Test",
             agent_type=AgentType.COMPOSITE,
             task_goal="Test agent",
-            completion_criteria=CompletionCriteria(success="Success", failure="Failure"),
+            completion_criteria=CompletionCriteria(
+                success="Success", failure="Failure"
+            ),
             input_schema={"type": "object"},
             output_schema={"type": "object"},
             workflows=(workflow,),
@@ -303,7 +321,9 @@ class TestCompileDefinitionUseCase:
             description="Test",
             agent_type=AgentType.COMPOSITE,
             task_goal="Test",
-            completion_criteria=CompletionCriteria(success="Success", failure="Failure"),
+            completion_criteria=CompletionCriteria(
+                success="Success", failure="Failure"
+            ),
             input_schema={"type": "object"},
             output_schema={"type": "object"},
             workflows=(workflow,),
@@ -333,7 +353,9 @@ class TestCompileDefinitionUseCase:
             description="Test",
             agent_type=AgentType.COMPOSITE,
             task_goal="Test agent",
-            completion_criteria=CompletionCriteria(success="Success", failure="Failure"),
+            completion_criteria=CompletionCriteria(
+                success="Success", failure="Failure"
+            ),
             input_schema={"type": "object"},
             output_schema={"type": "object"},
             workflows=(workflow,),
@@ -363,7 +385,9 @@ class TestCompileDefinitionUseCase:
             description="Test",
             agent_type=AgentType.COMPOSITE,
             task_goal="Test agent",
-            completion_criteria=CompletionCriteria(success="Success", failure="Failure"),
+            completion_criteria=CompletionCriteria(
+                success="Success", failure="Failure"
+            ),
             input_schema={"type": "object"},
             output_schema={"type": "object"},
             workflows=(workflow,),

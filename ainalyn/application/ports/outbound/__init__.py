@@ -30,8 +30,8 @@ from ainalyn.application.ports.outbound.definition_static_analysis import (
 )
 
 __all__ = [
-    "IDefinitionSchemaValidator",
     "IDefinitionAnalyzer",
+    "IDefinitionSchemaValidator",
     "IDefinitionSerializer",
     "IDefinitionWriter",
 ]

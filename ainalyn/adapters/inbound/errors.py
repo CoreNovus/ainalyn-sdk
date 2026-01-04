@@ -43,9 +43,9 @@ DuplicateNameError = DuplicateError
 # Re-export for compatibility
 __all__ = [
     "BuilderError",
-    "MissingRequiredFieldError",
-    "InvalidValueError",
-    "InvalidReferenceError",
     "DuplicateNameError",
     "EmptyCollectionError",
+    "InvalidReferenceError",
+    "InvalidValueError",
+    "MissingRequiredFieldError",
 ]

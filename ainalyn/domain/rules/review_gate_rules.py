@@ -112,7 +112,9 @@ class ReviewGateRules:
             list[GateViolation]: All violations found across all gates.
         """
         violations: list[GateViolation] = []
-        violations.extend(ReviewGateRules.validate_gate1_contract_completeness(definition))
+        violations.extend(
+            ReviewGateRules.validate_gate1_contract_completeness(definition)
+        )
         violations.extend(ReviewGateRules.validate_gate2_no_shadow_runtime(definition))
         violations.extend(ReviewGateRules.validate_gate3_result_sovereignty(definition))
         violations.extend(ReviewGateRules.validate_gate4_billing_compliance(definition))
@@ -290,9 +292,7 @@ class ReviewGateRules:
         # COMPOSITE agents must have at least one terminal node that produces output
         for workflow in definition.workflows:
             # Find terminal nodes (no outgoing edges)
-            terminal_nodes = [
-                node for node in workflow.nodes if not node.next_nodes
-            ]
+            terminal_nodes = [node for node in workflow.nodes if not node.next_nodes]
 
             if not terminal_nodes:
                 # All nodes have outgoing edges - possible infinite workflow

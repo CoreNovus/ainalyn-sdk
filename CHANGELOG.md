@@ -13,6 +13,7 @@ This is the first alpha release of v0.2, featuring complete Worker Protocol comp
 comprehensive documentation, and production-ready quality.
 
 ### Added
+
 - **v0.2 Core Features**:
   - `AgentType` enum (ATOMIC | COMPOSITE) - required field for all agents
   - `CompletionCriteria` entity with success/failure conditions
@@ -43,6 +44,7 @@ comprehensive documentation, and production-ready quality.
   - CLI reference
 
 ### Changed
+
 - **Breaking: agent_type is now required** - All `AgentDefinition` must specify `AgentType.ATOMIC` or `AgentType.COMPOSITE`
 - **Breaking: v0.2 fields required** - `task_goal`, `completion_criteria`, `input_schema`, `output_schema` are mandatory
 - Updated README from 164 to 960 lines (+485%)
@@ -50,6 +52,7 @@ comprehensive documentation, and production-ready quality.
 - Improved error messages for missing v0.2 fields
 
 ### Fixed
+
 - Runtime output validation logic in `decorators.py`
 - Import statements sorted correctly
 - MyPy unreachable code warnings in runtime module
@@ -57,6 +60,7 @@ comprehensive documentation, and production-ready quality.
 - Test suite updated for v0.2 compliance (175 tests)
 
 ### Quality Assurance
+
 - ✅ Ruff linting: All checks passed
 - ✅ MyPy type checking: 66 files, 0 errors
 - ✅ Pytest: 175/175 tests passed (100% pass rate)
@@ -65,6 +69,7 @@ comprehensive documentation, and production-ready quality.
 - ✅ Type coverage: 100%
 
 ### Spec Compliance
+
 - ✅ Worker Protocol (02_worker_protocol.md) - Complete
 - ✅ Review Gate 1 - Complete
 - ✅ SYNC/ASYNC modes per spec
@@ -100,6 +105,7 @@ agent = AgentBuilder("my-agent") \
 ## [0.1.0-alpha.5] - 2024-12-31
 
 ### Fixed
+
 - **CI/CD Configuration**: Fixed incorrect source directory paths in CI workflows and pre-commit hooks
   - Updated `.github/workflows/ci.yml` to use correct paths (`ainalyn` instead of `src`)
   - Updated `.pre-commit-config.yaml` MyPy and Bandit paths
@@ -108,6 +114,7 @@ agent = AgentBuilder("my-agent") \
 - **Code Quality**: Fixed 3 import sorting issues and reformatted 2 files with Ruff
 
 ### Changed
+
 - **Submission API Warning**: Added explicit warnings to `submit_agent()` and `track_submission()` documentation
   - Clearly states these functions are NOT available in current version
   - Raises `NotImplementedError` when called
@@ -117,6 +124,7 @@ agent = AgentBuilder("my-agent") \
   - Ensures submission functionality is explicitly opt-in
 
 ### Added
+
 - **Quality Assurance Documentation**:
   - `AGENT_DEFINITION_REFERENCE.md`: Technical reference for EIP and Platform Core teams
   - `QUALITY_ASSURANCE.md`: Complete guide to static checks, CI/CD, and development workflow
@@ -127,6 +135,7 @@ agent = AgentBuilder("my-agent") \
   - Verified all checks pass: Ruff (✅), MyPy (✅), Pytest (160 tests ✅), Bandit (⚠️ 2 known issues)
 
 ### Platform Constitution Compliance
+
 - **Submission Disabled**: Confirmed SDK does NOT provide agent submission in current version
   - `HttpPlatformClient.submit_agent()` raises `NotImplementedError`
   - `MockPlatformClient` only for internal SDK testing
@@ -134,6 +143,7 @@ agent = AgentBuilder("my-agent") \
   - Developers must use local validation and YAML export only
 
 ### Developer Experience
+
 - Improved local development workflow with comprehensive Makefile
 - All CI checks can be run locally to catch issues before push
 - Pre-commit hooks automatically enforce code quality standards
@@ -142,12 +152,14 @@ agent = AgentBuilder("my-agent") \
 ## [0.1.0-alpha.3] - 2024-12-31
 
 ### Fixed
+
 - Fixed PyPI project description URLs that were returning 404 errors
 - Documentation links now point to correct locations
 
 ## [0.1.0-alpha.2] - 2024-12-31
 
 ### Added
+
 - **Agent Submission API**: New `submit_agent()` function for direct submission to Platform Core
   - Validates definition before submission
   - Supports custom base_url for staging/testing environments
@@ -177,24 +189,28 @@ agent = AgentBuilder("my-agent") \
 - **Examples**: New `examples/submit_agent_example.py` demonstrating end-to-end submission workflow
 
 ### Changed
+
 - Updated `DefinitionService` to include `submit()` and `track_submission()` methods
 - Enhanced `service_factory` to inject `MockPlatformClient` by default
 - Updated package exports in `__init__.py` to include submission-related APIs
 - Updated README.md with submission workflow documentation
 
 ### Documentation
+
 - Added "Submitting Agents to Platform" section to README
 - Added comprehensive docstrings for all submission-related APIs
 - Included Platform Constitution compliance notes in all submission documentation
 - Created detailed implementation plan (IMPLEMENTATION_PLAN_v0.1.0-alpha.2.md)
 
 ### Platform Constitution Compliance
+
 - SDK can submit but NOT approve (Platform Core has final authority)
 - Submission does NOT create an Execution
 - Submission does NOT incur billing (unless platform policy explicitly states)
 - All submission workflows respect platform governance boundaries
 
 ### Notes
+
 - Currently uses `MockPlatformClient` for testing until Platform Core API is available
 - Real HTTP communication will be enabled when Platform Core API endpoints are ready
 - This is an alpha release - API may change based on Platform Core requirements
@@ -202,6 +218,7 @@ agent = AgentBuilder("my-agent") \
 ## [0.1.0-alpha.1] - 2024-12-30
 
 ### Added
+
 - Initial alpha release of Ainalyn SDK
 - Agent Definition builders (`AgentBuilder`, `WorkflowBuilder`, `NodeBuilder`, etc.)
 - Fluent API for defining task-oriented agents
@@ -212,5 +229,6 @@ agent = AgentBuilder("my-agent") \
 - Hexagonal architecture with clean separation of concerns
 
 ### Notes
+
 - This is an alpha release for early adopters and testing
 - API may change in future versions based on feedback

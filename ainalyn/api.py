@@ -288,9 +288,9 @@ def track_submission(
 
 # Convenience re-exports for quick imports
 __all__ = [
-    "validate",
-    "export_yaml",
     "compile_agent",
+    "export_yaml",
     "submit_agent",
     "track_submission",
+    "validate",
 ]

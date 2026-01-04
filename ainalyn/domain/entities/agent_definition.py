@@ -110,10 +110,18 @@ class AgentDefinition:
         ...         success="Text extracted with page numbers",
         ...         failure="PDF corrupted or password protected",
         ...     ),
-        ...     input_schema={"type": "object", "properties": {"file_url": {"type": "string"}}},
-        ...     output_schema={"type": "object", "properties": {"text": {"type": "string"}}},
+        ...     input_schema={
+        ...         "type": "object",
+        ...         "properties": {"file_url": {"type": "string"}},
+        ...     },
+        ...     output_schema={
+        ...         "type": "object",
+        ...         "properties": {"text": {"type": "string"}},
+        ...     },
         ...     behavior=BehaviorConfig(is_long_running=False, timeout_seconds=60),
-        ...     pricing_strategy=PricingStrategy(type=PricingType.FIXED, fixed_price_cents=5),
+        ...     pricing_strategy=PricingStrategy(
+        ...         type=PricingType.FIXED, fixed_price_cents=5
+        ...     ),
         ...     workflows=(),  # ATOMIC agents may have no workflow
         ... )
     """

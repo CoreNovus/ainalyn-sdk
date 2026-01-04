@@ -74,12 +74,18 @@ class AgentBuilder:
         ...         category="document",
         ...     )
         ...     .task_goal("Extract all text content from a PDF file")
-        ...     .completion_criteria(CompletionCriteria(
-        ...         success="Text extracted with page numbers",
-        ...         failure="PDF corrupted or password protected",
-        ...     ))
-        ...     .input_schema({"type": "object", "properties": {"file_url": {"type": "string"}}})
-        ...     .output_schema({"type": "object", "properties": {"text": {"type": "string"}}})
+        ...     .completion_criteria(
+        ...         CompletionCriteria(
+        ...             success="Text extracted with page numbers",
+        ...             failure="PDF corrupted or password protected",
+        ...         )
+        ...     )
+        ...     .input_schema(
+        ...         {"type": "object", "properties": {"file_url": {"type": "string"}}}
+        ...     )
+        ...     .output_schema(
+        ...         {"type": "object", "properties": {"text": {"type": "string"}}}
+        ...     )
         ...     .behavior(is_long_running=False, timeout_seconds=60)
         ...     .pricing_fixed(price_cents=5)
         ...     .build()

@@ -25,7 +25,7 @@ from ainalyn.application.ports.inbound.validate_agent_definition import (
 
 __all__ = [
     "IValidateAgentDefinition",
+    "Severity",
     "ValidationError",
     "ValidationResult",
-    "Severity",
 ]

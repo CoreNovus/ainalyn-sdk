@@ -244,9 +244,7 @@ class JsonExporter:
             return {}
 
         # For COMPOSITE agents, export all workflows
-        result: dict[str, Any] = {
-            "workflows": []
-        }
+        result: dict[str, Any] = {"workflows": []}
 
         for workflow in workflows:
             if not isinstance(workflow, Workflow):

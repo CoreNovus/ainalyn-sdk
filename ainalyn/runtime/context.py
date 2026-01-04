@@ -63,10 +63,10 @@ def parse_event(event: dict[str, Any]) -> ExecutionContext:
         ...         "agentId": "pdf-parser",
         ...         "version": "1.0.0",
         ...         "attempt": 1,
-        ...         "mode": "SYNC"
+        ...         "mode": "SYNC",
         ...     },
         ...     "security": {"userSub": "user-123"},
-        ...     "input": {"file_url": "s3://..."}
+        ...     "input": {"file_url": "s3://..."},
         ... }
         >>> context = parse_event(event)
         >>> context.meta.execution_id
