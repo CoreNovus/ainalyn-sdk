@@ -64,12 +64,14 @@ print(yaml_output)
 Ainalyn SDK enables developers to create **task-oriented agents** with two approaches:
 
 ### 📊 COMPOSITE Agents (Graph-First)
+
 - Build workflows using **node-based graphs**
 - Pure configuration - **no code required**
 - Platform executes your workflow
 - Perfect for: Data pipelines, orchestration, multi-step processes
 
 ### 💻 ATOMIC Agents (Code-First)
+
 - Write **Python functions** with custom logic
 - Full implementation control
 - Deploy as **AWS Lambda** functions
@@ -109,6 +111,7 @@ AgentDefinition
 ### Platform Review Gates
 
 The SDK validates against 5 platform compliance gates:
+
 1. **Contract Completeness** - All schemas defined
 2. **No Shadow Runtime** - Clear ATOMIC vs COMPOSITE distinction
 3. **No Billing Authority** - Pricing is hint-only
@@ -202,16 +205,19 @@ ainalyn validate my_agent.py --verbose
 
 ### Common Issues
 
-**ImportError: No module named 'ainalyn'**
+#### ImportError: No module named 'ainalyn'
+
 ```bash
 pip install ainalyn-sdk
 ```
 
-**ValidationError: Missing required field**
+#### ValidationError: Missing required field
+
 - Ensure all required fields are set in builders
 - Check that `description()`, `version()`, etc. are called
 
-**ReferenceError: Module 'xyz' not found**
+#### ReferenceError: Module 'xyz' not found
+
 - Verify module names match exactly
 - Check that referenced modules are added to agent
 
@@ -221,9 +227,9 @@ For more help, see our [GitHub Issues](https://github.com/CoreNovus/ainalyn-sdk/
 
 ## 📖 Documentation
 
-- **Full Documentation**: https://docs.ainalyn.corenovus.com/
-- **API Reference**: https://github.com/CoreNovus/ainalyn-sdk/blob/master/docs/api-reference.md
-- **Architecture Guide**: https://github.com/CoreNovus/ainalyn-sdk/blob/master/docs/architecture.md
+- **Full Documentation**: <https://docs.ainalyn.corenovus.com/>
+- **API Reference**: <https://github.com/CoreNovus/ainalyn-sdk/blob/master/docs/api-reference.md>
+- **Architecture Guide**: <https://github.com/CoreNovus/ainalyn-sdk/blob/master/docs/architecture.md>
 
 ---
 
@@ -252,9 +258,9 @@ See [CHANGELOG.md](https://github.com/CoreNovus/ainalyn-sdk/blob/master/CHANGELO
 
 ## 🆘 Support
 
-- **Documentation**: https://docs.ainalyn.corenovus.com/
-- **Report Issues**: https://github.com/CoreNovus/ainalyn-sdk/issues
-- **Email**: dev@ainalyn.io
+- **Documentation**: <https://docs.ainalyn.corenovus.com/>
+- **Report Issues**: <https://github.com/CoreNovus/ainalyn-sdk/issues>
+- **Email**: <dev@ainalyn.io>
 
 ---
 
