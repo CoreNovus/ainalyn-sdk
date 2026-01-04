@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Any, Self
 
-from ainalyn.adapters.primary.errors import (
+from ainalyn.adapters.inbound.errors import (
     InvalidReferenceError,
     InvalidValueError,
     MissingRequiredFieldError,
@@ -587,7 +587,7 @@ class WorkflowBuilder:
         Raises:
             DuplicateNameError: If a node with this name already exists.
         """
-        from ainalyn.adapters.primary.errors import DuplicateNameError
+        from ainalyn.adapters.inbound.errors import DuplicateNameError
 
         # Check for duplicate names
         if any(n.name == node.name for n in self._nodes):
@@ -611,7 +611,7 @@ class WorkflowBuilder:
         Raises:
             DuplicateNameError: If any nodes have duplicate names.
         """
-        from ainalyn.adapters.primary.errors import DuplicateNameError
+        from ainalyn.adapters.inbound.errors import DuplicateNameError
 
         # Check for duplicate names
         node_names = [n.name for n in nodes]
@@ -649,7 +649,7 @@ class WorkflowBuilder:
             EmptyCollectionError: If no nodes have been added.
             InvalidValueError: If entry_node doesn't exist in nodes.
         """
-        from ainalyn.adapters.primary.errors import EmptyCollectionError
+        from ainalyn.adapters.inbound.errors import EmptyCollectionError
 
         if self._description is None:
             raise MissingRequiredFieldError("description", "WorkflowBuilder")
@@ -783,7 +783,7 @@ class AgentBuilder:
         Raises:
             DuplicateNameError: If a workflow with this name already exists.
         """
-        from ainalyn.adapters.primary.errors import DuplicateNameError
+        from ainalyn.adapters.inbound.errors import DuplicateNameError
 
         if any(w.name == workflow.name for w in self._workflows):
             raise DuplicateNameError(
@@ -810,7 +810,7 @@ class AgentBuilder:
         Raises:
             DuplicateNameError: If any workflows have duplicate names.
         """
-        from ainalyn.adapters.primary.errors import DuplicateNameError
+        from ainalyn.adapters.inbound.errors import DuplicateNameError
 
         workflow_names = [w.name for w in workflows]
         seen = set()
@@ -835,7 +835,7 @@ class AgentBuilder:
         Raises:
             DuplicateNameError: If a module with this name already exists.
         """
-        from ainalyn.adapters.primary.errors import DuplicateNameError
+        from ainalyn.adapters.inbound.errors import DuplicateNameError
 
         if any(m.name == module.name for m in self._modules):
             raise DuplicateNameError("module", module.name, f"agent '{self._name}'")
@@ -856,7 +856,7 @@ class AgentBuilder:
         Raises:
             DuplicateNameError: If any modules have duplicate names.
         """
-        from ainalyn.adapters.primary.errors import DuplicateNameError
+        from ainalyn.adapters.inbound.errors import DuplicateNameError
 
         module_names = [m.name for m in modules]
         seen = set()
@@ -881,7 +881,7 @@ class AgentBuilder:
         Raises:
             DuplicateNameError: If a prompt with this name already exists.
         """
-        from ainalyn.adapters.primary.errors import DuplicateNameError
+        from ainalyn.adapters.inbound.errors import DuplicateNameError
 
         if any(p.name == prompt.name for p in self._prompts):
             raise DuplicateNameError("prompt", prompt.name, f"agent '{self._name}'")
@@ -902,7 +902,7 @@ class AgentBuilder:
         Raises:
             DuplicateNameError: If any prompts have duplicate names.
         """
-        from ainalyn.adapters.primary.errors import DuplicateNameError
+        from ainalyn.adapters.inbound.errors import DuplicateNameError
 
         prompt_names = [p.name for p in prompts]
         seen = set()
@@ -927,7 +927,7 @@ class AgentBuilder:
         Raises:
             DuplicateNameError: If a tool with this name already exists.
         """
-        from ainalyn.adapters.primary.errors import DuplicateNameError
+        from ainalyn.adapters.inbound.errors import DuplicateNameError
 
         if any(t.name == tool.name for t in self._tools):
             raise DuplicateNameError("tool", tool.name, f"agent '{self._name}'")
@@ -948,7 +948,7 @@ class AgentBuilder:
         Raises:
             DuplicateNameError: If any tools have duplicate names.
         """
-        from ainalyn.adapters.primary.errors import DuplicateNameError
+        from ainalyn.adapters.inbound.errors import DuplicateNameError
 
         tool_names = [t.name for t in tools]
         seen = set()
@@ -977,7 +977,7 @@ class AgentBuilder:
             EmptyCollectionError: If no workflows have been added.
             InvalidReferenceError: If nodes reference undefined resources.
         """
-        from ainalyn.adapters.primary.errors import EmptyCollectionError
+        from ainalyn.adapters.inbound.errors import EmptyCollectionError
 
         if self._version is None:
             raise MissingRequiredFieldError("version", "AgentBuilder")
