@@ -96,7 +96,9 @@ class HttpPlatformClient:
             "See IMPLEMENTATION_PLAN_v0.1.0-alpha.2.md for details."
         )
 
-        # TODO: Implement HTTP communication
+        # TODO: Implement HTTP communication when Platform Core API is ready
+        # See: api.py docstrings warning "NOT AVAILABLE IN CURRENT VERSION"
+        # Reference: ../spec/01_client_api_contract.md
         # 1. Serialize definition to JSON/YAML
         # 2. POST to {base_url}/api/v1/agents/submit
         # 3. Handle authentication headers
@@ -143,7 +145,9 @@ class HttpPlatformClient:
             "See IMPLEMENTATION_PLAN_v0.1.0-alpha.2.md for details."
         )
 
-        # TODO: Implement HTTP communication
+        # TODO: Implement HTTP communication when Platform Core API is ready
+        # See: api.py docstrings warning "NOT AVAILABLE IN CURRENT VERSION"
+        # Reference: ../spec/01_client_api_contract.md
         # 1. GET to {base_url}/api/v1/submissions/{review_id}
         # 2. Handle authentication headers
         # 3. Parse response
