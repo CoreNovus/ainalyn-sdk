@@ -5,6 +5,7 @@ This document defines the labeling strategy for issues and pull requests in the 
 ## Why Labels Matter
 
 Labels help:
+
 - **New contributors** find suitable issues (`good first issue`, `help wanted`)
 - **Maintainers** prioritize and organize work
 - **Community** understand project status and focus areas
@@ -100,7 +101,7 @@ Labels help:
 
 ## Issue Lifecycle Example
 
-```
+```text
 1. User creates issue (no labels)
       ↓
 2. Maintainer triages: adds type, component, maybe priority

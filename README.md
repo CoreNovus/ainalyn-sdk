@@ -5,9 +5,10 @@
 [![Tests](https://img.shields.io/badge/tests-175%20passed-success)](https://github.com/CoreNovus/ainalyn-sdk)
 [![Type Coverage](https://img.shields.io/badge/type%20coverage-100%25-success)](https://github.com/CoreNovus/ainalyn-sdk)
 
-**Official Python SDK for Building Task-Oriented Agents on Ainalyn Platform**
+## Official Python SDK for Building Task-Oriented Agents on Ainalyn Platform
 
 The Ainalyn SDK is a dual-purpose toolkit that enables developers to:
+
 1. **Define & Compile** agents using type-safe Python builders
 2. **Execute** ATOMIC agents as AWS Lambda functions with built-in runtime support
 
@@ -40,7 +41,7 @@ Ainalyn SDK is the **official development kit** for creating task-oriented agent
 
 ### Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                    Ainalyn SDK                          │
 ├─────────────────────────────────────────────────────────┤
@@ -65,13 +66,15 @@ Ainalyn SDK is the **official development kit** for creating task-oriented agent
 
 ### 🎯 Dual Development Paths
 
-**COMPOSITE Agents (Graph-First)**
+#### COMPOSITE Agents (Graph-First)
+
 - Build workflows using visual node-based graphs
 - No code required - pure configuration
 - Executed by Platform Core's Graph Executor
 - Perfect for: Data pipelines, multi-step processes, orchestration
 
-**ATOMIC Agents (Code-First)**
+#### ATOMIC Agents (Code-First)
+
 - Write Python functions with custom business logic
 - Full control over implementation
 - Executed by SDK Runtime in AWS Lambda
@@ -106,13 +109,14 @@ pip install ainalyn-sdk boto3
 ```
 
 **Requirements:**
+
 - Python 3.11, 3.12, or 3.13
 - PyYAML >= 6.0
 - boto3 (optional, for ATOMIC runtime)
 
 ### Your First COMPOSITE Agent
 
-**Step 1: Define your agent**
+#### Step 1: Define your agent
 
 Create `my_agent.py`:
 
@@ -175,7 +179,7 @@ agent = AgentBuilder("data-processor") \
     .build()
 ```
 
-**Step 2: Compile to YAML**
+#### Step 2: Compile to YAML
 
 ```bash
 # Using CLI
@@ -197,7 +201,7 @@ else:
         print(f"  - {error.code}: {error.message}")
 ```
 
-**Step 3: Review generated YAML**
+#### Step 3: Review generated YAML
 
 ```yaml
 # agent.yaml
@@ -242,7 +246,7 @@ modules:
 
 ### Your First ATOMIC Agent
 
-**Step 1: Write your handler**
+#### Step 1: Write your handler
 
 Create `pdf_parser.py`:
 
@@ -278,7 +282,7 @@ def parse_pdf(input_data: dict) -> dict:
     }
 ```
 
-**Step 2: Create agent definition**
+#### Step 2: Create agent definition
 
 Create `pdf_parser_definition.py`:
 
@@ -317,7 +321,7 @@ agent = AgentBuilder("pdf-parser") \
 compile_agent(agent, output_path="pdf-parser.yaml")
 ```
 
-**Step 3: Deploy to AWS Lambda**
+#### Step 3: Deploy to AWS Lambda
 
 ```bash
 # Package your code
@@ -345,13 +349,15 @@ aws lambda create-function \
 
 ### Execution Modes
 
-**SYNC Mode (Fast Route)**
+#### SYNC Mode (Fast Route)
+
 - Tasks completing in < 29 seconds
 - Direct Lambda invocation (RequestResponse)
 - Result returned immediately
 - Platform Core waits for response
 
-**ASYNC Mode (Heavy Route)**
+#### ASYNC Mode (Heavy Route)
+
 - Long-running tasks (> 29 seconds)
 - Event-based Lambda invocation
 - SDK writes result to DynamoDB
@@ -361,20 +367,24 @@ aws lambda create-function \
 
 All agents must pass Platform Core's review gates:
 
-**Gate 1: Contract Completeness**
+#### Gate 1: Contract Completeness
+
 - ✅ `task_goal` - What does this agent do?
 - ✅ `completion_criteria` - Success/failure conditions
 - ✅ `input_schema` - Expected input structure
 - ✅ `output_schema` - Expected output structure
 
-**Gate 2: No Shadow Runtime**
+#### Gate 2: No Shadow Runtime
+
 - ❌ No infinite loops or unbounded iterations
 - ❌ No circular dependencies
 
-**Gate 4: No Billing Authority**
+#### Gate 4: No Billing Authority
+
 - ❌ SDK cannot calculate fees or make billing decisions
 
-**Gate 5: EIP Dependencies**
+#### Gate 5: EIP Dependencies
+
 - ✅ Declare all EIP module dependencies
 
 ---
@@ -384,12 +394,13 @@ All agents must pass Platform Core's review gates:
 ### Path 1: COMPOSITE Agents (Recommended for Beginners)
 
 **When to use:**
+
 - Building data pipelines
 - Orchestrating multiple steps
 - No custom code required
 - Leveraging existing platform modules
 
-**Example: Multi-Step Data Pipeline**
+#### Example: Multi-Step Data Pipeline
 
 ```python
 from ainalyn import (
@@ -476,12 +487,13 @@ agent = AgentBuilder("data-analyzer") \
 ### Path 2: ATOMIC Agents (For Custom Logic)
 
 **When to use:**
+
 - Custom algorithms or business logic
 - Third-party API integrations
 - Data transformations
 - Performance-critical operations
 
-**Example: Real-Time Price Monitor**
+#### Example: Real-Time Price Monitor
 
 ```python
 from ainalyn.runtime import agent
@@ -691,6 +703,7 @@ print(f"✓ Compiled: {compilation.file_path}")
 #### 1. Import Error: `ModuleNotFoundError: No module named 'ainalyn'`
 
 **Solution:**
+
 ```bash
 # Ensure SDK is installed
 pip install ainalyn-sdk
@@ -704,6 +717,7 @@ python -c "import ainalyn"
 **Cause:** Missing required v0.2 fields.
 
 **Solution:**
+
 ```python
 agent = AgentBuilder("my-agent") \
     .version("1.0.0") \
@@ -725,6 +739,7 @@ agent = AgentBuilder("my-agent") \
 **Cause:** ATOMIC agent in ASYNC mode needs boto3.
 
 **Solution:**
+
 ```bash
 pip install boto3
 ```
@@ -734,6 +749,7 @@ pip install boto3
 **Cause:** v0.2 requires explicit agent type.
 
 **Solution:**
+
 ```python
 from ainalyn import AgentType
 
@@ -749,6 +765,7 @@ agent = AgentBuilder("my-agent") \
 **Cause:** Nodes reference each other in a loop.
 
 **Solution:**
+
 ```python
 # ❌ Bad: A → B → A (circular)
 NodeBuilder("A").next_nodes("B").build()
@@ -765,6 +782,7 @@ NodeBuilder("C").build()
 **Cause:** Python file doesn't export the right variable.
 
 **Solution:**
+
 ```python
 # In your agent file, ensure you have:
 agent = AgentBuilder(...).build()  # ← Must be named 'agent' or 'definition'
@@ -867,15 +885,19 @@ from ainalyn.domain.entities import (
 ## Requirements
 
 **Python Version:**
+
 - Python 3.11, 3.12, or 3.13
 
 **Core Dependencies:**
+
 - PyYAML >= 6.0 (YAML serialization)
 
 **Optional Dependencies:**
+
 - boto3 (for ATOMIC agent runtime with ASYNC mode)
 
 **Development Dependencies:**
+
 - pytest >= 7.4.0 (testing)
 - mypy >= 1.7.0 (type checking)
 - ruff >= 0.1.8 (linting & formatting)
@@ -936,6 +958,7 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
 **Current Version:** 0.1.0-alpha.5
 
 **Recent Changes:**
+
 - ✅ Full v0.2 spec compliance (Worker Protocol)
 - ✅ Review Gate 1 validation
 - ✅ 175 tests with 100% pass rate
@@ -949,11 +972,11 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
 - **📚 Documentation**: [docs.ainalyn.corenovus.com](http://docs.ainalyn.corenovus.com/)
 - **🐛 Report Issues**: [GitHub Issues](https://github.com/CoreNovus/ainalyn-sdk/issues)
 - **💬 Discussions**: [GitHub Discussions](https://github.com/CoreNovus/ainalyn-sdk/discussions)
-- **📧 Email**: dev@ainalyn.io
+- **📧 Email**: <dev@ainalyn.io>
 - **💭 Discord**: [discord.gg/ainalyn](https://discord.gg/ainalyn)
 
 ---
 
-**Built with ❤️ by the CoreNovus Team**
+Built with ❤️ by the CoreNovus Team
 
 [Website](https://ainalyn.io) • [Platform](https://platform.ainalyn.io) • [Blog](https://blog.ainalyn.io)

@@ -4,7 +4,7 @@ This is the official documentation site for the Ainalyn SDK, built with [Nextra]
 
 ## Deployment URL
 
-- Production: https://ainalyn.corenovus.com/docs
+- Production: <https://ainalyn.corenovus.com/docs>
 
 ## Development
 
@@ -38,7 +38,7 @@ The static site will be generated in the `out/` directory.
 
 ## Project Structure
 
-```
+```text
 ainalyn-docs/
 ├── pages/
 │   ├── _app.tsx

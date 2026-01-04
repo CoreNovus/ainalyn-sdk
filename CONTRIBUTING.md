@@ -110,7 +110,7 @@ Use descriptive branch names following this pattern:
 
 Follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
 
-```
+```text
 <type>(<scope>): <subject>
 
 <body>
@@ -119,6 +119,7 @@ Follow the [Conventional Commits](https://www.conventionalcommits.org/) specific
 ```
 
 **Types:**
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation changes
@@ -127,7 +128,8 @@ Follow the [Conventional Commits](https://www.conventionalcommits.org/) specific
 - `chore`: Maintenance tasks
 
 **Examples:**
-```
+
+```text
 feat(builders): add support for conditional workflows
 
 fix(validators): correct validation for nested modules
@@ -144,13 +146,14 @@ test(analyzers): add edge case tests for circular dependency detection
 The Ainalyn SDK follows **Clean Hexagonal Architecture** with strict adherence to **SOLID principles**.
 
 For detailed architecture documentation, see:
+
 - **[Architecture Overview](docs/concepts/architecture-overview.md)** - High-level architecture explanation
 - **[Hexagonal Architecture](docs/contributor-guide/architecture/hexagonal-architecture.md)** - Detailed architecture guide
 - **[Layer Documentation](docs/contributor-guide/architecture/)** - Layer-by-layer deep dives
 
 ### Architecture Layers
 
-```
+```text
 ainalyn/
 ├── domain/              # Business logic and entities
 │   ├── entities/        # Core domain models (immutable dataclasses)
@@ -218,23 +221,27 @@ class NewEntity:
 The SDK **MUST NOT** contain any of the following:
 
 #### ❌ Execution Semantics
+
 - No `execute()`, `run()`, `start()` methods on entities
 - No execution lifecycle management
 - No state machines for execution states
 - No `executionId` concept anywhere
 
 #### ❌ Billing/Pricing Logic
+
 - No price calculation
 - No cost estimation
 - No billing logic
 - No usage metering as source of truth
 
 #### ❌ Platform Authority
+
 - No retry/timeout/fallback execution decisions
 - No determination of success/failure
 - No generation of platform facts (executionId, execution status)
 
 #### ❌ Autonomous Agent Patterns
+
 - No autonomous loops
 - No self-planning systems
 - No reflection or memory-driven continuous behavior
@@ -264,6 +271,7 @@ grep -r "executionId\|autonomous\|retry.*logic\|billing.*calc" ainalyn/
 ```
 
 For detailed boundary rules, see:
+
 - `ref-boundary/Platform Vision & System Boundary.md`
 - `ref-boundary/Agent Definition Compiler & Runtime Forbidden Zone.md`
 - `COMPLIANCE_REPORT.md`
@@ -357,6 +365,7 @@ ruff format ainalyn/ tests/
 ```
 
 Configuration is in `pyproject.toml`. Key rules:
+
 - Line length: 88 characters
 - Use double quotes for strings
 - Mandatory `from __future__ import annotations`
@@ -369,7 +378,7 @@ Configuration is in `pyproject.toml`. Key rules:
 
 Tests must mirror the source code structure:
 
-```
+```text
 tests/
 ├── unit/              # Unit tests
 │   ├── domain/
@@ -444,26 +453,31 @@ pytest -k "test_builder"
 ### Before Submitting
 
 1. **Ensure all tests pass**
+
    ```bash
    pytest
    ```
 
 2. **Run type checker**
+
    ```bash
    mypy ainalyn/
    ```
 
 3. **Run linter**
+
    ```bash
    ruff check ainalyn/ tests/
    ```
 
 4. **Check coverage**
+
    ```bash
    pytest --cov=ainalyn --cov-report=term-missing
    ```
 
 5. **Verify boundary compliance**
+
    ```bash
    # Should return no results in implementation code
    grep -r "executionId\|autonomous.*agent\|retry.*execution" ainalyn/
@@ -593,7 +607,7 @@ class AgentBuilder:
 - **GitHub Discussions**: For questions and general discussion
 - **GitHub Issues**: For bug reports and feature requests
 - **Discord**: Join our [Discord community](https://discord.gg/ainalyn)
-- **Email**: dev@ainalyn.io
+- **Email**: <dev@ainalyn.io>
 
 ### Reporting Issues
 
@@ -628,6 +642,7 @@ For new features:
 ### 1. Start Small
 
 If you're new to the project:
+
 - Start with documentation improvements
 - Fix typos or clarify existing docs
 - Add missing docstrings
@@ -673,6 +688,7 @@ Releases follow semantic versioning (MAJOR.MINOR.PATCH):
 ## Recognition
 
 We value all contributions! Contributors will be:
+
 - Listed in release notes
 - Credited in the repository
 - Recognized in the community
@@ -704,7 +720,7 @@ grep -r "executionId\|autonomous" ainalyn/  # Boundary check
 
 ---
 
-## Thank You!
+## Thank You
 
 Your contributions make Ainalyn SDK better for everyone. We appreciate your time and effort! 🎉
 

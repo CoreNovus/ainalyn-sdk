@@ -4,7 +4,7 @@ This directory contains all tests for the Ainalyn SDK, organized following best 
 
 ## Directory Structure
 
-```
+```text
 tests/
 ├── unit/                      # Unit tests (isolated, fast)
 │   ├── domain/               # Domain layer tests
@@ -20,6 +20,7 @@ tests/
 ## Test Organization Principles
 
 ### Unit Tests (`tests/unit/`)
+
 - **Purpose**: Test individual components in isolation
 - **Characteristics**:
   - Fast execution (< 1 second each)
@@ -30,6 +31,7 @@ tests/
 - **Structure**: Mirrors main codebase structure
 
 ### Integration Tests (`tests/integration/`)
+
 - **Purpose**: Test interaction between components
 - **Characteristics**:
   - Test multiple layers together
@@ -41,41 +43,49 @@ tests/
 ## Running Tests
 
 ### Run All Tests
+
 ```bash
 pytest
 ```
 
 ### Run Only Unit Tests
+
 ```bash
 pytest tests/unit
 ```
 
 ### Run Only Integration Tests
+
 ```bash
 pytest tests/integration
 ```
 
 ### Run Specific Test File
+
 ```bash
 pytest tests/unit/domain/entities/test_entities.py
 ```
 
 ### Run Specific Test Class
+
 ```bash
 pytest tests/unit/domain/entities/test_entities.py::TestModule
 ```
 
 ### Run Specific Test Method
+
 ```bash
 pytest tests/unit/domain/entities/test_entities.py::TestModule::test_create_module
 ```
 
 ### Run with Coverage
+
 ```bash
 pytest --cov=ainalyn --cov-report=html
 ```
 
 ### Run with Verbose Output
+
 ```bash
 pytest -v
 ```
@@ -90,6 +100,7 @@ pytest -v
 ## Writing Tests
 
 ### Test Structure
+
 Each test file should follow this structure:
 
 ```python
@@ -114,12 +125,14 @@ class TestModule:
 ```
 
 ### Test Naming Conventions
+
 - Test files: `test_<module_name>.py`
 - Test classes: `Test<ClassName>`
 - Test methods: `test_<what_is_being_tested>`
 - Use descriptive docstrings
 
 ### Test Categories (Markers)
+
 - `@pytest.mark.unit`: Unit tests (default for `tests/unit/`)
 - `@pytest.mark.integration`: Integration tests
 - `@pytest.mark.slow`: Slow tests (> 1 second)
@@ -128,11 +141,13 @@ class TestModule:
 ## Test Maintenance
 
 ### Aligning with Code Structure
+
 - When adding a new module in `ainalyn/`, add corresponding test file in `tests/unit/`
 - Maintain 1:1 mapping between code modules and test files
 - Keep test structure synchronized with code structure
 
 ### Best Practices
+
 1. **One Test, One Assertion** (when possible)
 2. **Arrange-Act-Assert (AAA)** pattern
 3. **Test behavior, not implementation**
@@ -144,25 +159,30 @@ class TestModule:
 ## Current Test Coverage
 
 ### Domain Layer
+
 - ✅ **entities**: Complete coverage
   - Module, Prompt, Tool, Node, Workflow, AgentDefinition
 - ✅ **rules**: Complete coverage
   - Name validation, version validation, workflow rules, circular dependencies, etc.
 
 ### Adapters Layer
+
 - ✅ **primary/errors**: Complete coverage
   - All builder errors
 - ✅ **primary/builders**: Complete coverage
   - ModuleBuilder, PromptBuilder, ToolBuilder, NodeBuilder, WorkflowBuilder, AgentBuilder
 
 ### Ports Layer
+
 - ⏳ **inbound**: Pending (interfaces only, no logic to test)
 - ⏳ **outbound**: Pending (interfaces only, no logic to test)
 
 ### Application Layer
+
 - ⏳ **use_cases**: Not yet implemented
 
 ## Future Improvements
+
 - [ ] Add integration tests for end-to-end workflows
 - [ ] Add property-based testing with Hypothesis
 - [ ] Add mutation testing with mutmut
