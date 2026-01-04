@@ -92,6 +92,24 @@ class YamlExporter:
         # Prepend header comment to explain the file's purpose
         return self._YAML_HEADER + yaml_content
 
+    def export(self, definition: AgentDefinition) -> str:
+        """
+        Export an AgentDefinition to YAML format (alias for serialize).
+
+        This method is an alias for serialize() to maintain backward
+        compatibility with existing code and tests.
+
+        Args:
+            definition: The AgentDefinition to export.
+
+        Returns:
+            str: The YAML-formatted string representation with header comments.
+
+        Note:
+            This is an alias for serialize(). Both methods are equivalent.
+        """
+        return self.serialize(definition)
+
     def write(self, content: str, path: Path) -> None:
         """
         Write YAML content to a file.
